@@ -24,11 +24,15 @@ function getGeminiClient(): GoogleGenAI {
     const apiKey = 
       process.env.GEMINI_API_KEY || 
       process.env.gemini_api_key || 
+      process.env.GOOGLE_API_KEY || 
+      process.env.google_api_key || 
+      process.env.VITE_GEMINI_API_KEY || 
+      process.env.VITE_GOOGLE_API_KEY || 
       process.env.Gemini_Api_Key || 
       process.env.Gemini_API_Key || 
       process.env.gemini_API_key;
     if (!apiKey) {
-      throw new Error("GEMINI_API_KEY environment variable is missing. Please configure it in Settings > Secrets with exact capital letters.");
+      throw new Error("GEMINI_API_KEY environment variable is missing. Please configure it in your environment or Vercel settings.");
     }
     aiClient = new GoogleGenAI({
       apiKey,
@@ -97,7 +101,7 @@ app.post("/api/chat/stream", async (req, res) => {
       };
     });
 
-    const modelName = model || "gemini-3.5-flash";
+    const modelName = model || "gemini-2.5-flash";
 
     // Build tools config if search grounding is enabled
     const tools = useSearch ? [{ googleSearch: {} }] : undefined;
@@ -307,34 +311,25 @@ app.post("/api/education/generate", async (req, res) => {
     let response;
     try {
       response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.5-flash",
         contents: prompt,
         config,
       });
     } catch (primaryError: any) {
-      console.warn("Primary model gemini-3.5-flash failed in education. Trying fallback to gemini-2.5-flash...", primaryError);
+      console.warn("Primary model gemini-2.5-flash failed in education. Trying fallback to gemini-2.0-flash...", primaryError);
       try {
         response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-2.0-flash",
           contents: prompt,
           config,
         });
       } catch (secondaryError: any) {
-        console.error("Secondary model gemini-2.5-flash failed in education. Trying tertiary gemini-2.0-flash...", secondaryError);
-        try {
-          response = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
-            contents: prompt,
-            config,
-          });
-        } catch (tertiaryError: any) {
-          console.error("Tertiary model gemini-2.0-flash failed in education. Trying legacy gemini-1.5-flash...", tertiaryError);
-          response = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
-            contents: prompt,
-            config,
-          });
-        }
+        console.error("Secondary model gemini-2.0-flash failed in education. Trying tertiary gemini-1.5-flash...", secondaryError);
+        response = await ai.models.generateContent({
+          model: "gemini-1.5-flash",
+          contents: prompt,
+          config,
+        });
       }
     }
 

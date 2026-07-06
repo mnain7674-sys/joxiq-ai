@@ -107,10 +107,34 @@ export const SYSTEM_PERSONAS: Persona[] = [
 
 export const AVAILABLE_MODELS = [
   {
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    description: "Highly recommended stable standard. Extremely fast and smart for daily prompts.",
+    badge: "Stable & Fast",
+  },
+  {
+    id: "gemini-2.0-flash",
+    name: "Gemini 2.0 Flash",
+    description: "Next-generation model. Excellent balance of speed, capability, and performance.",
+    badge: "Next-Gen",
+  },
+  {
+    id: "gemini-1.5-flash",
+    name: "Gemini 1.5 Flash",
+    description: "High performance multimodal model, very efficient and widely supported.",
+    badge: "Classic Flash",
+  },
+  {
+    id: "gemini-1.5-pro",
+    name: "Gemini 1.5 Pro",
+    description: "Complex reasoning and deep understanding for advanced multi-step tasks.",
+    badge: "Deep Reasoning",
+  },
+  {
     id: "gemini-3.5-flash",
     name: "Gemini 3.5 Flash",
-    description: "Default standard. Ultra-fast and smart for daily prompts and multimodal analysis.",
-    badge: "Fast & Smart",
+    description: "AI Studio internal preview model. (Works on internal platforms; may not work with some external API keys).",
+    badge: "AI Studio Preview",
   },
 ];
 
