@@ -880,8 +880,14 @@ export default function App() {
               break;
             }
 
+            let payload: any = null;
             try {
-              const payload = JSON.parse(payloadStr);
+              payload = JSON.parse(payloadStr);
+            } catch (e: any) {
+              // Ignore partial JSON parsing errors that might happen on boundary splits
+            }
+
+            if (payload) {
               if (payload.text) {
                 finalResponseText += payload.text;
                 setCurrentStreamText(finalResponseText);
@@ -893,8 +899,6 @@ export default function App() {
               if (payload.error) {
                 throw new Error(payload.error);
               }
-            } catch (e: any) {
-              // Ignore partial JSON parsing errors that might happen on boundary splits
             }
           }
         }
@@ -1114,8 +1118,14 @@ export default function App() {
               break;
             }
 
+            let payload: any = null;
             try {
-              const payload = JSON.parse(payloadStr);
+              payload = JSON.parse(payloadStr);
+            } catch (e: any) {
+              // Ignore partial JSON parsing errors that might happen on boundary splits
+            }
+
+            if (payload) {
               if (payload.text) {
                 finalResponseText += payload.text;
                 setCurrentStreamText(finalResponseText);
@@ -1124,7 +1134,10 @@ export default function App() {
                 finalGrounding = payload.grounding;
                 setCurrentGrounding(payload.grounding);
               }
-            } catch (e) {}
+              if (payload.error) {
+                throw new Error(payload.error);
+              }
+            }
           }
         }
       }

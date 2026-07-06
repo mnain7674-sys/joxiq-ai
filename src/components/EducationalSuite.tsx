@@ -471,7 +471,7 @@ export const EducationalSuite: React.FC<EducationalSuiteProps> = ({ theme, userP
               },
             },
           ],
-          model: "gemini-3.5-flash",
+          model: "gemini-2.5-flash",
           systemInstruction: "You are an expert academic visual solver. Identify formulas, handwritten math, text questions, diagrams or scientific layouts from images. Provide precise step-by-step guidance.",
           temperature: 0.2,
           useSearch: false,
