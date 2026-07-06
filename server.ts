@@ -125,10 +125,10 @@ IMPORTANT SYSTEM RULES:
         },
       });
     } catch (primaryError: any) {
-      console.warn(`Primary model ${modelName} stream failed. Trying fallback to gemini-flash-latest...`, primaryError);
+      console.warn(`Primary model ${modelName} stream failed. Trying fallback to gemini-2.5-flash...`, primaryError);
       try {
         responseStream = await ai.models.generateContentStream({
-          model: "gemini-flash-latest",
+          model: "gemini-2.5-flash",
           contents: contentsArray,
           config: {
             systemInstruction: finalSystemInstruction,
@@ -137,16 +137,29 @@ IMPORTANT SYSTEM RULES:
           },
         });
       } catch (secondaryError: any) {
-        console.error("Secondary model gemini-flash-latest stream failed. Trying tertiary gemini-3.1-flash-lite...", secondaryError);
-        responseStream = await ai.models.generateContentStream({
-          model: "gemini-3.1-flash-lite",
-          contents: contentsArray,
-          config: {
-            systemInstruction: finalSystemInstruction,
-            temperature: typeof temperature === "number" ? temperature : 0.7,
-            tools,
-          },
-        });
+        console.error("Secondary model gemini-2.5-flash stream failed. Trying tertiary gemini-2.0-flash...", secondaryError);
+        try {
+          responseStream = await ai.models.generateContentStream({
+            model: "gemini-2.0-flash",
+            contents: contentsArray,
+            config: {
+              systemInstruction: finalSystemInstruction,
+              temperature: typeof temperature === "number" ? temperature : 0.7,
+              tools,
+            },
+          });
+        } catch (tertiaryError: any) {
+          console.error("Tertiary model gemini-2.0-flash stream failed. Trying legacy gemini-1.5-flash...", tertiaryError);
+          responseStream = await ai.models.generateContentStream({
+            model: "gemini-1.5-flash",
+            contents: contentsArray,
+            config: {
+              systemInstruction: finalSystemInstruction,
+              temperature: typeof temperature === "number" ? temperature : 0.7,
+              tools,
+            },
+          });
+        }
       }
     }
 
@@ -211,18 +224,51 @@ app.post("/api/chat/tts", async (req, res) => {
 
     const ai = getGeminiClient();
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-tts-preview",
-      contents: [{ parts: [{ text: `Say cheerful and clear: ${text}` }] }],
-      config: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: voice || "Kore" }, // 'Puck', 'Charon', 'Kore', 'Fenrir', 'Zephyr'
+    let response;
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-3.1-flash-tts-preview",
+        contents: [{ parts: [{ text: `Say cheerful and clear: ${text}` }] }],
+        config: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: voice || "Kore" }, // 'Puck', 'Charon', 'Kore', 'Fenrir', 'Zephyr'
+            },
           },
         },
-      },
-    });
+      });
+    } catch (primaryError: any) {
+      console.warn("Primary TTS model gemini-3.1-flash-tts-preview failed. Trying fallback to gemini-2.5-flash...", primaryError);
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{ parts: [{ text: `Say cheerful and clear: ${text}` }] }],
+          config: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: voice || "Kore" },
+              },
+            },
+          },
+        });
+      } catch (secondaryError: any) {
+        console.warn("Secondary TTS model gemini-2.5-flash failed. Trying tertiary gemini-2.0-flash...", secondaryError);
+        response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: [{ parts: [{ text: `Say cheerful and clear: ${text}` }] }],
+          config: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: voice || "Kore" },
+              },
+            },
+          },
+        });
+      }
+    }
 
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
@@ -266,20 +312,29 @@ app.post("/api/education/generate", async (req, res) => {
         config,
       });
     } catch (primaryError: any) {
-      console.warn("Primary model gemini-3.5-flash failed in education. Trying fallback to gemini-flash-latest...", primaryError);
+      console.warn("Primary model gemini-3.5-flash failed in education. Trying fallback to gemini-2.5-flash...", primaryError);
       try {
         response = await ai.models.generateContent({
-          model: "gemini-flash-latest",
+          model: "gemini-2.5-flash",
           contents: prompt,
           config,
         });
       } catch (secondaryError: any) {
-        console.error("Secondary model gemini-flash-latest failed in education. Trying tertiary gemini-3.1-flash-lite...", secondaryError);
-        response = await ai.models.generateContent({
-          model: "gemini-3.1-flash-lite",
-          contents: prompt,
-          config,
-        });
+        console.error("Secondary model gemini-2.5-flash failed in education. Trying tertiary gemini-2.0-flash...", secondaryError);
+        try {
+          response = await ai.models.generateContent({
+            model: "gemini-2.0-flash",
+            contents: prompt,
+            config,
+          });
+        } catch (tertiaryError: any) {
+          console.error("Tertiary model gemini-2.0-flash failed in education. Trying legacy gemini-1.5-flash...", tertiaryError);
+          response = await ai.models.generateContent({
+            model: "gemini-1.5-flash",
+            contents: prompt,
+            config,
+          });
+        }
       }
     }
 
