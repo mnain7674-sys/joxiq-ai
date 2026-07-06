@@ -21,9 +21,14 @@ let aiClient: GoogleGenAI | null = null;
  */
 function getGeminiClient(): GoogleGenAI {
   if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = 
+      process.env.GEMINI_API_KEY || 
+      process.env.gemini_api_key || 
+      process.env.Gemini_Api_Key || 
+      process.env.Gemini_API_Key || 
+      process.env.gemini_API_key;
     if (!apiKey) {
-      throw new Error("GEMINI_API_KEY environment variable is missing. Please configure it in Settings > Secrets.");
+      throw new Error("GEMINI_API_KEY environment variable is missing. Please configure it in Settings > Secrets with exact capital letters.");
     }
     aiClient = new GoogleGenAI({
       apiKey,
@@ -311,6 +316,10 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
-  console.error("Failed to start the Express application server:", err);
-});
+if (!process.env.VERCEL) {
+  startServer().catch((err) => {
+    console.error("Failed to start the Express application server:", err);
+  });
+}
+
+export default app;
