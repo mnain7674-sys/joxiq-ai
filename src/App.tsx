@@ -1181,6 +1181,14 @@ export default function App() {
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-violet-600/15 rounded-full blur-[150px] pointer-events-none" />
 
+      {/* Mobile Sidebar Overlay Backdrop */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 z-20 md:hidden backdrop-blur-xs transition-opacity duration-300"
+        />
+      )}
+
       {/* Sidebar: Navigation & History */}
       <aside
         id="chat-sidebar"
@@ -1660,19 +1668,17 @@ export default function App() {
         <header className={`h-16 flex items-center justify-between px-6 md:px-8 border-b shrink-0 z-10 ${
           theme === "dark" ? "bg-white/5 border-white/10" : "bg-white/60 border-slate-200/60"
         } backdrop-blur-md`}>
-          <div className="flex items-center gap-4">
-            {!sidebarOpen && (
-              <button
-                id="btn-sidebar-toggle"
-                onClick={() => setSidebarOpen(true)}
-                className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                  theme === "dark" ? "bg-white/5 border-white/10 text-slate-200" : "bg-white border-slate-200 text-slate-700"
-                }`}
-                title="Open Sidebar"
-              >
-                <Menu size={18} />
-              </button>
-            )}
+          <div className="flex items-center gap-3">
+            <button
+              id="btn-sidebar-toggle"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                theme === "dark" ? "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+              }`}
+              title="Toggle Sidebar"
+            >
+              <Menu size={18} />
+            </button>
 
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold text-slate-400 hidden sm:inline">Active Mode:</span>
