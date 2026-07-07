@@ -109,6 +109,14 @@ export default function App() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => typeof window !== "undefined" && window.innerWidth >= 768);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
+
+  const handleSidebarItemClick = (action: () => void) => {
+    action();
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobileSidebarOpen(false);
+    }
+  };
 
   // --- Projects / Workspaces state ---
   const [projects, setProjects] = useState<Project[]>([]);
@@ -1182,22 +1190,22 @@ export default function App() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-violet-600/15 rounded-full blur-[150px] pointer-events-none" />
 
       {/* Mobile Sidebar Overlay Backdrop */}
-      {sidebarOpen && (
+      {mobileSidebarOpen && (
         <div
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 bg-black/60 z-20 md:hidden backdrop-blur-xs transition-opacity duration-300"
+          onClick={() => setMobileSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-xs transition-opacity duration-300"
         />
       )}
 
       {/* Sidebar: Navigation & History */}
       <aside
         id="chat-sidebar"
-        className={`fixed inset-y-0 left-0 z-30 w-72 flex flex-col transition-all duration-300 md:static ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition-transform duration-300 ease-in-out md:static md:translate-x-0 md:w-72 md:border-r ${
           theme === "dark" 
-            ? "bg-white/[0.03] border-white/10 text-slate-200" 
-            : "bg-white/70 border-slate-200/75 text-slate-800"
-        } backdrop-blur-3xl border-r ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:w-0 md:border-r-0 md:-translate-x-72"
+            ? "bg-[#0b1329] border-white/10 text-slate-200" 
+            : "bg-white border-slate-200 text-slate-800"
+        } backdrop-blur-3xl ${
+          mobileSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
         }`}
       >
         {/* Sidebar Header */}
@@ -1220,7 +1228,7 @@ export default function App() {
             </span>
           </div>
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => setMobileSidebarOpen(false)}
             className={`md:hidden p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-slate-400 cursor-pointer`}
           >
             <X size={16} />
@@ -1671,11 +1679,11 @@ export default function App() {
           <div className="flex items-center gap-3">
             <button
               id="btn-sidebar-toggle"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+              onClick={() => setMobileSidebarOpen(true)}
+              className={`md:hidden p-2 rounded-xl border transition-all cursor-pointer ${
                 theme === "dark" ? "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
               }`}
-              title="Toggle Sidebar"
+              title="Open Navigation Menu"
             >
               <Menu size={18} />
             </button>
