@@ -341,6 +341,29 @@ app.post("/api/education/generate", async (req, res) => {
 });
 
 /**
+ * Checkout Session API Endpoint for Pro Subscription & Token Refills
+ */
+app.post("/api/create-checkout-session", async (req, res) => {
+  try {
+    const { plan } = req.body;
+    // If Stripe key is configured, integrate Stripe here. Otherwise, return success for simulated checkout.
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (stripeKey) {
+      // Stripe integration hook placeholder
+      // const stripe = new Stripe(stripeKey);
+      // const session = await stripe.checkout.sessions.create(...);
+      // return res.json({ url: session.url });
+    }
+    
+    // Return simulated success response for QAR / USD payment
+    res.json({ success: true, message: "Checkout session created successfully", plan: plan || "monthly" });
+  } catch (error: any) {
+    console.error("Checkout session error:", error);
+    res.status(500).json({ error: error.message || "Failed to create checkout session." });
+  }
+});
+
+/**
  * Start the Express + Vite server
  */
 async function startServer() {

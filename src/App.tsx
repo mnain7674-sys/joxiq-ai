@@ -50,7 +50,8 @@ import {
   UserPlus,
   User,
   LayoutGrid,
-  Wrench
+  Wrench,
+  Crown
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -69,6 +70,7 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { EducationalSuite } from "./components/EducationalSuite";
 import { AboutPage } from "./components/AboutPage";
 import { ToolsPage } from "./components/ToolsPage";
+import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import julkarEmblem from "./assets/images/julkar_ai_emblem_1783331067944.jpg";
 import julkarLogo from "./assets/images/julkar_ai_logo_1783331052964.jpg";
 
@@ -132,6 +134,14 @@ export default function App() {
   const [authNameInput, setAuthNameInput] = useState<string>("");
   const [authEmailInput, setAuthEmailInput] = useState<string>("");
   const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+
+  // --- Pro Subscription & Token Limit states ---
+  const [isProUser, setIsProUser] = useState<boolean>(() => localStorage.getItem("julkar_is_pro") === "true");
+  const [freeMessagesLeft, setFreeMessagesLeft] = useState<number>(() => {
+    const saved = localStorage.getItem("julkar_free_messages_left");
+    return saved !== null ? parseInt(saved, 10) : 15;
+  });
+  const [proModalOpen, setProModalOpen] = useState<boolean>(false);
 
   // --- Theme Mode state ---
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -796,6 +806,17 @@ export default function App() {
     const docToSend = customDocument !== undefined ? customDocument : attachedDocument;
 
     if (!textToSend.trim() && !imgToSend && !docToSend) return;
+
+    // Check free message limit
+    if (!isProUser) {
+      if (freeMessagesLeft <= 0) {
+        setProModalOpen(true);
+        return;
+      }
+      const nextCount = freeMessagesLeft - 1;
+      setFreeMessagesLeft(nextCount);
+      localStorage.setItem("julkar_free_messages_left", String(nextCount));
+    }
 
     setStreamError(null);
     let chat = targetChat || activeConversation;
@@ -1706,6 +1727,14 @@ export default function App() {
 
           {/* Right Controls */}
           <div className="flex items-center gap-2">
+            {/* Upgrade to Pro Button */}
+            <button
+              onClick={() => setProModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer animate-pulse"
+            >
+              <Crown size={14} />
+              <span>{isProUser ? "Pro Active ⭐" : `Upgrade Pro (${freeMessagesLeft} free left)`}</span>
+            </button>
             {useSearch && (
               <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
                 <Globe size={11} className="animate-spin" />
@@ -2885,6 +2914,19 @@ export default function App() {
           setUseSearch(false);
           setSelectedVoice("Kore");
         }}
+      />
+
+      {/* Pro Subscription & Monetization Modal */}
+      <ProSubscriptionModal
+        isOpen={proModalOpen}
+        onClose={() => setProModalOpen(false)}
+        onUpgradeSuccess={() => {
+          setIsProUser(true);
+          localStorage.setItem("julkar_is_pro", "true");
+        }}
+        isDark={theme === "dark"}
+        freeMessagesLeft={freeMessagesLeft}
+        isProUser={isProUser}
       />
     </div>
   );
