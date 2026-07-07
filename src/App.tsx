@@ -108,7 +108,7 @@ export default function App() {
   // --- Conversations and active state ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string>("");
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => typeof window !== "undefined" && window.innerWidth >= 768);
 
   // --- Projects / Workspaces state ---
   const [projects, setProjects] = useState<Project[]>([]);
