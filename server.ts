@@ -153,9 +153,9 @@ IMPORTANT SYSTEM RULES:
             },
           });
         } catch (tertiaryError: any) {
-          console.error("Tertiary model gemini-2.0-flash stream failed. Trying tertiary gemini-2.5-pro...", tertiaryError);
+          console.error("Tertiary model gemini-2.0-flash stream failed. Trying tertiary gemini-2.5-flash...", tertiaryError);
           responseStream = await ai.models.generateContentStream({
-            model: "gemini-2.5-pro",
+            model: "gemini-2.5-flash",
             contents: contentsArray,
             config: {
               systemInstruction: finalSystemInstruction,
@@ -324,9 +324,9 @@ app.post("/api/education/generate", async (req, res) => {
           config,
         });
       } catch (secondaryError: any) {
-        console.error("Secondary model gemini-2.0-flash failed in education. Trying tertiary gemini-2.5-pro...", secondaryError);
+        console.error("Secondary model gemini-2.0-flash failed in education. Trying tertiary gemini-2.5-flash...", secondaryError);
         response = await ai.models.generateContent({
-          model: "gemini-2.5-pro",
+          model: "gemini-2.5-flash",
           contents: prompt,
           config,
         });
