@@ -1174,7 +1174,7 @@ export default function App() {
         } backdrop-blur-3xl ${
           sidebarOpen 
             ? "translate-x-0 md:translate-x-0 md:relative md:w-72 md:opacity-100 shadow-2xl md:shadow-none md:border-r" 
-            : "-translate-x-full md:-translate-x-full md:absolute md:w-72 md:opacity-0 md:pointer-events-none md:border-r-0"
+            : "-translate-x-full md:translate-x-0 md:relative md:w-0 md:opacity-0 md:overflow-hidden md:border-r-0 md:pointer-events-none"
         }`}
       >
         {/* Sidebar Header */}
