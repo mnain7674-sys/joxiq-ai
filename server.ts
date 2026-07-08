@@ -31,9 +31,11 @@ function getGeminiClient(): GoogleGenAI {
       process.env.Gemini_Api_Key || 
       process.env.Gemini_API_Key || 
       process.env.gemini_API_key;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY environment variable is missing. Please configure it in your environment or Vercel settings.");
+      
+    if (!apiKey || apiKey === "MY_GEMINI_API_KEY" || apiKey.trim() === "") {
+      throw new Error("GEMINI_API_KEY is missing or not configured. Please open AI Studio Settings / Secrets and configure your GEMINI_API_KEY.");
     }
+    
     aiClient = new GoogleGenAI({
       apiKey,
       httpOptions: {

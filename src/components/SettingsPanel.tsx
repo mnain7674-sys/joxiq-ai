@@ -16,6 +16,8 @@ interface SettingsPanelProps {
   onUseSearchChange: (val: boolean) => void;
   selectedVoice: string;
   onSelectVoice: (val: string) => void;
+  selectedModel: string;
+  onSelectModel: (val: string) => void;
   onReset: () => void;
 }
 
@@ -40,6 +42,8 @@ export function SettingsPanel({
   onUseSearchChange,
   selectedVoice,
   onSelectVoice,
+  selectedModel,
+  onSelectModel,
   onReset,
 }: SettingsPanelProps) {
   return (
@@ -67,7 +71,7 @@ export function SettingsPanel({
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-2">
                 <Sliders className="w-5 h-5 text-indigo-500" />
-                <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-50">Chat settings</h2>
+                <h2 className="text-lg font-semibold text-gray-950 dark:text-gray-50">Chat settings & Models</h2>
               </div>
               <button
                 onClick={onClose}
@@ -79,6 +83,53 @@ export function SettingsPanel({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-7">
+              {/* AI Model Selector */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <Sparkles size={16} className="text-indigo-500" />
+                  <span>Choose AI Model</span>
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div
+                    onClick={() => onSelectModel("gemini-2.5-flash")}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                      (selectedModel === "gemini-2.5-flash" || !selectedModel)
+                        ? "border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/30 shadow-sm"
+                        : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs text-gray-900 dark:text-gray-100">Gemini 2.5 Flash</span>
+                        <span className="text-[10px] bg-emerald-500/10 text-emerald-500 font-semibold px-1.5 py-0.5 rounded">Free</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-normal">
+                        Blazing fast, ideal for everyday chats, coding & quick questions.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => onSelectModel("gemini-2.5-pro")}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                      selectedModel === "gemini-2.5-pro"
+                        ? "border-amber-500 bg-amber-50/40 dark:bg-amber-950/30 shadow-sm"
+                        : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-xs text-amber-500 dark:text-amber-400">Gemini 2.5 Pro</span>
+                        <span className="text-[10px] bg-amber-500/10 text-amber-500 font-semibold px-1.5 py-0.5 rounded">Pro ⭐</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-normal">
+                        Advanced reasoning, deep logic & complex multi-step problem solving.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Google Search Grounding Toggle */}
               <div className="space-y-3 bg-indigo-50/40 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-100/50 dark:border-indigo-900/30">
                 <div className="flex items-start justify-between">

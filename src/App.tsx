@@ -159,6 +159,55 @@ export default function App() {
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [copiedTranscript, setCopiedTranscript] = useState<boolean>(false);
+  const [savedMessageIds, setSavedMessageIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem("julkar_saved_message_ids");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
+
+  const toggleSaveMessage = (msgId: string) => {
+    setSavedMessageIds((prev) => {
+      const next = prev.includes(msgId) ? prev.filter(id => id !== msgId) : [...prev, msgId];
+      localStorage.setItem("julkar_saved_message_ids", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const copyMessageText = (msg: Message) => {
+    navigator.clipboard.writeText(msg.content);
+    setCopiedMsgId(msg.id);
+    setTimeout(() => setCopiedMsgId(null), 2000);
+  };
+
+  const shareMessage = async (msg: Message) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Julkar AI Response",
+          text: msg.content,
+        });
+      } catch (err) {
+        copyMessageText(msg);
+      }
+    } else {
+      copyMessageText(msg);
+    }
+  };
+
+  const deleteMessage = (msgId: string) => {
+    if (!activeId) return;
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.id === activeId) {
+          return {
+            ...c,
+            messages: c.messages.filter((m) => m.id !== msgId),
+          };
+        }
+        return c;
+      })
+    );
+  };
 
   // --- Settings state (local session overrides, sync to active chat configuration) ---
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
@@ -1709,8 +1758,48 @@ export default function App() {
               <Menu size={18} />
             </button>
 
+            {/* Quick Model Selector Toggle */}
+            <div className={`hidden sm:flex items-center p-1 rounded-xl border ${
+              theme === "dark" ? "bg-white/5 border-white/10" : "bg-slate-100 border-slate-200"
+            }`}>
+              <button
+                onClick={() => {
+                  if (activeConversation) {
+                    setConversations(prev => prev.map(c => c.id === activeConversation.id ? { ...c, model: 'gemini-2.5-flash' } : c));
+                  }
+                }}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  (!activeConversation || activeConversation.model === "gemini-2.5-flash" || !activeConversation.model)
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Flash
+              </button>
+              <button
+                onClick={() => {
+                  if (!isProUser) {
+                    setProModalOpen(true);
+                    return;
+                  }
+                  if (activeConversation) {
+                    setConversations(prev => prev.map(c => c.id === activeConversation.id ? { ...c, model: 'gemini-2.5-pro' } : c));
+                  }
+                }}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  (activeConversation?.model === "gemini-2.5-pro")
+                    ? "bg-amber-500 text-white shadow-sm"
+                    : "text-amber-400 hover:text-amber-300"
+                }`}
+                title={!isProUser ? "Upgrade to Pro to unlock Gemini 2.5 Pro" : "Switch to Gemini 2.5 Pro"}
+              >
+                <Sparkles size={11} />
+                <span>Pro</span>
+              </button>
+            </div>
+
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-400 hidden sm:inline">Active Mode:</span>
+              <span className="text-xs font-semibold text-slate-400 hidden md:inline">Mode:</span>
               <div
                 onClick={() => setSettingsOpen(true)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-full cursor-pointer transition-all shadow-sm active:scale-95 ${
@@ -1718,7 +1807,7 @@ export default function App() {
                 }`}
               >
                 <span className="text-xs font-bold uppercase tracking-wider">
-                  {currentPersona ? currentPersona.name : "Custom AI prompter"}
+                  {currentPersona ? currentPersona.name : "Custom AI"}
                 </span>
                 <ChevronRight size={12} className="text-slate-400 rotate-90" />
               </div>
@@ -1727,6 +1816,18 @@ export default function App() {
 
           {/* Right Controls */}
           <div className="flex items-center gap-2">
+            {/* Settings Button */}
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
+              }`}
+              title="Open AI Model & Advanced Settings"
+            >
+              <Wrench size={14} className="text-indigo-400" />
+              <span className="hidden sm:inline">Settings</span>
+            </button>
+
             {/* Upgrade to Pro Button */}
             <button
               onClick={() => setProModalOpen(true)}
@@ -2005,17 +2106,17 @@ export default function App() {
             </div>
           ) : (
             /* Active message timeline */
-            <div className="max-w-3xl mx-auto space-y-7">
+            <div className="max-w-4xl mx-auto space-y-8 pb-10">
               {activeConversation.messages.map((msg, mIdx) => {
                 const isUser = msg.role === "user";
                 const isLastMsg = mIdx === activeConversation.messages.length - 1;
                 return (
                   <div
                     key={msg.id}
-                    className={`flex items-start gap-4 ${isUser ? "justify-end" : "justify-start"}`}
+                    className={`flex items-start gap-4 w-full ${isUser ? "justify-end" : "justify-start"}`}
                   >
                     {!isUser && (
-                      <div className="w-8.5 h-8.5 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 border border-white/15 shadow-md overflow-hidden">
+                      <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 border border-white/10 shadow-sm overflow-hidden mt-0.5">
                         <img
                           src={julkarEmblem}
                           alt="Julkar AI Avatar"
@@ -2025,84 +2126,106 @@ export default function App() {
                       </div>
                     )}
 
-                    <div className="flex flex-col gap-1.5 max-w-[85%] md:max-w-[80%]">
-                      <div
-                        className={`relative border backdrop-blur-lg p-4 md:p-5 shadow-xl transition-all duration-200 ${
-                          isUser
-                            ? (theme === "dark" ? "bg-indigo-600/20 border-indigo-500/30 rounded-2xl rounded-tr-none text-slate-100" : "bg-indigo-600/10 border-indigo-500/20 rounded-2xl rounded-tr-none text-indigo-950")
-                            : (theme === "dark" ? "bg-white/[0.04] border-white/10 rounded-2xl rounded-tl-none text-slate-200" : "bg-white border-slate-250 rounded-2xl rounded-tl-none text-slate-800")
-                        }`}
-                      >
-                        {/* Inline attached images if present in message history */}
-                        {msg.image && (
-                          <div className="mb-3 max-w-sm rounded-lg overflow-hidden border border-white/10 shadow-sm bg-black/40">
-                            <img
-                              src={msg.image.data}
-                              alt="User uploaded attachment"
-                              className="max-h-56 w-auto object-contain mx-auto"
-                            />
-                          </div>
-                        )}
-
-                        {/* Inline attached documents info */}
-                        {msg.document && (
-                          <div className={`mb-3 flex items-center gap-2.5 p-2.5 border rounded-xl max-w-md ${
-                            theme === "dark" ? "bg-black/20 border-white/10 text-slate-200" : "bg-slate-50 border-slate-200 text-slate-800"
-                          }`}>
-                            <FileText size={18} className="text-indigo-500 shrink-0" />
-                            <div className="flex-1 min-w-0 text-left">
-                              <div className="text-xs font-semibold truncate">{msg.document.name}</div>
-                              <div className="text-[10px] text-slate-500 font-mono mt-0.5">Parsed Document - {msg.document.size}</div>
+                    <div className={`flex flex-col gap-2 ${isUser ? "items-end max-w-[85%] md:max-w-[75%]" : "flex-1 min-w-0"}`}>
+                      {isUser ? (
+                        <div className="bg-indigo-600 text-white rounded-2xl rounded-br-sm px-4 py-3 shadow-sm text-sm md:text-base leading-relaxed">
+                          {/* Inline attached images if present in message history */}
+                          {msg.image && (
+                            <div className="mb-3 max-w-sm rounded-lg overflow-hidden border border-white/20 shadow-sm bg-black/40">
+                              <img
+                                src={msg.image.data}
+                                alt="User uploaded attachment"
+                                className="max-h-56 w-auto object-contain mx-auto"
+                              />
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        {/* Rendering core content */}
-                        <MarkdownMessage content={msg.content} />
-
-                        {/* Grounding Citations Panel */}
-                        {msg.grounding && msg.grounding.chunks && msg.grounding.chunks.length > 0 && (
-                          <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-                              <Globe size={13} />
-                              <span>Grounding Search Sources:</span>
+                          {/* Inline attached documents info */}
+                          {msg.document && (
+                            <div className="mb-3 flex items-center gap-2.5 p-2 rounded-xl bg-black/20 border border-white/20 text-white max-w-md">
+                              <FileText size={18} className="text-white shrink-0" />
+                              <div className="flex-1 min-w-0 text-left">
+                                <div className="text-xs font-semibold truncate">{msg.document.name}</div>
+                                <div className="text-[10px] text-white/80 font-mono mt-0.5">Parsed Document - {msg.document.size}</div>
+                              </div>
                             </div>
-                            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                              {msg.grounding.chunks.map((chunk, cidx) => {
-                                if (!chunk.web) return null;
-                                return (
-                                  <a
-                                    key={cidx}
-                                    href={chunk.web.uri}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className={`flex items-start gap-2 p-2 border rounded-lg text-xs transition-colors group truncate ${
-                                      theme === "dark" ? "bg-white/[0.03] hover:bg-white/[0.06] border-white/5 text-slate-300" : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
-                                    }`}
-                                  >
-                                    <div className="bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">
-                                      {cidx + 1}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-semibold truncate group-hover:text-indigo-500 transition-colors text-left">
-                                        {chunk.web.title || "Web Source"}
+                          )}
+
+                          <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                        </div>
+                      ) : (
+                        <div className="text-slate-800 dark:text-slate-100 space-y-3 text-sm md:text-base leading-relaxed w-full">
+                          {/* Inline attached images if present in message history */}
+                          {msg.image && (
+                            <div className="mb-3 max-w-sm rounded-lg overflow-hidden border border-white/10 shadow-sm bg-black/40">
+                              <img
+                                src={msg.image.data}
+                                alt="User uploaded attachment"
+                                className="max-h-56 w-auto object-contain mx-auto"
+                              />
+                            </div>
+                          )}
+
+                          {/* Inline attached documents info */}
+                          {msg.document && (
+                            <div className={`mb-3 flex items-center gap-2.5 p-2.5 border rounded-xl max-w-md ${
+                              theme === "dark" ? "bg-black/20 border-white/10 text-slate-200" : "bg-slate-50 border-slate-200 text-slate-800"
+                            }`}>
+                              <FileText size={18} className="text-indigo-500 shrink-0" />
+                              <div className="flex-1 min-w-0 text-left">
+                                <div className="text-xs font-semibold truncate">{msg.document.name}</div>
+                                <div className="text-[10px] text-slate-500 font-mono mt-0.5">Parsed Document - {msg.document.size}</div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Rendering core content with clean markdown (no boxed card background) */}
+                          <MarkdownMessage content={msg.content} />
+
+                          {/* Grounding Citations Panel */}
+                          {msg.grounding && msg.grounding.chunks && msg.grounding.chunks.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-slate-200/50 dark:border-white/10 space-y-2">
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-500 dark:text-emerald-400">
+                                <Globe size={13} />
+                                <span>Grounding Search Sources:</span>
+                              </div>
+                              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                                {msg.grounding.chunks.map((chunk, cidx) => {
+                                  if (!chunk.web) return null;
+                                  return (
+                                    <a
+                                      key={cidx}
+                                      href={chunk.web.uri}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className={`flex items-start gap-2 p-2 border rounded-lg text-xs transition-colors group truncate ${
+                                        theme === "dark" ? "bg-white/[0.03] hover:bg-white/[0.06] border-white/5 text-slate-300" : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700"
+                                      }`}
+                                    >
+                                      <div className="bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">
+                                        {cidx + 1}
                                       </div>
-                                      <div className="text-[10px] text-slate-500 truncate mt-0.5 text-left">
-                                        {chunk.web.uri}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-semibold truncate group-hover:text-indigo-500 transition-colors text-left">
+                                          {chunk.web.title || "Web Source"}
+                                        </div>
+                                        <div className="text-[10px] text-slate-500 truncate mt-0.5 text-left">
+                                          {chunk.web.uri}
+                                        </div>
                                       </div>
-                                    </div>
-                                    <ExternalLink size={10} className="text-slate-500 group-hover:text-indigo-500 shrink-0 mt-0.5" />
-                                  </a>
-                                );
-                              })}
+                                      <ExternalLink size={10} className="text-slate-500 group-hover:text-indigo-500 shrink-0 mt-0.5" />
+                                    </a>
+                                  );
+                                })}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
 
-                      {/* Message metadata line, audio controls, like/dislike feedback and regenerate response */}
+                      {/* Message metadata line and audio controls */}
                       <div
-                        className={`flex items-center gap-3 text-[10px] text-slate-500 px-1 mt-0.5 ${
+                        className={`flex items-center gap-3 text-[10px] text-slate-400 dark:text-slate-500 px-1 mt-1 ${
                           isUser ? "justify-end" : "justify-between w-full"
                         }`}
                       >
@@ -2145,53 +2268,108 @@ export default function App() {
                             </>
                           )}
                         </div>
-
-                        {/* Ratings & Regenerate Actions (Assistant Only) */}
-                        {!isUser && (
-                          <div className="flex items-center gap-2.5">
-                            {/* Like Button */}
-                            <button
-                              onClick={() => rateMessage(msg.id, msg.rating === "like" ? null : "like")}
-                              className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center ${
-                                msg.rating === "like"
-                                  ? "text-emerald-500 bg-emerald-500/10"
-                                  : "text-slate-500 hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-white/5"
-                              }`}
-                              title="Like response"
-                            >
-                              <ThumbsUp size={11} className={msg.rating === "like" ? "fill-emerald-500" : ""} />
-                            </button>
-
-                            {/* Dislike Button */}
-                            <button
-                              onClick={() => rateMessage(msg.id, msg.rating === "dislike" ? null : "dislike")}
-                              className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center ${
-                                msg.rating === "dislike"
-                                  ? "text-rose-500 bg-rose-500/10"
-                                  : "text-slate-500 hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-white/5"
-                              }`}
-                              title="Dislike response"
-                            >
-                              <ThumbsDown size={11} className={msg.rating === "dislike" ? "fill-rose-500" : ""} />
-                            </button>
-
-                            {/* Regenerate Button (Only shown under the very last message in conversation) */}
-                            {isLastMsg && (
-                              <button
-                                onClick={handleRegenerate}
-                                disabled={isStreaming}
-                                className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-[10px] text-slate-500 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-white/5 ${
-                                  isStreaming ? "opacity-40 cursor-not-allowed" : ""
-                                }`}
-                                title="Regenerate this response"
-                              >
-                                <RefreshCw size={11} className={isStreaming ? "animate-spin" : ""} />
-                                <span>Regenerate</span>
-                              </button>
-                            )}
-                          </div>
-                        )}
                       </div>
+
+                      {/* Modern ChatGPT-style Response Action Toolbar (Assistant Only) */}
+                      {!isUser && (
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5">
+                          {/* Like Button */}
+                          <button
+                            onClick={() => rateMessage(msg.id, msg.rating === "like" ? null : "like")}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                              msg.rating === "like"
+                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500 font-medium"
+                                : "bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300"
+                            }`}
+                            title="Like response"
+                          >
+                            <ThumbsUp size={13} className={msg.rating === "like" ? "fill-emerald-500" : ""} />
+                            <span>Like</span>
+                          </button>
+
+                          {/* Dislike Button */}
+                          <button
+                            onClick={() => rateMessage(msg.id, msg.rating === "dislike" ? null : "dislike")}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                              msg.rating === "dislike"
+                                ? "bg-rose-500/10 border-rose-500/30 text-rose-500 font-medium"
+                                : "bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300"
+                            }`}
+                            title="Dislike response"
+                          >
+                            <ThumbsDown size={13} className={msg.rating === "dislike" ? "fill-rose-500" : ""} />
+                            <span>Dislike</span>
+                          </button>
+
+                          {/* Copy Button */}
+                          <button
+                            onClick={() => copyMessageText(msg)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer"
+                            title="Copy full response"
+                          >
+                            {copiedMsgId === msg.id ? (
+                              <>
+                                <Check size={13} className="text-emerald-500" />
+                                <span className="text-emerald-500 font-medium">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={13} />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Regenerate Button */}
+                          {isLastMsg && (
+                            <button
+                              onClick={handleRegenerate}
+                              disabled={isStreaming}
+                              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer ${
+                                isStreaming ? "opacity-40 cursor-not-allowed" : ""
+                              }`}
+                              title="Regenerate response"
+                            >
+                              <RefreshCw size={13} className={isStreaming ? "animate-spin" : ""} />
+                              <span>Regenerate</span>
+                            </button>
+                          )}
+
+                          {/* Share Button */}
+                          <button
+                            onClick={() => shareMessage(msg)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer"
+                            title="Share response"
+                          >
+                            <Share2 size={13} />
+                            <span>Share</span>
+                          </button>
+
+                          {/* Save / Bookmark Button */}
+                          <button
+                            onClick={() => toggleSaveMessage(msg.id)}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                              savedMessageIds.includes(msg.id)
+                                ? "bg-amber-500/10 border-amber-500/30 text-amber-500 font-medium"
+                                : "bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300"
+                            }`}
+                            title="Save to bookmarks"
+                          >
+                            <Bookmark size={13} className={savedMessageIds.includes(msg.id) ? "fill-amber-500" : ""} />
+                            <span>{savedMessageIds.includes(msg.id) ? "Saved" : "Save"}</span>
+                          </button>
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => deleteMessage(msg.id)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 text-slate-600 dark:text-slate-300 hover:text-rose-500 transition-all duration-200 cursor-pointer ml-auto"
+                            title="Delete message"
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -2199,8 +2377,8 @@ export default function App() {
 
               {/* Streaming AI Bubble overlay */}
               {isStreaming && currentStreamText && (
-                <div className="flex items-start gap-4 justify-start">
-                  <div className="w-8.5 h-8.5 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 border border-white/15 shadow-md overflow-hidden">
+                <div className="flex items-start gap-4 justify-start w-full">
+                  <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 border border-white/10 shadow-sm overflow-hidden mt-0.5">
                     <img
                       src={julkarEmblem}
                       alt="Julkar AI Avatar"
@@ -2208,21 +2386,19 @@ export default function App() {
                       referrerPolicy="no-referrer"
                     />
                   </div>
-                  <div className="flex flex-col gap-1.5 max-w-[85%] md:max-w-[80%]">
-                    <div className={`relative border backdrop-blur-lg p-5 shadow-xl ${
-                      theme === "dark" ? "bg-white/[0.04] border-white/10 text-slate-200" : "bg-white border-slate-250 text-slate-800"
-                    } rounded-2xl rounded-tl-none`}>
+                  <div className="flex flex-col gap-2 flex-1 min-w-0">
+                    <div className="text-slate-800 dark:text-slate-100 space-y-3 text-sm md:text-base leading-relaxed w-full">
                       <MarkdownMessage content={currentStreamText} />
 
                       {/* Streaming search citation query bubble if active */}
                       {currentGrounding && currentGrounding.queries && currentGrounding.queries.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 text-xs text-indigo-400 font-mono">
+                        <div className="mt-3 pt-3 border-t border-slate-200/50 dark:border-white/10 flex items-center gap-2 text-xs text-indigo-400 font-mono">
                           <Search size={12} className="animate-pulse" />
                           <span>Searching: "{currentGrounding.queries.join(", ")}"...</span>
                         </div>
                       )}
                     </div>
-                    <div className="text-[10px] text-slate-500 px-1">
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500 px-1">
                       <span>Generating response...</span>
                     </div>
                   </div>
@@ -2231,18 +2407,14 @@ export default function App() {
 
               {/* Glowing breathing loader if streaming started but text hasn't arrived */}
               {isStreaming && !currentStreamText && (
-                <div className="flex items-start gap-4 justify-start">
-                  <div className="w-8.5 h-8.5 rounded-xl bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-lg">
+                <div className="flex items-start gap-4 justify-start w-full">
+                  <div className="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-sm mt-0.5">
                     <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
                   </div>
-                  <div className={`rounded-2xl rounded-tl-none p-4 w-28 border ${
-                    theme === "dark" ? "bg-white/[0.02] border-white/10" : "bg-white border-slate-200"
-                  }`}>
-                    <div className="flex justify-start space-x-1.5 py-1.5">
-                      <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                      <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce" />
-                    </div>
+                  <div className="flex items-center space-x-1.5 py-2">
+                    <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-bounce" />
                   </div>
                 </div>
               )}
@@ -2907,6 +3079,14 @@ export default function App() {
         onUseSearchChange={setUseSearch}
         selectedVoice={selectedVoice}
         onSelectVoice={setSelectedVoice}
+        selectedModel={activeConversation ? activeConversation.model : "gemini-2.5-flash"}
+        onSelectModel={(model) => {
+          if (activeConversation) {
+            setConversations((prev) =>
+              prev.map((c) => (c.id === activeConversation.id ? { ...c, model } : c))
+            );
+          }
+        }}
         onReset={() => {
           setSelectedPersonaId("general");
           setCustomInstruction("");
