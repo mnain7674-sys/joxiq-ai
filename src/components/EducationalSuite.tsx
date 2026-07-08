@@ -78,7 +78,7 @@ export const EducationalSuite: React.FC<EducationalSuiteProps> = ({ theme, userP
         body: JSON.stringify({ prompt, jsonMode }),
       });
       if (!res.ok) {
-        throw new Error("Failed to generate content from Julkar AI Engine");
+        throw new Error("Failed to generate content from JOXIQ AI Engine");
       }
       const data = await res.json();
       return data.result;
@@ -542,7 +542,7 @@ export const EducationalSuite: React.FC<EducationalSuiteProps> = ({ theme, userP
 
       const response = await callEducationAPI(prompt);
       if (response) {
-        setPhotoAnswer(`${previousExplanation}\n\n---\n\n**User Doubts Question:** ${currentQuestion}\n\n**Julkar Teacher Reply:**\n${response}`);
+        setPhotoAnswer(`${previousExplanation}\n\n---\n\n**User Doubts Question:** ${currentQuestion}\n\n**JOXIQ Teacher Reply:**\n${response}`);
       }
     } catch (e) {
       setApiError("Failed to fetch follow-up.");
@@ -748,7 +748,7 @@ export const EducationalSuite: React.FC<EducationalSuiteProps> = ({ theme, userP
             {isGenerating && (
               <div className="my-auto text-center py-20 space-y-3">
                 <div className="w-10 h-10 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto" />
-                <p className="text-xs text-slate-500 font-medium">Julkar AI Teacher is preparing study materials...</p>
+                <p className="text-xs text-slate-500 font-medium">JOXIQ AI Teacher is preparing study materials...</p>
               </div>
             )}
 
@@ -757,7 +757,7 @@ export const EducationalSuite: React.FC<EducationalSuiteProps> = ({ theme, userP
                 <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center mx-auto">
                   <GraduationCap className="w-6 h-6 animate-bounce" />
                 </div>
-                <h4 className="font-bold text-sm">Welcome to Julkar AI Study Classroom</h4>
+                <h4 className="font-bold text-sm">Welcome to JOXIQ AI Study Classroom</h4>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Enter a topic on the left to get premium, step-by-step teacher explanations, analogies, and take high-quality customized quizzes!
                 </p>

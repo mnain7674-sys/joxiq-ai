@@ -72,8 +72,8 @@ import { EducationalSuite } from "./components/EducationalSuite";
 import { AboutPage } from "./components/AboutPage";
 import { ToolsPage } from "./components/ToolsPage";
 import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
-import julkarEmblem from "./assets/images/julkar_ai_emblem_1783331067944.jpg";
-import julkarLogo from "./assets/images/julkar_ai_logo_1783331052964.jpg";
+import joxiqEmblem from "./assets/images/joxiq_emblem_1783529116595.jpg";
+import joxiqLogo from "./assets/images/joxiq_logo_1783529101963.jpg";
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);
@@ -1202,8 +1202,8 @@ export default function App() {
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-lg shadow-indigo-600/30 border border-white/10 bg-slate-900">
               <img
-                src={julkarEmblem}
-                alt="Julkar AI Logo"
+                src={joxiqEmblem}
+                alt="JOXIQ AI Logo"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
@@ -1211,7 +1211,7 @@ export default function App() {
             <span className={`font-bold text-base tracking-tight ${
               theme === "dark" ? "bg-gradient-to-r from-white to-slate-400" : "bg-gradient-to-r from-slate-900 to-indigo-950"
             } bg-clip-text text-transparent`}>
-              Julkar AI Chat
+              JOXIQ AI Chat
             </span>
           </div>
           <button
@@ -1336,7 +1336,7 @@ export default function App() {
             }`}
           >
             <MessageSquare size={14} className="text-indigo-500" />
-            <span>Julkar AI Chat Hub</span>
+            <span>JOXIQ AI Chat Hub</span>
           </button>
 
           <button
@@ -1374,7 +1374,7 @@ export default function App() {
             }`}
           >
             <Info size={14} className="text-amber-500" />
-            <span className="flex-1 text-left">About Julkar AI</span>
+            <span className="flex-1 text-left">About JOXIQ AI</span>
           </button>
         </div>
 
@@ -1822,7 +1822,7 @@ export default function App() {
             }`}
           >
             <Sparkles size={12} />
-            <span>Julkar AI</span>
+            <span>JOXIQ AI</span>
           </button>
 
           <button
@@ -1875,8 +1875,8 @@ export default function App() {
                   className="w-20 h-20 rounded-2xl overflow-hidden border border-white/20 flex items-center justify-center mx-auto shadow-2xl bg-slate-900"
                 >
                   <img
-                    src={julkarEmblem}
-                    alt="Julkar AI Logo"
+                    src={joxiqEmblem}
+                    alt="JOXIQ AI Logo"
                     className="w-full h-full object-cover animate-pulse"
                     referrerPolicy="no-referrer"
                   />
@@ -1902,7 +1902,7 @@ export default function App() {
                   }`}
                 >
                   <Sparkles size={18} className="text-indigo-500 dark:text-indigo-400" />
-                  <span className="text-xs font-bold font-sans">Julkar AI</span>
+                  <span className="text-xs font-bold font-sans">JOXIQ AI</span>
                 </button>
 
                 <button
@@ -1996,8 +1996,8 @@ export default function App() {
                     {!isUser && (
                       <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 border border-white/10 shadow-sm overflow-hidden mt-0.5">
                         <img
-                          src={julkarEmblem}
-                          alt="Julkar AI Avatar"
+                          src={joxiqEmblem}
+                          alt="JOXIQ AI Avatar"
                           className="w-full h-full object-cover"
                           referrerPolicy="no-referrer"
                         />
@@ -2258,8 +2258,8 @@ export default function App() {
                 <div className="flex items-start gap-4 justify-start w-full">
                   <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 border border-white/10 shadow-sm overflow-hidden mt-0.5">
                     <img
-                      src={julkarEmblem}
-                      alt="Julkar AI Avatar"
+                      src={joxiqEmblem}
+                      alt="JOXIQ AI Avatar"
                       className="w-full h-full object-cover animate-pulse"
                       referrerPolicy="no-referrer"
                     />
@@ -2573,7 +2573,7 @@ export default function App() {
                   value={inputText}
                   onChange={handleTextareaChange}
                   onKeyDown={handleKeyDown}
-                  placeholder={isListening ? "Listening closely... Speak now..." : "Ask Julkar AI anything..."}
+                  placeholder={isListening ? "Listening closely... Speak now..." : "Ask JOXIQ AI anything..."}
                   rows={1}
                   className={`flex-1 px-2 py-3 text-sm min-h-[44px] bg-transparent resize-none focus:outline-none max-h-[200px] ${
                     theme === "dark" ? "text-slate-100 placeholder-slate-400" : "text-slate-900 placeholder-slate-500"
@@ -2601,7 +2601,7 @@ export default function App() {
 
             {/* Platform powered notice */}
             <div className="mt-3 text-center text-[10px] uppercase tracking-wider text-slate-600 font-bold flex items-center justify-center gap-1 select-none">
-              <span>Powered by Julkar AI Engine</span>
+              <span>Powered by JOXIQ AI Engine</span>
               <span>&bull;</span>
               <span>Professional Edition</span>
             </div>

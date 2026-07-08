@@ -14,7 +14,7 @@ import {
   Mail
 } from "lucide-react";
 import { motion } from "motion/react";
-import julkarLogo from "../assets/images/julkar_ai_logo_1783331052964.jpg";
+import joxiqLogo from "../assets/images/joxiq_logo_1783529101963.jpg";
 
 interface AboutPageProps {
   theme: "light" | "dark";
@@ -36,14 +36,14 @@ export function AboutPage({ theme }: AboutPageProps) {
       >
         <div className="max-w-md mx-auto rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 shadow-lg bg-slate-900 mb-4 p-1">
           <img
-            src={julkarLogo}
-            alt="Julkar AI Official Logo"
+            src={joxiqLogo}
+            alt="JOXIQ AI Official Logo"
             className="w-full h-auto rounded-xl object-cover"
             referrerPolicy="no-referrer"
           />
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-          About Julkar AI
+          About JOXIQ AI
         </h1>
         <p className={`text-sm max-w-lg mx-auto ${isDark ? "text-slate-400" : "text-slate-600"}`}>
           A smart, next-generation educational and conversational AI companion crafted to empower your daily studies, productivity, and coding workflows.
@@ -74,7 +74,7 @@ export function AboutPage({ theme }: AboutPageProps) {
           
           <div className="space-y-4 text-sm">
             <p className={isDark ? "text-slate-300" : "text-slate-700"}>
-              Julkar AI is designed and developed by <strong className="text-indigo-600 dark:text-indigo-400">Julkar Nain Mahi</strong>.
+              JOXIQ AI is designed and developed by <strong className="text-indigo-600 dark:text-indigo-400">Julkar Nain Mahi</strong>.
             </p>
             
             <div className="space-y-3 pt-2">
@@ -130,7 +130,7 @@ export function AboutPage({ theme }: AboutPageProps) {
           <div className="space-y-3.5 text-sm">
             <div className="flex items-center justify-between border-b pb-2.5 border-slate-500/10">
               <span className="text-slate-400">AI Name</span>
-              <span className="font-bold text-indigo-500 dark:text-indigo-400">Julkar AI</span>
+              <span className="font-bold text-indigo-500 dark:text-indigo-400">JOXIQ AI</span>
             </div>
             <div className="flex items-center justify-between border-b pb-2.5 border-slate-500/10">
               <span className="text-slate-400">Main Architect</span>
@@ -199,7 +199,7 @@ export function AboutPage({ theme }: AboutPageProps) {
       >
         <h3 className="text-lg font-bold text-slate-900 dark:text-white">Vision Statement</h3>
         <p className={`text-sm max-w-2xl mx-auto leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-          "I created Julkar AI with the vision of building a smart, helpful, and user-friendly AI assistant that can help people with learning, productivity, coding, creativity, and everyday tasks. Julkar AI is an independent AI project developed by Julkar Nain Mahi."
+          "I created JOXIQ AI with the vision of building a smart, helpful, and user-friendly AI assistant that can help people with learning, productivity, coding, creativity, and everyday tasks. JOXIQ AI is an independent AI project developed by Julkar Nain Mahi."
         </p>
         <div className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"} flex items-center justify-center gap-1.5`}>
           <span>Made with</span>

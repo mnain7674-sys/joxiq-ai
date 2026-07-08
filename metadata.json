@@ -1,5 +1,5 @@
 {
-  "name": "Julkar AI",
+  "name": "JOXIQ AI",
   "description": "A highly intelligent, modern AI chatbot companion and classroom suite created by Julkar Nain Mahi, powered by the Gemini API.",
   "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

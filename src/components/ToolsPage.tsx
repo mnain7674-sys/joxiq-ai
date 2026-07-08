@@ -24,8 +24,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { AttachedImage, AttachedDocument } from "../types";
-import julkarEmblem from "../assets/images/julkar_ai_emblem_1783331067944.jpg";
-import julkarLogo from "../assets/images/julkar_ai_logo_1783331052964.jpg";
+import joxiqEmblem from "../assets/images/joxiq_emblem_1783529116595.jpg";
+import joxiqLogo from "../assets/images/joxiq_logo_1783529101963.jpg";
 
 interface ToolsPageProps {
   theme: "light" | "dark";
@@ -283,14 +283,14 @@ export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: Tools
             <div className="flex items-center gap-2.5">
               <span className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-white/10 shadow bg-slate-900">
                 <img
-                  src={julkarEmblem}
-                  alt="Julkar AI Emblem"
+                  src={joxiqEmblem}
+                  alt="JOXIQ AI Emblem"
                   className="w-full h-full object-cover animate-pulse"
                   referrerPolicy="no-referrer"
                 />
               </span>
               <div>
-                <h1 className="text-2xl font-black tracking-tight">Julkar AI Workspace Tools</h1>
+                <h1 className="text-2xl font-black tracking-tight">JOXIQ AI Workspace Tools</h1>
                 <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                   Pick a specialized AI tool below to draft essays, generate code, create images, or solve complex problems.
                 </p>
