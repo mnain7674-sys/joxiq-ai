@@ -1246,9 +1246,17 @@ export default function App() {
           </div>
           
           <button
-            onClick={() => handleSidebarItemClick(() => setActiveView("chat"))}
+            onClick={() => handleSidebarItemClick(() => {
+              setActiveView("chat");
+              const emptyChat = conversations.find(c => c.messages.length === 0);
+              if (emptyChat) {
+                setActiveId(emptyChat.id);
+              } else {
+                createNewChat();
+              }
+            })}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeView === "chat"
+              activeView === "chat" && (!activeConversation || activeConversation.messages.length === 0)
                 ? (theme === "dark" ? "bg-indigo-600/20 text-indigo-400 border border-indigo-500/30" : "bg-indigo-50 text-indigo-700 border border-indigo-200")
                 : (theme === "dark" ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700")
             }`}
@@ -1387,7 +1395,13 @@ export default function App() {
                 return (
                   <div
                     key={chat.id}
-                    onClick={() => setActiveId(chat.id)}
+                    onClick={() => {
+                      setActiveId(chat.id);
+                      setActiveView("chat");
+                      if (typeof window !== "undefined" && window.innerWidth < 768) {
+                        setSidebarOpen(false);
+                      }
+                    }}
                     className={`group relative p-2.5 rounded-xl border transition-all duration-200 flex items-center gap-2.5 cursor-pointer ${
                       isSelected
                         ? "bg-indigo-500/10 border-indigo-500/30 shadow-md"
@@ -1443,7 +1457,13 @@ export default function App() {
                 return (
                   <div
                     key={chat.id}
-                    onClick={() => setActiveId(chat.id)}
+                    onClick={() => {
+                      setActiveId(chat.id);
+                      setActiveView("chat");
+                      if (typeof window !== "undefined" && window.innerWidth < 768) {
+                        setSidebarOpen(false);
+                      }
+                    }}
                     className={`group relative p-2.5 rounded-xl border transition-all duration-200 flex items-center gap-2.5 cursor-pointer ${
                       isSelected
                         ? "bg-white/10 dark:bg-white/10 border-slate-200 dark:border-white/15 shadow-md"
@@ -2311,7 +2331,7 @@ export default function App() {
         </div>
 
         {/* Chat Input Bar area */}
-        <footer className={`p-4 md:p-8 flex flex-col items-center shrink-0 border-t ${
+        <footer className={`p-4 md:p-8 pb-20 md:pb-8 flex flex-col items-center shrink-0 border-t ${
           theme === "dark" ? "border-white/5 bg-slate-950/20" : "border-slate-200/50 bg-white/40"
         }`}>
           <div className="w-full max-w-3xl relative">
@@ -2581,6 +2601,57 @@ export default function App() {
         </footer>
           </>
         )}
+
+        {/* Mobile Bottom Navigation Bar (ChatGPT style mobile navigation) */}
+        <div className={`md:hidden fixed bottom-0 left-0 right-0 z-30 h-16 border-t flex items-center justify-around px-4 shadow-2xl ${
+          theme === "dark" ? "bg-[#0b1329]/95 border-white/10 text-slate-200" : "bg-white/95 border-slate-200 text-slate-800"
+        } backdrop-blur-lg`}>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
+            title="Open Sidebar Menu"
+          >
+            <Menu size={20} />
+            <span>Menu</span>
+          </button>
+
+          <button
+            onClick={() => {
+              const emptyChat = conversations.find(c => c.messages.length === 0);
+              if (emptyChat) {
+                setActiveId(emptyChat.id);
+                setActiveView("chat");
+              } else {
+                createNewChat();
+              }
+            }}
+            className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
+            title="Return to Home Dashboard"
+          >
+            <Compass size={20} className="text-indigo-500" />
+            <span>Home</span>
+          </button>
+
+          <button
+            onClick={() => createNewChat()}
+            className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
+            title="Start New Chat"
+          >
+            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-md">
+              <Plus size={18} />
+            </div>
+            <span>New Chat</span>
+          </button>
+
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
+            title="Open Settings"
+          >
+            <Settings size={20} />
+            <span>Settings</span>
+          </button>
+        </div>
       </main>
 
       {/* Share conversation modal popup */}
