@@ -268,15 +268,25 @@ export default function App() {
     if (saved) {
       try {
         const parsed: Conversation[] = JSON.parse(saved);
-        setConversations(parsed);
-        if (active && parsed.some((c) => c.id === active)) {
-          setActiveId(active);
-        } else if (parsed.length > 0) {
-          setActiveId(parsed[0].id);
-        }
+        const defaultPersona = SYSTEM_PERSONAS[0];
+        const initialNewChat: Conversation = {
+          id: Math.random().toString(36).substring(2, 11),
+          title: "New Chat",
+          messages: [],
+          model: "gemini-2.5-flash",
+          systemInstruction: defaultPersona.systemInstruction,
+          temperature,
+          useSearch,
+          timestamp: Date.now(),
+        };
+        setConversations([initialNewChat, ...parsed]);
+        setActiveId(initialNewChat.id);
       } catch (e) {
         console.error("Failed to restore history", e);
+        createNewChat();
       }
+    } else {
+      createNewChat();
     }
   }, []);
 
@@ -1562,7 +1572,7 @@ export default function App() {
               }`}
               title="Toggle Sidebar Menu"
             >
-              <MoreVertical size={18} />
+              <Menu size={18} />
             </button>
 
             {/* Quick New Chat Button */}
