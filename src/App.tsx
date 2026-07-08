@@ -1575,6 +1575,26 @@ export default function App() {
               <Menu size={18} />
             </button>
 
+            {/* Home / Return to Home Dashboard Button */}
+            <button
+              id="btn-header-home"
+              onClick={() => {
+                const emptyChat = conversations.find(c => c.messages.length === 0);
+                if (emptyChat) {
+                  setActiveId(emptyChat.id);
+                  setActiveView("chat");
+                } else {
+                  createNewChat();
+                }
+              }}
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                theme === "dark" ? "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+              }`}
+              title="Return to Home Dashboard"
+            >
+              <Compass size={18} className="text-indigo-500" />
+            </button>
+
             {/* Quick New Chat Button */}
             <button
               id="btn-header-new-chat"
