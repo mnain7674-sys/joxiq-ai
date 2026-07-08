@@ -14,7 +14,7 @@ import {
   Mail
 } from "lucide-react";
 import { motion } from "motion/react";
-import joxiqLogo from "../assets/images/joxiq_logo_1783529101963.jpg";
+import joxiqLogo from "../assets/images/joxiq_logo_updated_1783529657638.jpg";
 
 interface AboutPageProps {
   theme: "light" | "dark";
