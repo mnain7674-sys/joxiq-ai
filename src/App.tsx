@@ -1167,12 +1167,12 @@ export default function App() {
       {/* Sidebar: Navigation & History */}
       <aside
         id="chat-sidebar"
-        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition-all duration-300 ease-in-out md:static md:border-r ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition-all duration-300 ease-in-out md:relative md:shrink-0 ${
           theme === "dark" 
             ? "bg-[#0b1329] border-white/10 text-slate-200" 
             : "bg-white border-slate-200 text-slate-800"
         } backdrop-blur-3xl ${
-          sidebarOpen ? "translate-x-0 shadow-2xl md:translate-x-0 md:w-72" : "-translate-x-full md:-translate-x-full md:w-0 md:opacity-0 md:overflow-hidden"
+          sidebarOpen ? "translate-x-0 shadow-2xl md:translate-x-0 md:w-72 md:opacity-100 md:border-r" : "-translate-x-full md:translate-x-0 md:w-0 md:opacity-0 md:overflow-hidden md:border-r-0"
         }`}
       >
         {/* Sidebar Header */}
@@ -1561,6 +1561,19 @@ export default function App() {
               title="Toggle Sidebar Menu"
             >
               <MoreVertical size={18} />
+            </button>
+
+            {/* Quick New Chat Button */}
+            <button
+              id="btn-header-new-chat"
+              onClick={() => createNewChat()}
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl border transition-all cursor-pointer ${
+                theme === "dark" ? "bg-indigo-600/20 border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30" : "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+              }`}
+              title="Start New Chat"
+            >
+              <Plus size={16} />
+              <span className="text-xs font-bold hidden xs:inline sm:inline">New Chat</span>
             </button>
 
             {/* Quick Model Selector Toggle */}
