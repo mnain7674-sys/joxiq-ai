@@ -18,7 +18,7 @@ export function ProSubscriptionModal({
   freeMessagesLeft,
   isProUser,
 }: ProSubscriptionModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly" | "tokens">("monthly");
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -102,7 +102,7 @@ export function ProSubscriptionModal({
         ) : (
           <>
             {/* Plan Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {/* Monthly Plan */}
               <div
                 onClick={() => setSelectedPlan("monthly")}
@@ -153,30 +153,6 @@ export function ProSubscriptionModal({
                   <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400" /> Priority 24/7 Support</li>
                 </ul>
               </div>
-
-              {/* Token Refill Pack */}
-              <div
-                onClick={() => setSelectedPlan("tokens")}
-                className={`relative rounded-2xl p-5 border cursor-pointer transition-all flex flex-col justify-between ${
-                  selectedPlan === "tokens"
-                    ? "border-violet-500 bg-violet-600/10 shadow-lg shadow-violet-500/10 ring-2 ring-violet-500/50"
-                    : isDark ? "border-white/10 bg-white/5 hover:border-white/30" : "border-slate-200 bg-slate-50 hover:border-slate-300"
-                }`}
-              >
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-violet-400">Token Refill</span>
-                    {selectedPlan === "tokens" && <Check size={16} className="text-violet-400" />}
-                  </div>
-                  <div className="text-2xl font-black mb-1">15 QR <span className="text-xs font-normal text-slate-400">/ pack</span></div>
-                  <div className="text-xs text-slate-400">+5 Million Tokens Pack</div>
-                </div>
-                <ul className="text-xs text-slate-300 space-y-2 mt-4 pt-4 border-t border-white/10">
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400" /> 5,000 Extra Messages</li>
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400" /> Never expires</li>
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400" /> Instant activation</li>
-                </ul>
-              </div>
             </div>
 
             {/* Feature Highlights for App Owner */}
@@ -186,7 +162,7 @@ export function ProSubscriptionModal({
               <Sparkles size={20} className="text-indigo-400 shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold block mb-0.5">Monetization Active for Your App:</span>
-                When your app users reach their free limit, this Pro upgrade modal appears. Whenever they purchase a Pro plan or Token pack, the revenue goes directly to your connected Stripe / payment account!
+                When your app users reach their free limit, this Pro upgrade modal appears. Whenever they purchase a Pro subscription, the revenue goes directly to your connected Stripe / payment account!
               </div>
             </div>
 
@@ -208,7 +184,7 @@ export function ProSubscriptionModal({
                 ) : (
                   <>
                     <CreditCard size={16} />
-                    Proceed to Payment ({selectedPlan === "monthly" ? "36 QR" : selectedPlan === "yearly" ? "300 QR" : "15 QR"})
+                    Proceed to Payment ({selectedPlan === "monthly" ? "36 QR" : "300 QR"})
                   </>
                 )}
               </button>

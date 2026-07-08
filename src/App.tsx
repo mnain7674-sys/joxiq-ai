@@ -130,7 +130,15 @@ export default function App() {
   // --- Pro Subscription & Token Limit states ---
   const [isProUser, setIsProUser] = useState<boolean>(() => localStorage.getItem("julkar_is_pro") === "true");
   const [freeMessagesLeft, setFreeMessagesLeft] = useState<number>(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const savedDate = localStorage.getItem("julkar_free_messages_date");
     const saved = localStorage.getItem("julkar_free_messages_left");
+
+    if (savedDate !== today) {
+      localStorage.setItem("julkar_free_messages_date", today);
+      localStorage.setItem("julkar_free_messages_left", "15");
+      return 15;
+    }
     return saved !== null ? parseInt(saved, 10) : 15;
   });
   const [proModalOpen, setProModalOpen] = useState<boolean>(false);
