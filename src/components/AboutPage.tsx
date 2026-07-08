@@ -34,11 +34,11 @@ export function AboutPage({ theme }: AboutPageProps) {
         transition={{ duration: 0.5 }}
         className="text-center space-y-4"
       >
-        <div className="max-w-md mx-auto rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 shadow-lg bg-slate-900 mb-4 p-1">
+        <div className="w-full max-w-md sm:max-w-lg aspect-[16/9] mx-auto rounded-2xl overflow-hidden border border-slate-200/50 dark:border-white/10 shadow-2xl bg-slate-900 mb-6 p-3 flex items-center justify-center">
           <img
             src={joxiqLogo}
             alt="JOXIQ AI Official Logo"
-            className="w-full h-auto rounded-xl object-cover"
+            className="w-full h-full object-contain rounded-xl"
             referrerPolicy="no-referrer"
           />
         </div>
