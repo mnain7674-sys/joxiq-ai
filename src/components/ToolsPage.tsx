@@ -25,7 +25,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { AttachedImage, AttachedDocument } from "../types";
 import joxiqEmblem from "../assets/images/joxiq_emblem_1783529116595.jpg";
-import joxiqLogo from "../assets/images/joxiq_logo_updated_1783529657638.jpg";
+import joxiqLogo from "../assets/images/joxiq_logo_black_bg_1783530406544.jpg";
 
 interface ToolsPageProps {
   theme: "light" | "dark";

@@ -73,7 +73,7 @@ import { AboutPage } from "./components/AboutPage";
 import { ToolsPage } from "./components/ToolsPage";
 import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import joxiqEmblem from "./assets/images/joxiq_emblem_1783529116595.jpg";
-import joxiqLogo from "./assets/images/joxiq_logo_updated_1783529657638.jpg";
+import joxiqLogo from "./assets/images/joxiq_logo_black_bg_1783530406544.jpg";
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);
