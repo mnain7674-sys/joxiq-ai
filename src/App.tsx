@@ -51,7 +51,8 @@ import {
   User,
   LayoutGrid,
   Wrench,
-  Crown
+  Crown,
+  MoreVertical
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -1559,7 +1560,7 @@ export default function App() {
               }`}
               title="Toggle Sidebar Menu"
             >
-              <Menu size={18} />
+              <MoreVertical size={18} />
             </button>
 
             {/* Quick Model Selector Toggle */}
