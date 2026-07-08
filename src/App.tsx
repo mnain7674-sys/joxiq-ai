@@ -111,22 +111,13 @@ export default function App() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => typeof window !== "undefined" && window.innerWidth >= 768);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
 
   const handleSidebarItemClick = (action: () => void) => {
     action();
     if (typeof window !== "undefined" && window.innerWidth < 768) {
-      setMobileSidebarOpen(false);
+      setSidebarOpen(false);
     }
   };
-
-  // --- Projects / Workspaces state ---
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState<string>("default-project");
-  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
-  const [editProjectName, setEditProjectName] = useState<string>("");
-  const [isCreatingProject, setIsCreatingProject] = useState<boolean>(false);
-  const [newProjectNameInput, setNewProjectNameInput] = useState<string>("");
 
   // --- User Profile / Authentication state ---
   const [userProfile, setUserProfile] = useState<{ name: string; email: string } | null>(null);
@@ -273,28 +264,6 @@ export default function App() {
       setTheme(systemPrefersDark ? "dark" : "light");
     }
 
-    let loadedProjects: Project[] = [];
-    if (savedProjects) {
-      try {
-        loadedProjects = JSON.parse(savedProjects);
-        setProjects(loadedProjects);
-      } catch (e) {
-        console.error("Failed to parse projects", e);
-      }
-    }
-    
-    if (loadedProjects.length === 0) {
-      const defaultProj: Project = { id: "default-project", name: "Personal Workspace", timestamp: Date.now() };
-      setProjects([defaultProj]);
-      loadedProjects = [defaultProj];
-    }
-
-    if (savedActiveProj && loadedProjects.some(p => p.id === savedActiveProj)) {
-      setActiveProjectId(savedActiveProj);
-    } else {
-      setActiveProjectId(loadedProjects[0].id);
-    }
-
     if (saved) {
       try {
         const parsed: Conversation[] = JSON.parse(saved);
@@ -309,24 +278,6 @@ export default function App() {
       }
     }
   }, []);
-
-  // Sync projects to localStorage
-  useEffect(() => {
-    if (projects.length > 0) {
-      localStorage.setItem("gemini_projects", JSON.stringify(projects));
-    } else {
-      localStorage.removeItem("gemini_projects");
-    }
-  }, [projects]);
-
-  // Sync active project ID to localStorage
-  useEffect(() => {
-    if (activeProjectId) {
-      localStorage.setItem("gemini_active_project_id", activeProjectId);
-    } else {
-      localStorage.removeItem("gemini_active_project_id");
-    }
-  }, [activeProjectId]);
 
   // Sync theme changes
   useEffect(() => {
@@ -414,9 +365,9 @@ export default function App() {
     scrollToBottom();
   }, [conversations, currentStreamText, isStreaming]);
 
-  // Get active conversation object (scoped to current project)
+  // Get active conversation object
   const activeConversation = conversations.find(
-    (c) => c.id === activeId && (c.projectId === activeProjectId || (!c.projectId && activeProjectId === "default-project"))
+    (c) => c.id === activeId
   );
 
   // Initialize a fresh new conversation
@@ -431,7 +382,6 @@ export default function App() {
       temperature,
       useSearch,
       timestamp: Date.now(),
-      projectId: activeProjectId,
     };
 
     setConversations((prev) => [newChat, ...prev]);
@@ -462,7 +412,6 @@ export default function App() {
       temperature: 0.7,
       useSearch: false,
       timestamp: Date.now(),
-      projectId: activeProjectId,
     };
 
     setConversations((prev) => [newChat, ...prev]);
@@ -497,60 +446,6 @@ export default function App() {
     stopTts();
     setConversations([]);
     setActiveId("");
-  };
-
-  // --- Project / Workspace Actions ---
-  const handleCreateProject = (name?: string) => {
-    const projName = (name || newProjectNameInput || "").trim() || `Project ${projects.length + 1}`;
-    const newProj: Project = {
-      id: Math.random().toString(36).substring(2, 11),
-      name: projName,
-      timestamp: Date.now(),
-    };
-    setProjects((prev) => [...prev, newProj]);
-    setActiveProjectId(newProj.id);
-    setNewProjectNameInput("");
-    setIsCreatingProject(false);
-    return newProj;
-  };
-
-  const handleRenameProject = (id: string, newName: string) => {
-    const trimmed = newName.trim();
-    if (!trimmed) return;
-    setProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, name: trimmed } : p))
-    );
-    setEditingProjectId(null);
-    setEditProjectName("");
-  };
-
-  const handleDeleteProject = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const remainingProjects = projects.filter((p) => p.id !== id);
-    let finalProjects = remainingProjects;
-
-    if (remainingProjects.length === 0) {
-      const defaultProj: Project = { id: "default-project", name: "My Workspace", timestamp: Date.now() };
-      finalProjects = [defaultProj];
-    }
-
-    setProjects(finalProjects);
-
-    // Delete all conversations in this project
-    const remainingConversations = conversations.filter((c) => c.projectId !== id);
-    setConversations(remainingConversations);
-
-    if (activeProjectId === id) {
-      const nextProj = finalProjects[0];
-      setActiveProjectId(nextProj.id);
-      
-      const nextProjChats = remainingConversations.filter((c) => c.projectId === nextProj.id || (!c.projectId && nextProj.id === "default-project"));
-      if (nextProjChats.length > 0) {
-        setActiveId(nextProjChats[0].id);
-      } else {
-        setActiveId("");
-      }
-    }
   };
 
   // Handle Drag & Drop / Image uploads
@@ -1243,11 +1138,8 @@ export default function App() {
     }
   };
 
-  const projectConversations = conversations.filter(
-    (c) => c.projectId === activeProjectId || (!c.projectId && activeProjectId === "default-project")
-  );
-  const favoriteChats = projectConversations.filter((c) => c.isFavorite);
-  const regularChats = [...projectConversations]
+  const favoriteChats = conversations.filter((c) => c.isFavorite);
+  const regularChats = [...conversations]
     .filter((c) => !c.isFavorite)
     .sort((a, b) => b.timestamp - a.timestamp);
 
@@ -1259,10 +1151,14 @@ export default function App() {
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-violet-600/15 rounded-full blur-[150px] pointer-events-none" />
 
-      {/* Mobile Sidebar Overlay Backdrop */}
-      {mobileSidebarOpen && (
+      {/* Sidebar Overlay Backdrop */}
+      {sidebarOpen && (
         <div
-          onClick={() => setMobileSidebarOpen(false)}
+          onClick={() => {
+            if (typeof window !== "undefined" && window.innerWidth < 768) {
+              setSidebarOpen(false);
+            }
+          }}
           className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-xs transition-opacity duration-300"
         />
       )}
@@ -1270,12 +1166,12 @@ export default function App() {
       {/* Sidebar: Navigation & History */}
       <aside
         id="chat-sidebar"
-        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition-transform duration-300 ease-in-out md:static md:translate-x-0 md:w-72 md:border-r ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition-all duration-300 ease-in-out md:static md:border-r ${
           theme === "dark" 
             ? "bg-[#0b1329] border-white/10 text-slate-200" 
             : "bg-white border-slate-200 text-slate-800"
         } backdrop-blur-3xl ${
-          mobileSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0"
+          sidebarOpen ? "translate-x-0 shadow-2xl md:translate-x-0 md:w-72" : "-translate-x-full md:-translate-x-full md:w-0 md:opacity-0 md:overflow-hidden"
         }`}
       >
         {/* Sidebar Header */}
@@ -1298,7 +1194,7 @@ export default function App() {
             </span>
           </div>
           <button
-            onClick={() => setMobileSidebarOpen(false)}
+            onClick={() => setSidebarOpen(false)}
             className={`md:hidden p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-slate-400 cursor-pointer`}
           >
             <X size={16} />
@@ -1326,6 +1222,76 @@ export default function App() {
               theme === "dark" ? "bg-white/10 text-slate-400" : "bg-indigo-750 text-indigo-200"
             }`}>
               Reset
+            </span>
+          </button>
+        </div>
+
+        {/* ChatGPT-style Main Menu */}
+        <div className="px-4 pb-3 border-b border-slate-500/10 flex flex-col gap-1">
+          <div className="px-2 pb-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
+            Navigation Menu
+          </div>
+          
+          <button
+            onClick={() => handleSidebarItemClick(() => setActiveView("chat"))}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeView === "chat"
+                ? (theme === "dark" ? "bg-indigo-600/20 text-indigo-400 border border-indigo-500/30" : "bg-indigo-50 text-indigo-700 border border-indigo-200")
+                : (theme === "dark" ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700")
+            }`}
+          >
+            <Compass size={16} className="text-indigo-500" />
+            <span>Home</span>
+          </button>
+
+          <button
+            onClick={() => handleSidebarItemClick(() => setActiveView("chat"))}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              theme === "dark" ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700"
+            }`}
+          >
+            <MessageSquare size={16} className="text-violet-500" />
+            <span className="flex-1 text-left">Chat History</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">
+              {conversations.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => handleSidebarItemClick(() => setSettingsOpen(true))}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              theme === "dark" ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700"
+            }`}
+          >
+            <Settings size={16} className="text-amber-500" />
+            <span>Settings</span>
+          </button>
+
+          <button
+            onClick={() => handleSidebarItemClick(() => setShowAuthModal(true))}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              theme === "dark" ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700"
+            }`}
+          >
+            <User size={16} className="text-emerald-500" />
+            <span className="flex-1 text-left">Profile</span>
+            <span className="text-[10px] font-medium text-slate-400 truncate max-w-[100px]">
+              {userProfile ? userProfile.name : "Guest"}
+            </span>
+          </button>
+
+          <button
+            onClick={() => handleSidebarItemClick(() => setProModalOpen(true))}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              theme === "dark" ? "hover:bg-amber-500/10 text-amber-300" : "hover:bg-amber-50 text-amber-700"
+            }`}
+          >
+            <Crown size={16} className="text-amber-500" />
+            <span className="flex-1 text-left">Subscription</span>
+            <span className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase ${
+              isProUser ? "bg-amber-500 text-white" : "bg-indigo-500/10 text-indigo-400"
+            }`}>
+              {isProUser ? "Pro" : "Free"}
             </span>
           </button>
         </div>
@@ -1385,168 +1351,6 @@ export default function App() {
 
         {/* History Stream / Sidebar Sections */}
         <div className="flex-1 px-4 py-2 space-y-6 overflow-y-auto overflow-x-hidden select-none">
-          
-          {/* Projects / Workspace Section */}
-          <div className="space-y-2 border-b pb-4 border-slate-500/10">
-            <div className="flex items-center justify-between px-2">
-              <span className={`text-[10px] font-extrabold uppercase tracking-widest flex items-center gap-1.5 ${
-                theme === "dark" ? "text-indigo-400" : "text-indigo-600"
-              }`}>
-                <Briefcase size={12} />
-                <span>Projects / Workspace</span>
-              </span>
-              <button
-                onClick={() => {
-                  setIsCreatingProject(true);
-                  setNewProjectNameInput("");
-                }}
-                className={`p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer ${
-                  theme === "dark" ? "text-indigo-400 hover:text-white" : "text-indigo-600 hover:text-indigo-800"
-                }`}
-                title="Create New Project"
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-
-            {/* Inline Project Creation Input */}
-            {isCreatingProject && (
-              <div className="px-1 pt-1 animate-fadeIn">
-                <div className={`flex items-center gap-1 p-1 rounded-xl border ${
-                  theme === "dark" ? "bg-black/30 border-indigo-500/30" : "bg-white border-indigo-200"
-                }`}>
-                  <input
-                    type="text"
-                    autoFocus
-                    placeholder="Project name..."
-                    value={newProjectNameInput}
-                    onChange={(e) => setNewProjectNameInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleCreateProject();
-                      } else if (e.key === "Escape") {
-                        setIsCreatingProject(false);
-                      }
-                    }}
-                    className={`flex-1 text-xs px-2 py-1 bg-transparent border-0 outline-none focus:ring-0 ${
-                      theme === "dark" ? "text-slate-100" : "text-slate-800"
-                    }`}
-                  />
-                  <button
-                    onClick={() => handleCreateProject()}
-                    className="p-1 rounded text-indigo-500 hover:bg-indigo-500/10 transition-colors cursor-pointer"
-                    title="Save"
-                  >
-                    <Check size={12} />
-                  </button>
-                  <button
-                    onClick={() => setIsCreatingProject(false)}
-                    className="p-1 rounded text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                    title="Cancel"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Projects list */}
-            <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-              {projects.map((project) => {
-                const isActive = project.id === activeProjectId;
-                const isEditing = project.id === editingProjectId;
-
-                return (
-                  <div key={project.id} className="relative group">
-                    {isEditing ? (
-                      <div className={`flex items-center gap-1 p-1 rounded-xl border ${
-                        theme === "dark" ? "bg-black/30 border-indigo-500/30" : "bg-white border-indigo-200"
-                      }`}>
-                        <input
-                          type="text"
-                          autoFocus
-                          value={editProjectName}
-                          onChange={(e) => setEditProjectName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleRenameProject(project.id, editProjectName);
-                            } else if (e.key === "Escape") {
-                              setEditingProjectId(null);
-                            }
-                          }}
-                          className={`flex-1 text-xs px-2 py-1 bg-transparent border-0 outline-none focus:ring-0 ${
-                            theme === "dark" ? "text-slate-100" : "text-slate-800"
-                          }`}
-                        />
-                        <button
-                          onClick={() => handleRenameProject(project.id, editProjectName)}
-                          className="p-1 rounded text-indigo-500 hover:bg-indigo-500/10 transition-colors cursor-pointer"
-                        >
-                          <Check size={12} />
-                        </button>
-                        <button
-                          onClick={() => setEditingProjectId(null)}
-                          className="p-1 rounded text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div
-                        onClick={() => {
-                          setActiveProjectId(project.id);
-                          const projectChats = conversations.filter(c => c.projectId === project.id || (!c.projectId && project.id === "default-project"));
-                          if (projectChats.length > 0) {
-                            setActiveId(projectChats[0].id);
-                          } else {
-                            setActiveId("");
-                          }
-                        }}
-                        className={`group p-2 py-2 rounded-xl border transition-all duration-200 flex items-center gap-2 cursor-pointer ${
-                          isActive
-                            ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/10 font-bold"
-                            : "border-transparent hover:bg-black/5 dark:hover:bg-white/5 hover:border-slate-200 dark:hover:border-white/5 text-slate-600 dark:text-slate-300"
-                        }`}
-                      >
-                        <Briefcase size={13} className={`shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
-                        <div className="flex-1 min-w-0 pr-12">
-                          <div className="text-xs truncate font-medium">
-                            {project.name}
-                          </div>
-                        </div>
-
-                        {/* Inline Actions Overlay on Hover */}
-                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingProjectId(project.id);
-                              setEditProjectName(project.name);
-                            }}
-                            className={`p-1 rounded hover:bg-white/25 transition-all cursor-pointer ${
-                              isActive ? "text-white" : "text-slate-400 hover:text-indigo-500"
-                            }`}
-                            title="Rename Project"
-                          >
-                            <Edit2 size={11} />
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteProject(project.id, e)}
-                            className={`p-1 rounded hover:bg-rose-500/20 transition-all cursor-pointer ${
-                              isActive ? "text-white hover:text-rose-200" : "text-slate-400 hover:text-rose-500"
-                            }`}
-                            title="Delete Project & Chats"
-                          >
-                            <Trash2 size={11} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
 
           {/* Saved Chats (Starred) Section */}
           <div className="space-y-1.5 border-b pb-4 border-slate-500/10">
@@ -1749,11 +1553,11 @@ export default function App() {
           <div className="flex items-center gap-3">
             <button
               id="btn-sidebar-toggle"
-              onClick={() => setMobileSidebarOpen(true)}
-              className={`md:hidden p-2 rounded-xl border transition-all cursor-pointer ${
+              onClick={() => setSidebarOpen(prev => !prev)}
+              className={`p-2 rounded-xl border transition-all cursor-pointer ${
                 theme === "dark" ? "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
               }`}
-              title="Open Navigation Menu"
+              title="Toggle Sidebar Menu"
             >
               <Menu size={18} />
             </button>
