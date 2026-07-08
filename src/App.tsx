@@ -1548,7 +1548,7 @@ export default function App() {
       {/* Main Content Area: Chat Interface */}
       <main className="relative flex-1 flex flex-col h-full overflow-hidden z-0">
         {/* Top Navbar */}
-        <header className={`h-16 flex items-center justify-between px-6 md:px-8 border-b shrink-0 z-10 ${
+        <header className={`h-16 flex items-center justify-between px-3 sm:px-6 md:px-8 border-b shrink-0 z-10 ${
           theme === "dark" ? "bg-white/5 border-white/10" : "bg-white/60 border-slate-200/60"
         } backdrop-blur-md`}>
           <div className="flex items-center gap-3">
@@ -1636,10 +1636,10 @@ export default function App() {
             {/* Upgrade to Pro Button */}
             <button
               onClick={() => setProModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer animate-pulse"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer animate-pulse"
             >
               <Crown size={14} />
-              <span>{isProUser ? "Pro Active ⭐" : `Upgrade Pro (${freeMessagesLeft} free left)`}</span>
+              <span>{isProUser ? "Pro ⭐" : <><span className="hidden sm:inline">Upgrade Pro </span><span>({freeMessagesLeft} left)</span></>}</span>
             </button>
             {useSearch && (
               <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
