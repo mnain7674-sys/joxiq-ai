@@ -1167,12 +1167,14 @@ export default function App() {
       {/* Sidebar: Navigation & History */}
       <aside
         id="chat-sidebar"
-        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition-all duration-300 ease-in-out md:relative md:shrink-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition-all duration-300 ease-in-out md:shrink-0 ${
           theme === "dark" 
             ? "bg-[#0b1329] border-white/10 text-slate-200" 
             : "bg-white border-slate-200 text-slate-800"
         } backdrop-blur-3xl ${
-          sidebarOpen ? "translate-x-0 shadow-2xl md:translate-x-0 md:w-72 md:opacity-100 md:border-r" : "-translate-x-full md:translate-x-0 md:w-0 md:opacity-0 md:overflow-hidden md:border-r-0"
+          sidebarOpen 
+            ? "translate-x-0 md:translate-x-0 md:relative md:w-72 md:opacity-100 shadow-2xl md:shadow-none md:border-r" 
+            : "-translate-x-full md:-translate-x-full md:absolute md:w-72 md:opacity-0 md:pointer-events-none md:border-r-0"
         }`}
       >
         {/* Sidebar Header */}
@@ -1546,7 +1548,7 @@ export default function App() {
       </aside>
 
       {/* Main Content Area: Chat Interface */}
-      <main className="relative flex-1 flex flex-col h-full overflow-hidden z-0">
+      <main className="relative flex-1 flex flex-col h-full overflow-hidden z-0 min-w-0 w-full">
         {/* Top Navbar */}
         <header className={`h-16 flex items-center justify-between px-3 sm:px-6 md:px-8 border-b shrink-0 z-10 ${
           theme === "dark" ? "bg-white/5 border-white/10" : "bg-white/60 border-slate-200/60"
