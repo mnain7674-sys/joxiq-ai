@@ -3065,12 +3065,27 @@ export default function App() {
                         return;
                       }
 
-                      // Check if owner admin
+                      // Check if owner admin - verify via backend API securely
                       if (email.toLowerCase() === "mnain7674@gmail.com") {
-                        const profile = { name: "Owner Admin", email: "mnain7674@gmail.com" };
-                        setUserProfile(profile);
-                        localStorage.setItem("julkar_user_profile", JSON.stringify(profile));
-                        setShowAuthModal(false);
+                        fetch("/api/auth/admin-login", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ email, password })
+                        })
+                          .then(async (res) => {
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                              setUserProfile(data.profile);
+                              localStorage.setItem("julkar_user_profile", JSON.stringify(data.profile));
+                              setShowAuthModal(false);
+                            } else {
+                              setAuthError(data.error || "Invalid admin credentials.");
+                            }
+                          })
+                          .catch((err) => {
+                            console.error("Admin login network error:", err);
+                            setAuthError("Failed to connect to backend verification server.");
+                          });
                         return;
                       }
 

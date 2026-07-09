@@ -56,6 +56,39 @@ app.get("/api/health", (req, res) => {
 });
 
 /**
+ * Secure Admin Login API Endpoint
+ * Verifies admin credentials stored securely on the backend server environment.
+ */
+app.post("/api/auth/admin-login", (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: "Email and password are required." });
+    }
+
+    const expectedEmail = process.env.ADMIN_EMAIL || "mnain7674@gmail.com";
+    const expectedPassword = process.env.ADMIN_PASSWORD || "#**?6251(JNM-369-captain)";
+
+    if (email.trim().toLowerCase() === expectedEmail.toLowerCase() && password === expectedPassword) {
+      return res.json({
+        success: true,
+        profile: {
+          name: "Owner Admin",
+          email: expectedEmail,
+          role: "Owner Admin"
+        }
+      });
+    } else {
+      return res.status(401).json({ success: false, error: "Invalid admin email or password." });
+    }
+  } catch (error: any) {
+    console.error("Admin login error:", error);
+    res.status(500).json({ success: false, error: error.message || "Internal server error during admin authentication." });
+  }
+});
+
+/**
  * Chat Stream API Endpoint (Server-Sent Events)
  * Streams response from Gemini models with optional grounding (Google Search).
  */
