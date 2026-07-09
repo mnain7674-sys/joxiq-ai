@@ -1906,10 +1906,10 @@ export default function App() {
         </div>
 
         {/* Message container */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-24 py-8 space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
+        <div className="flex-1 overflow-y-auto px-4 md:px-24 py-6 space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
           {!activeConversation || activeConversation.messages.length === 0 ? (
             /* Starter welcome dashboard */
-            <div className="max-w-3xl mx-auto h-full flex flex-col justify-center items-center py-6 space-y-8">
+            <div className="max-w-3xl mx-auto h-full flex flex-col justify-center items-center py-4 space-y-6">
               <div className="text-center space-y-3">
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
@@ -2382,7 +2382,7 @@ export default function App() {
         </div>
 
         {/* Chat Input Bar area */}
-        <footer className={`p-4 md:p-8 pb-20 md:pb-8 flex flex-col items-center shrink-0 border-t ${
+        <footer className={`p-3 md:p-6 pb-4 md:pb-6 flex flex-col items-center shrink-0 border-t ${
           theme === "dark" ? "border-white/5 bg-slate-950/20" : "border-slate-200/50 bg-white/40"
         }`}>
           <div className="w-full max-w-3xl relative">
