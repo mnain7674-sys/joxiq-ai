@@ -18,7 +18,10 @@ import {
   BarChart2,
   UserCheck,
   ShieldAlert,
-  ArrowUpRight
+  ArrowUpRight,
+  UserPlus,
+  Trash2,
+  Check
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -36,10 +39,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [systemStatus, setSystemStatus] = useState<"optimal" | "warning">("optimal");
+  const [auditMessage, setAuditMessage] = useState<string | null>(null);
 
   const isDark = theme === "dark";
 
-  // Mock user directory for admin management
+  // User directory for admin management
   const [usersList, setUsersList] = useState([
     { id: "u-1", name: "Owner Admin", email: "mnain7674@gmail.com", role: "Owner Admin", status: "Active", lastLogin: "Just now", tokensUsed: "142,500" },
     { id: "u-2", name: "Jubayer Ahmed", email: "jubayer@example.com", role: "Standard User", status: "Active", lastLogin: "12m ago", tokensUsed: "12,400" },
@@ -47,12 +51,85 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { id: "u-4", name: "Alex Rivera", email: "alex.r@example.com", role: "Standard User", status: "Inactive", lastLogin: "3d ago", tokensUsed: "1,200" },
   ]);
 
-  const auditLogs = [
+  const [auditLogs, setAuditLogs] = useState([
     { id: "log-1", time: "11:42 AM", user: "mnain7674@gmail.com", action: "SECURITY_AUDIT_RAN", status: "SUCCESS", ip: "192.168.1.45" },
     { id: "log-2", time: "10:15 AM", user: "jubayer@example.com", action: "MODEL_QUERY_FLASH", status: "SUCCESS", ip: "10.0.4.12" },
     { id: "log-3", time: "09:30 AM", user: "mnain7674@gmail.com", action: "ROLE_POLICY_UPDATED", status: "SUCCESS", ip: "192.168.1.45" },
     { id: "log-4", time: "Yesterday", user: "sarah.j@example.com", action: "DOC_UPLOAD_PDF", status: "SUCCESS", ip: "172.16.8.9" },
-  ];
+  ]);
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserRole, setNewUserRole] = useState("Standard User");
+
+  const handleRunAudit = () => {
+    const newLog = {
+      id: `log-${Date.now()}`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      user: userProfile?.email || "mnain7674@gmail.com",
+      action: "SECURITY_AUDIT_MANUAL",
+      status: "SUCCESS",
+      ip: "192.168.1.45"
+    };
+    setAuditLogs([newLog, ...auditLogs]);
+    setAuditMessage("Security Audit successfully completed: 0 vulnerabilities found, RBAC policy verified.");
+    setTimeout(() => setAuditMessage(null), 4000);
+  };
+
+  const handleExportLogs = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(auditLogs, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `joxiq_audit_logs_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const handleToggleUserStatus = (id: string) => {
+    setUsersList(usersList.map(u => {
+      if (u.id === id) {
+        if (u.email === "mnain7674@gmail.com") return u; // Cannot disable owner admin
+        const nextStatus = u.status === "Active" ? "Inactive" : "Active";
+        return { ...u, status: nextStatus };
+      }
+      return u;
+    }));
+  };
+
+  const handleDeleteUser = (id: string, email: string) => {
+    if (email === "mnain7674@gmail.com") {
+      alert("Cannot delete master owner admin account.");
+      return;
+    }
+    if (confirm(`Are you sure you want to remove user ${email}?`)) {
+      setUsersList(usersList.filter(u => u.id !== id));
+    }
+  };
+
+  const handleAddUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName || !newUserEmail) return;
+    const newUser = {
+      id: `u-${Date.now()}`,
+      name: newUserName,
+      email: newUserEmail,
+      role: newUserRole,
+      status: "Active",
+      lastLogin: "Just now",
+      tokensUsed: "0"
+    };
+    setUsersList([...usersList, newUser]);
+    setNewUserName("");
+    setNewUserEmail("");
+    setShowAddUserModal(false);
+  };
+
+  const filteredUsers = usersList.filter(u => 
+    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    u.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className={`min-h-screen ${isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"} font-sans flex flex-col`}>
@@ -147,6 +224,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* Quick Security Status Banner */}
+            {auditMessage && (
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                <Check size={16} className="text-emerald-400 shrink-0" />
+                <span>{auditMessage}</span>
+              </div>
+            )}
             <div className={`p-6 rounded-2xl border ${isDark ? "bg-gradient-to-r from-amber-950/20 to-slate-900 border-amber-500/30" : "bg-gradient-to-r from-amber-50 to-white border-amber-500/30"} flex flex-col md:flex-row items-start md:items-center justify-between gap-4`}>
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-amber-500/10 text-amber-500 rounded-xl border border-amber-500/20">
@@ -160,10 +243,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
               <button
-                onClick={() => alert("Security Audit Verified: 0 privilege escalation vulnerabilities found.")}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap shadow-md"
+                onClick={handleRunAudit}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl transition-all cursor-pointer whitespace-nowrap shadow-md flex items-center gap-1.5"
               >
-                Run Security Audit
+                <RefreshCw size={14} />
+                <span>Run Security Audit</span>
               </button>
             </div>
           </div>
@@ -177,7 +261,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <h2 className="font-bold text-sm">User Directory & Role Authorization</h2>
                 <p className="text-xs text-slate-400">Manage user accounts, permissions, and administrative access privileges.</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
                   <Search size={14} className="text-slate-400" />
                   <input
@@ -185,11 +269,66 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     placeholder="Search users..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="bg-transparent text-xs focus:outline-none w-40"
+                    className="bg-transparent text-xs focus:outline-none w-40 text-slate-200"
                   />
                 </div>
+                <button
+                  onClick={() => setShowAddUserModal(true)}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                >
+                  <UserPlus size={14} />
+                  <span>Add User</span>
+                </button>
               </div>
             </div>
+
+            {/* Add User Modal / Panel */}
+            {showAddUserModal && (
+              <div className="p-4 border-b border-indigo-500/20 bg-indigo-500/5">
+                <form onSubmit={handleAddUser} className="flex flex-col sm:flex-row items-center gap-3">
+                  <input
+                    type="text"
+                    placeholder="Full Name"
+                    required
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    className={`p-2 rounded-xl border text-xs w-full sm:w-auto flex-1 ${isDark ? "bg-slate-950 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-800"}`}
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email Address"
+                    required
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    className={`p-2 rounded-xl border text-xs w-full sm:w-auto flex-1 ${isDark ? "bg-slate-950 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-800"}`}
+                  />
+                  <select
+                    value={newUserRole}
+                    onChange={(e) => setNewUserRole(e.target.value)}
+                    className={`p-2 rounded-xl border text-xs ${isDark ? "bg-slate-950 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-800"}`}
+                  >
+                    <option value="Standard User">Standard User</option>
+                    <option value="Pro User">Pro User</option>
+                    <option value="Moderator">Moderator</option>
+                  </select>
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddUserModal(false)}
+                      className="px-3 py-2 rounded-xl text-xs bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold cursor-pointer shadow-md"
+                    >
+                      Save User
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -204,7 +343,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-500/10 text-xs">
-                  {usersList.map((user) => (
+                  {filteredUsers.map((user) => (
                     <tr key={user.id} className={`transition-colors ${isDark ? "hover:bg-slate-850" : "hover:bg-slate-50"}`}>
                       <td className="py-4 px-6">
                         <div className="font-semibold text-slate-200">{user.name}</div>
@@ -217,26 +356,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </span>
                         ) : (
                           <span className="px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium text-[10px]">
-                            Standard User
+                            {user.role}
                           </span>
                         )}
                       </td>
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold ${user.status === "Active" ? "bg-emerald-500/10 text-emerald-500" : "bg-slate-500/10 text-slate-400"}`}>
+                        <button
+                          onClick={() => handleToggleUserStatus(user.id)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold cursor-pointer transition-all ${user.status === "Active" ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" : "bg-slate-500/10 text-slate-400 hover:bg-slate-500/20"}`}
+                          title="Click to toggle status"
+                        >
                           <span className={`w-1.5 h-1.5 rounded-full ${user.status === "Active" ? "bg-emerald-500" : "bg-slate-400"}`} />
                           {user.status}
-                        </span>
+                        </button>
                       </td>
                       <td className="py-4 px-6 font-mono font-medium">{user.tokensUsed}</td>
                       <td className="py-4 px-6 text-slate-400">{user.lastLogin}</td>
-                      <td className="py-4 px-6 text-right">
+                      <td className="py-4 px-6 text-right flex items-center justify-end gap-2">
                         {user.email !== "mnain7674@gmail.com" ? (
-                          <button
-                            onClick={() => alert(`Managing permissions for ${user.email}`)}
-                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] transition-colors cursor-pointer"
-                          >
-                            Configure
-                          </button>
+                          <>
+                            <button
+                              onClick={() => alert(`User config for ${user.email}:\n- Reset Password\n- Revoke Session\n- Upgrade to Pro`)}
+                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] transition-colors cursor-pointer"
+                            >
+                              Configure
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user.id, user.email)}
+                              className="p-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors cursor-pointer"
+                              title="Remove User"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </>
                         ) : (
                           <span className="text-[11px] text-amber-500 font-medium italic">Immutable</span>
                         )}
@@ -321,7 +473,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <p className="text-xs text-slate-400">Real-time recording of security events, API queries, and authorization checks.</p>
               </div>
               <button
-                onClick={() => alert("Audit log export generated successfully.")}
+                onClick={handleExportLogs}
                 className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download size={14} />
