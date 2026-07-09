@@ -21,22 +21,34 @@ import {
   ArrowUpRight,
   UserPlus,
   Trash2,
-  Check
+  Check,
+  Sun,
+  Moon,
+  MessageSquare,
+  Star
 } from "lucide-react";
 import { motion } from "motion/react";
 
 interface AdminDashboardProps {
   theme: "dark" | "light";
+  onToggleTheme: () => void;
   userProfile: { name: string; email: string } | null;
   onBackToChat: () => void;
+  conversations?: any[];
+  onClearAllChats?: () => void;
+  onDeleteChat?: (id: string, e: React.MouseEvent) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   theme,
+  onToggleTheme,
   userProfile,
   onBackToChat,
+  conversations = [],
+  onClearAllChats,
+  onDeleteChat,
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [systemStatus, setSystemStatus] = useState<"optimal" | "warning">("optimal");
   const [auditMessage, setAuditMessage] = useState<string | null>(null);
@@ -156,6 +168,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>Admin: {userProfile?.email || "mnain7674@gmail.com"}</span>
           </div>
 
+          {/* Theme Toggle Button */}
+          <button
+            onClick={onToggleTheme}
+            className={`p-2 rounded-xl border transition-all cursor-pointer ${
+              isDark ? "bg-slate-800 border-slate-700 text-yellow-400 hover:bg-slate-700" : "bg-slate-100 border-slate-200 text-indigo-600 hover:bg-slate-200"
+            }`}
+            title="Toggle light/dark mode"
+          >
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
           <button
             onClick={onBackToChat}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
@@ -173,6 +196,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {[
             { id: "overview", label: "System Overview", icon: Activity },
             { id: "users", label: "User Access & Roles", icon: Users },
+            { id: "chats", label: "AI Chat History", icon: MessageSquare },
             { id: "security", label: "Security & RBAC", icon: Lock },
             { id: "logs", label: "Audit Telemetry", icon: Server },
             { id: "models", label: "AI Quota & Models", icon: Cpu },
@@ -401,7 +425,114 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
-        {/* Tab 3: Security & RBAC */}
+        {/* Tab 3: AI Chat History & Sessions */}
+        {activeTab === "chats" && (
+          <div className={`rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} overflow-hidden space-y-4`}>
+            <div className="p-5 border-b border-slate-500/10 flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h2 className="font-bold text-sm">AI Chat History & Session Management</h2>
+                <p className="text-xs text-slate-400">Inspect, search, export, or clear all user conversation logs across the platform.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
+                  <Search size={14} className="text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search chat sessions..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-transparent text-xs focus:outline-none w-48 text-slate-200"
+                  />
+                </div>
+                {conversations && conversations.length > 0 && onClearAllChats && (
+                  <button
+                    onClick={() => {
+                      if (confirm("Are you sure you want to clear all chat history?")) {
+                        onClearAllChats();
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/20"
+                  >
+                    <Trash2 size={14} />
+                    <span>Clear All Chats</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="p-5">
+              {!conversations || conversations.length === 0 ? (
+                <div className="text-center py-12 text-slate-500 italic text-xs">
+                  No chat history found in the workspace.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {conversations
+                    .filter((c: any) => c.title.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((chat: any) => (
+                      <div
+                        key={chat.id}
+                        className={`p-4 rounded-xl border flex items-center justify-between gap-4 transition-colors ${
+                          isDark ? "bg-slate-950/60 border-slate-800 hover:border-slate-700" : "bg-slate-50 border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 shrink-0">
+                            <MessageSquare size={18} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-xs truncate flex items-center gap-2">
+                              <span>{chat.title}</span>
+                              {chat.isFavorite && (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 text-[10px] font-bold">Starred</span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center gap-3">
+                              <span>Messages: {chat.messages?.length || 0}</span>
+                              <span>Model: {chat.model || "gemini-2.5-flash"}</span>
+                              <span>{new Date(chat.timestamp).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => {
+                              const transcript = chat.messages
+                                .map((m: any) => `### ${m.role === "user" ? "User" : "AI"}\n${m.content}\n\n`)
+                                .join("---\n");
+                              const blob = new Blob([transcript], { type: "text/markdown" });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = url;
+                              a.download = `${chat.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+                              a.click();
+                            }}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Export chat transcript"
+                          >
+                            <Download size={13} />
+                            <span>Export</span>
+                          </button>
+                          {onDeleteChat && (
+                            <button
+                              onClick={(e) => onDeleteChat(chat.id, e)}
+                              className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors cursor-pointer"
+                              title="Delete chat session"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Security & RBAC */}
         {activeTab === "security" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
@@ -464,7 +595,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
-        {/* Tab 4: Audit Logs */}
+        {/* Tab 5: Audit Logs */}
         {activeTab === "logs" && (
           <div className={`rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} overflow-hidden`}>
             <div className="p-5 border-b border-slate-500/10 flex items-center justify-between">
@@ -511,7 +642,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
-        {/* Tab 5: AI Quotas & Models */}
+        {/* Tab 6: AI Quotas & Models */}
         {activeTab === "models" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
@@ -573,3 +704,4 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     </div>
   );
 };
+

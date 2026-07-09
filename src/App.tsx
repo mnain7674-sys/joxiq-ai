@@ -1819,7 +1819,15 @@ export default function App() {
 
         {activeView === "admin" && userProfile?.email?.toLowerCase() === "mnain7674@gmail.com" ? (
           <div className="flex-1 overflow-y-auto">
-            <AdminDashboard theme={theme} userProfile={userProfile} onBackToChat={() => setActiveView("chat")} />
+            <AdminDashboard 
+              theme={theme} 
+              onToggleTheme={toggleTheme}
+              userProfile={userProfile} 
+              onBackToChat={() => setActiveView("chat")} 
+              conversations={conversations}
+              onClearAllChats={clearAllChats}
+              onDeleteChat={deleteChat}
+            />
           </div>
         ) : activeView === "education" ? (
           <div className="flex-1 overflow-y-auto">
