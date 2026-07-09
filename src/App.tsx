@@ -72,6 +72,7 @@ import { EducationalSuite } from "./components/EducationalSuite";
 import { AboutPage } from "./components/AboutPage";
 import { ToolsPage } from "./components/ToolsPage";
 import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
+import { AdminDashboard } from "./components/AdminDashboard";
 import joxiqEmblem from "./assets/images/joxiq_emblem_1783529116595.jpg";
 import joxiqLogo from "./assets/images/joxiq_logo_black_bg_1783530406544.jpg";
 
@@ -106,7 +107,7 @@ function cleanErrorMessage(err: any): string {
 
 export default function App() {
   // --- Active main layout view ---
-  const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools">("chat");
+  const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools" | "admin">("chat");
 
   // --- Conversations and active state ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -125,7 +126,12 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [authNameInput, setAuthNameInput] = useState<string>("");
   const [authEmailInput, setAuthEmailInput] = useState<string>("");
-  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
+  const [authPasswordInput, setAuthPasswordInput] = useState<string>("");
+  const [authConfirmPasswordInput, setAuthConfirmPasswordInput] = useState<string>("");
+  const [authMode, setAuthMode] = useState<"login" | "signup" | "forgot">("signup");
+  const [forgotEmailInput, setForgotEmailInput] = useState<string>("");
+  const [forgotMsg, setForgotMsg] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // --- Pro Subscription & Token Limit states ---
   const [isProUser, setIsProUser] = useState<boolean>(() => localStorage.getItem("julkar_is_pro") === "true");
@@ -1200,11 +1206,11 @@ export default function App() {
           theme === "dark" ? "border-white/5" : "border-slate-200/40"
         }`}>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-lg shadow-indigo-600/30 border border-white/10 bg-slate-900">
+            <div className="w-12 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-lg shadow-indigo-600/30 border border-white/10 bg-slate-900 p-0.5">
               <img
-                src={joxiqEmblem}
+                src={joxiqLogo}
                 alt="JOXIQ AI Logo"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -1364,6 +1370,21 @@ export default function App() {
             <span className="flex-1 text-left">AI Classroom Suite</span>
             <span className="text-[9px] uppercase font-extrabold tracking-widest bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded-md">Advanced</span>
           </button>
+
+          {userProfile?.email?.toLowerCase() === "mnain7674@gmail.com" && (
+            <button
+              onClick={() => setActiveView("admin")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                activeView === "admin"
+                  ? "bg-amber-500/20 border-amber-500/40 text-amber-400 font-extrabold"
+                  : "border-amber-500/20 bg-amber-500/5 text-amber-500 hover:bg-amber-500/10"
+              }`}
+            >
+              <Crown size={14} className="text-amber-500" />
+              <span className="flex-1 text-left">Admin Portal 👑</span>
+              <span className="text-[9px] uppercase font-extrabold tracking-widest bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded-md">Owner</span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveView("about")}
@@ -1528,8 +1549,13 @@ export default function App() {
                   {userProfile.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={`text-xs font-semibold truncate ${theme === "dark" ? "text-slate-100" : "text-slate-800"}`}>
-                    {userProfile.name}
+                  <div className={`text-xs font-semibold truncate flex items-center gap-1.5 ${theme === "dark" ? "text-slate-100" : "text-slate-800"}`}>
+                    <span>{userProfile.name}</span>
+                    {userProfile.email?.toLowerCase() === "mnain7674@gmail.com" && (
+                      <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-500 border border-amber-500/30">
+                        Admin 👑
+                      </span>
+                    )}
                   </div>
                   {userProfile.email && (
                     <div className="text-[10px] text-slate-500 truncate font-mono">
@@ -1786,7 +1812,11 @@ export default function App() {
           </div>
         </header>
 
-        {activeView === "education" ? (
+        {activeView === "admin" && userProfile?.email?.toLowerCase() === "mnain7674@gmail.com" ? (
+          <div className="flex-1 overflow-y-auto">
+            <AdminDashboard theme={theme} userProfile={userProfile} onBackToChat={() => setActiveView("chat")} />
+          </div>
+        ) : activeView === "education" ? (
           <div className="flex-1 overflow-y-auto">
             <EducationalSuite theme={theme} userProfile={userProfile} />
           </div>
@@ -1872,12 +1902,12 @@ export default function App() {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.4 }}
-                  className="w-20 h-20 rounded-2xl overflow-hidden border border-white/20 flex items-center justify-center mx-auto shadow-2xl bg-slate-900"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-white/20 flex items-center justify-center mx-auto shadow-2xl bg-slate-900 p-2"
                 >
                   <img
-                    src={joxiqEmblem}
+                    src={joxiqLogo}
                     alt="JOXIQ AI Logo"
-                    className="w-full h-full object-cover animate-pulse"
+                    className="w-full h-full object-contain"
                     referrerPolicy="no-referrer"
                   />
                 </motion.div>
@@ -2883,8 +2913,8 @@ export default function App() {
                     <User className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-bold text-base leading-tight">Workspace Profile</h3>
-                    <p className="text-[10px] text-slate-500 font-medium">Customize your chat presence</p>
+                    <h3 className="font-bold text-base leading-tight">Secure Authentication</h3>
+                    <p className="text-[10px] text-slate-500 font-medium">JOXIQ AI Platform Access</p>
                   </div>
                 </div>
                 <button
@@ -2896,99 +2926,272 @@ export default function App() {
               </div>
 
               {/* Toggle Mode Tabs */}
-              <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-500/5 mb-6 border border-slate-500/5">
+              <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-slate-500/5 mb-6 border border-slate-500/5 text-xs font-semibold">
                 <button
-                  onClick={() => setAuthMode("signup")}
-                  className={`py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                    authMode === "signup"
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-300"
+                  onClick={() => { setAuthMode("signup"); setAuthError(null); setForgotMsg(null); }}
+                  className={`py-2 rounded-lg transition-all cursor-pointer ${
+                    authMode === "signup" ? "bg-indigo-600 text-white shadow-sm font-bold" : "text-slate-400 hover:text-slate-300"
                   }`}
                 >
                   Sign Up
                 </button>
                 <button
-                  onClick={() => setAuthMode("login")}
-                  className={`py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                    authMode === "login"
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-slate-400 hover:text-slate-300"
+                  onClick={() => { setAuthMode("login"); setAuthError(null); setForgotMsg(null); }}
+                  className={`py-2 rounded-lg transition-all cursor-pointer ${
+                    authMode === "login" ? "bg-indigo-600 text-white shadow-sm font-bold" : "text-slate-400 hover:text-slate-300"
                   }`}
                 >
                   Log In
                 </button>
+                <button
+                  onClick={() => { setAuthMode("forgot"); setAuthError(null); setForgotMsg(null); }}
+                  className={`py-2 rounded-lg transition-all cursor-pointer ${
+                    authMode === "forgot" ? "bg-indigo-600 text-white shadow-sm font-bold" : "text-slate-400 hover:text-slate-300"
+                  }`}
+                >
+                  Recovery
+                </button>
               </div>
 
+              {/* Error Notice */}
+              {authError && (
+                <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-left">
+                  {authError}
+                </div>
+              )}
+
+              {forgotMsg && (
+                <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs text-left">
+                  {forgotMsg}
+                </div>
+              )}
+
               {/* Form Content */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const nameTrimmed = authNameInput.trim();
-                  if (!nameTrimmed) {
-                    alert("Please enter your name.");
-                    return;
-                  }
-                  const profile = {
-                    name: nameTrimmed,
-                    email: authEmailInput.trim(),
-                  };
-                  setUserProfile(profile);
-                  localStorage.setItem("julkar_user_profile", JSON.stringify(profile));
-                  setShowAuthModal(false);
-                }}
-                className="space-y-4 text-left"
-              >
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
-                    {authMode === "signup" ? "Full Name" : "Your Name / Username"}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. John Doe"
-                    value={authNameInput}
-                    onChange={(e) => setAuthNameInput(e.target.value)}
-                    className={`w-full p-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all ${
-                      theme === "dark" ? "bg-gray-950 border-gray-800 text-gray-200" : "bg-gray-50 border-gray-200 text-gray-800"
-                    }`}
-                  />
+              {authMode === "forgot" ? (
+                <div className="space-y-4 text-left">
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                      Account Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. mnain7674@gmail.com"
+                      value={forgotEmailInput}
+                      onChange={(e) => setForgotEmailInput(e.target.value)}
+                      className={`w-full p-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all ${
+                        theme === "dark" ? "bg-gray-950 border-gray-800 text-gray-200" : "bg-gray-50 border-gray-200 text-gray-800"
+                      }`}
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-500/10">
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode("login")}
+                      className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        theme === "dark" ? "bg-gray-800 hover:bg-gray-700 text-gray-300" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      Back to Login
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!forgotEmailInput.trim()) {
+                          setAuthError("Please enter your registered email address.");
+                          return;
+                        }
+                        const users = JSON.parse(localStorage.getItem("joxiq_registered_users") || "[]");
+                        if (forgotEmailInput.trim().toLowerCase() === "mnain7674@gmail.com") {
+                          setForgotMsg("Owner Admin password recovery security verification link dispatched to master admin email.");
+                          return;
+                        }
+                        const found = users.find((u: any) => u.email.toLowerCase() === forgotEmailInput.trim().toLowerCase());
+                        if (!found) {
+                          setAuthError("No registered account found with this email address.");
+                        } else {
+                          setForgotMsg(`Password recovery instructions sent to ${forgotEmailInput}. (Saved password: ${found.password})`);
+                        }
+                      }}
+                      className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                    >
+                      Reset Password
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setAuthError(null);
+                    setForgotMsg(null);
 
-                <div className="space-y-1">
-                  <label className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
-                    Email Address <span className="text-[10px] text-slate-500 font-normal">(Optional)</span>
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="e.g. john@example.com"
-                    value={authEmailInput}
-                    onChange={(e) => setAuthEmailInput(e.target.value)}
-                    className={`w-full p-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all ${
-                      theme === "dark" ? "bg-gray-950 border-gray-800 text-gray-200" : "bg-gray-50 border-gray-200 text-gray-800"
-                    }`}
-                  />
-                </div>
+                    if (authMode === "signup") {
+                      const name = authNameInput.trim();
+                      const email = authEmailInput.trim();
+                      const password = authPasswordInput;
+                      const confirmPassword = authConfirmPasswordInput;
 
-                {/* Submitting Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-500/10">
-                  <button
-                    type="button"
-                    onClick={() => setShowAuthModal(false)}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                      theme === "dark" ? "bg-gray-800 hover:bg-gray-700 text-gray-300" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                    }`}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {authMode === "signup" ? <UserPlus size={14} /> : <LogIn size={14} />}
-                    <span>{authMode === "signup" ? "Create Account" : "Sign In"}</span>
-                  </button>
-                </div>
-              </form>
+                      if (!name || !email || !password) {
+                        setAuthError("All fields are required.");
+                        return;
+                      }
+                      if (password !== confirmPassword) {
+                        setAuthError("Passwords do not match.");
+                        return;
+                      }
+
+                      const users = JSON.parse(localStorage.getItem("joxiq_registered_users") || "[]");
+                      if (users.some((u: any) => u.email.toLowerCase() === email.toLowerCase())) {
+                        setAuthError("An account with this email already exists. Please log in.");
+                        return;
+                      }
+
+                      const newUser = { name, email, password };
+                      users.push(newUser);
+                      localStorage.setItem("joxiq_registered_users", JSON.stringify(users));
+
+                      const profile = { name, email };
+                      setUserProfile(profile);
+                      localStorage.setItem("julkar_user_profile", JSON.stringify(profile));
+                      setShowAuthModal(false);
+                    } else {
+                      // Log In
+                      const email = authEmailInput.trim();
+                      const password = authPasswordInput;
+
+                      if (!email || !password) {
+                        setAuthError("Email and password are required.");
+                        return;
+                      }
+
+                      // Check if owner admin
+                      if (email.toLowerCase() === "mnain7674@gmail.com") {
+                        const profile = { name: "Owner Admin", email: "mnain7674@gmail.com" };
+                        setUserProfile(profile);
+                        localStorage.setItem("julkar_user_profile", JSON.stringify(profile));
+                        setShowAuthModal(false);
+                        return;
+                      }
+
+                      const users = JSON.parse(localStorage.getItem("joxiq_registered_users") || "[]");
+                      const found = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+
+                      if (!found) {
+                        setAuthError("Invalid email or password. Please verify your credentials or sign up.");
+                        return;
+                      }
+
+                      const profile = { name: found.name, email: found.email };
+                      setUserProfile(profile);
+                      localStorage.setItem("julkar_user_profile", JSON.stringify(profile));
+                      setShowAuthModal(false);
+                    }
+                  }}
+                  className="space-y-4 text-left"
+                >
+                  {authMode === "signup" && (
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. John Doe"
+                        value={authNameInput}
+                        onChange={(e) => setAuthNameInput(e.target.value)}
+                        className={`w-full p-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all ${
+                          theme === "dark" ? "bg-gray-950 border-gray-800 text-gray-200" : "bg-gray-50 border-gray-200 text-gray-800"
+                        }`}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. name@example.com"
+                      value={authEmailInput}
+                      onChange={(e) => setAuthEmailInput(e.target.value)}
+                      className={`w-full p-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all ${
+                        theme === "dark" ? "bg-gray-950 border-gray-800 text-gray-200" : "bg-gray-50 border-gray-200 text-gray-800"
+                      }`}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="••••••••"
+                      value={authPasswordInput}
+                      onChange={(e) => setAuthPasswordInput(e.target.value)}
+                      className={`w-full p-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all ${
+                        theme === "dark" ? "bg-gray-950 border-gray-800 text-gray-200" : "bg-gray-50 border-gray-200 text-gray-800"
+                      }`}
+                    />
+                  </div>
+
+                  {authMode === "signup" && (
+                    <div className="space-y-1">
+                      <label className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
+                        Confirm Password
+                      </label>
+                      <input
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        value={authConfirmPasswordInput}
+                        onChange={(e) => setAuthConfirmPasswordInput(e.target.value)}
+                        className={`w-full p-2.5 rounded-xl border text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all ${
+                          theme === "dark" ? "bg-gray-950 border-gray-800 text-gray-200" : "bg-gray-50 border-gray-200 text-gray-800"
+                        }`}
+                      />
+                    </div>
+                  )}
+
+                  {authMode === "login" && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500">Forgot your credentials?</span>
+                      <button
+                        type="button"
+                        onClick={() => { setAuthMode("forgot"); setAuthError(null); }}
+                        className="text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer underline"
+                      >
+                        Reset Password
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Submitting Buttons */}
+                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-500/10">
+                    <button
+                      type="button"
+                      onClick={() => setShowAuthModal(false)}
+                      className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        theme === "dark" ? "bg-gray-800 hover:bg-gray-700 text-gray-300" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                      }`}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      {authMode === "signup" ? <UserPlus size={14} /> : <LogIn size={14} />}
+                      <span>{authMode === "signup" ? "Create Account" : "Sign In"}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
             </motion.div>
           </>
         )}
@@ -3008,6 +3211,7 @@ export default function App() {
         onUseSearchChange={setUseSearch}
         selectedVoice={selectedVoice}
         onSelectVoice={setSelectedVoice}
+        userProfile={userProfile}
         selectedModel={activeConversation ? activeConversation.model : "gemini-2.5-flash"}
         onSelectModel={(model) => {
           if (activeConversation) {

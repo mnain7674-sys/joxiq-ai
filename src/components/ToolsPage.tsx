@@ -281,11 +281,11 @@ export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: Tools
             className="space-y-2 border-b border-slate-500/10 pb-6"
           >
             <div className="flex items-center gap-2.5">
-              <span className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-white/10 shadow bg-slate-900">
+              <span className="w-14 h-10 rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-white/10 shadow bg-slate-900 p-0.5">
                 <img
-                  src={joxiqEmblem}
-                  alt="JOXIQ AI Emblem"
-                  className="w-full h-full object-cover animate-pulse"
+                  src={joxiqLogo}
+                  alt="JOXIQ AI Logo"
+                  className="w-full h-full object-contain"
                   referrerPolicy="no-referrer"
                 />
               </span>
