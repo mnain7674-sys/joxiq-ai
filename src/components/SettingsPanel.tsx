@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Sliders, Globe, MessageSquareCode, Volume2, Sparkles, HelpCircle, RotateCcw } from "lucide-react";
+import { X, Sliders, Globe, MessageSquareCode, Volume2, Sparkles, HelpCircle, RotateCcw, Sun, Moon } from "lucide-react";
 import { SYSTEM_PERSONAS, Persona } from "../types";
 
 interface SettingsPanelProps {
@@ -20,6 +20,8 @@ interface SettingsPanelProps {
   onSelectModel: (val: string) => void;
   onReset: () => void;
   userProfile?: { name: string; email: string } | null;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
 }
 
 const PREBUILT_VOICES = [
@@ -49,6 +51,8 @@ export function SettingsPanel({
   onSelectModel,
   onReset,
   userProfile,
+  theme,
+  onToggleTheme,
 }: SettingsPanelProps) {
   const isOwnerAdmin = userProfile?.email?.toLowerCase() === OWNER_ADMIN_EMAIL.toLowerCase();
 
@@ -98,6 +102,41 @@ export function SettingsPanel({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-7">
+              {/* Theme Color (Appearance) Selector */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                  <Sun size={16} className="text-indigo-500" />
+                  <span>Theme Color & Appearance</span>
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      if (theme === "dark") onToggleTheme();
+                    }}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col items-center justify-center gap-2 ${
+                      theme === "light"
+                        ? "border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200 shadow-sm"
+                        : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-850"
+                    }`}
+                  >
+                    <Sun size={20} className={theme === "light" ? "text-indigo-600" : "text-gray-400"} />
+                    <span className="font-semibold text-xs">Normal / Light</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (theme === "light") onToggleTheme();
+                    }}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col items-center justify-center gap-2 ${
+                      theme === "dark"
+                        ? "border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/50 text-indigo-200 shadow-sm"
+                        : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-850"
+                    }`}
+                  >
+                    <Moon size={20} className={theme === "dark" ? "text-yellow-400" : "text-gray-400"} />
+                    <span className="font-semibold text-xs">Dark Mode</span>
+                  </button>
+                </div>
+              </div>
               {/* AI Model Selector (Admin Only for Pro models, Flash for regular users) */}
               <div className="space-y-3">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center justify-between">

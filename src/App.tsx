@@ -73,6 +73,7 @@ import { AboutPage } from "./components/AboutPage";
 import { ToolsPage } from "./components/ToolsPage";
 import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import { AdminDashboard } from "./components/AdminDashboard";
+import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import joxiqLogo from "./assets/images/joxiq_logo_icon_1783612642404.jpg";
 
 function cleanErrorMessage(err: any): string {
@@ -147,6 +148,7 @@ export default function App() {
     return saved !== null ? parseInt(saved, 10) : 15;
   });
   const [proModalOpen, setProModalOpen] = useState<boolean>(false);
+  const [showChatHistoryModal, setShowChatHistoryModal] = useState<boolean>(false);
 
   // --- Theme Mode state ---
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -468,6 +470,8 @@ export default function App() {
   // Clear all history
   const clearAllChats = () => {
     stopTts();
+    localStorage.removeItem("gemini_conversations");
+    localStorage.removeItem("gemini_active_conv_id");
     setConversations([]);
     setActiveId("");
   };
@@ -1291,7 +1295,7 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => handleSidebarItemClick(() => setActiveView("chat"))}
+            onClick={() => handleSidebarItemClick(() => setShowChatHistoryModal(true))}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               theme === "dark" ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700"
             }`}
@@ -1309,22 +1313,10 @@ export default function App() {
               theme === "dark" ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700"
             }`}
           >
-            <Settings size={16} className="text-amber-500" />
+            <Settings size={16} className="text-black dark:text-white" />
             <span>Settings</span>
           </button>
 
-          <button
-            onClick={() => handleSidebarItemClick(() => setShowAuthModal(true))}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              theme === "dark" ? "hover:bg-white/5 text-slate-300" : "hover:bg-slate-100 text-slate-700"
-            }`}
-          >
-            <User size={16} className="text-emerald-500" />
-            <span className="flex-1 text-left">Profile</span>
-            <span className="text-[10px] font-medium text-slate-400 truncate max-w-[100px]">
-              {userProfile ? userProfile.name : "Guest"}
-            </span>
-          </button>
 
           <button
             onClick={() => handleSidebarItemClick(() => setProModalOpen(true))}
@@ -1410,144 +1402,7 @@ export default function App() {
           </button>
         </div>
 
-        {/* History Stream / Sidebar Sections */}
-        <div className="flex-1 px-4 py-2 space-y-6 overflow-y-auto overflow-x-hidden select-none">
 
-          {/* Saved Chats (Starred) Section */}
-          <div className="space-y-1.5 border-b pb-4 border-slate-500/10">
-            <div className="flex items-center justify-between px-2 mb-1">
-              <span className={`text-[10px] font-extrabold uppercase tracking-widest flex items-center gap-1.5 ${
-                theme === "dark" ? "text-amber-500" : "text-amber-600"
-              }`}>
-                <Bookmark size={12} className="fill-amber-500 text-amber-500" />
-                <span>Saved Chats</span>
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono">({favoriteChats.length})</span>
-            </div>
-
-            {favoriteChats.length === 0 ? (
-              <div className="text-center text-xs text-slate-500 py-3 italic">
-                No saved chats in this project
-              </div>
-            ) : (
-              favoriteChats.map((chat) => {
-                const isSelected = chat.id === activeId;
-                return (
-                  <div
-                    key={chat.id}
-                    onClick={() => {
-                      setActiveId(chat.id);
-                      setActiveView("chat");
-                      if (typeof window !== "undefined" && window.innerWidth < 1024) {
-                        setSidebarOpen(false);
-                      }
-                    }}
-                    className={`group relative p-2.5 rounded-xl border transition-all duration-200 flex items-center gap-2.5 cursor-pointer ${
-                      isSelected
-                        ? "bg-indigo-500/10 border-indigo-500/30 shadow-md"
-                        : "border-transparent hover:bg-black/5 dark:hover:bg-white/5 hover:border-slate-200 dark:hover:border-white/5"
-                    }`}
-                  >
-                    <Star
-                      size={13}
-                      onClick={(e) => toggleFavorite(chat.id, e)}
-                      className="shrink-0 text-amber-500 fill-amber-500 cursor-pointer hover:scale-125 transition-transform"
-                    />
-                    <div className="flex-1 min-w-0 pr-6">
-                      <div className={`text-xs truncate font-medium ${
-                        isSelected 
-                          ? (theme === "dark" ? "text-slate-100 font-bold" : "text-indigo-950 font-bold")
-                          : (theme === "dark" ? "text-slate-400" : "text-slate-600")
-                      }`}>
-                        {chat.title}
-                      </div>
-                    </div>
-                    {/* Delete button */}
-                    <button
-                      onClick={(e) => deleteChat(chat.id, e)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer duration-150"
-                      title="Delete Chat"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Recent Chats Section */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between px-2 mb-1">
-              <span className={`text-[10px] font-bold uppercase tracking-widest ${
-                theme === "dark" ? "text-slate-500" : "text-slate-400"
-              }`}>
-                Recent Chats
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono">({regularChats.length})</span>
-            </div>
-
-            {regularChats.length === 0 ? (
-              <div className="text-center text-xs text-slate-500 py-6 italic">
-                No recent chats in this project
-              </div>
-            ) : (
-              regularChats.map((chat) => {
-                const isSelected = chat.id === activeId;
-                return (
-                  <div
-                    key={chat.id}
-                    onClick={() => {
-                      setActiveId(chat.id);
-                      setActiveView("chat");
-                      if (typeof window !== "undefined" && window.innerWidth < 1024) {
-                        setSidebarOpen(false);
-                      }
-                    }}
-                    className={`group relative p-2.5 rounded-xl border transition-all duration-200 flex items-center gap-2.5 cursor-pointer ${
-                      isSelected
-                        ? "bg-white/10 dark:bg-white/10 border-slate-200 dark:border-white/15 shadow-md"
-                        : "border-transparent hover:bg-black/5 dark:hover:bg-white/5 hover:border-slate-200 dark:hover:border-white/5"
-                    }`}
-                  >
-                    <MessageSquare
-                      size={13}
-                      className={`shrink-0 ${isSelected ? "text-indigo-500" : "text-slate-400"}`}
-                    />
-                    <div className="flex-1 min-w-0 pr-12">
-                      <div className={`text-xs truncate font-medium ${
-                        isSelected 
-                          ? (theme === "dark" ? "text-slate-100 font-bold" : "text-slate-900 font-bold")
-                          : (theme === "dark" ? "text-slate-400" : "text-slate-600")
-                      }`}>
-                        {chat.title}
-                      </div>
-                    </div>
-
-                    {/* Quick star/save button */}
-                    <button
-                      onClick={(e) => toggleFavorite(chat.id, e)}
-                      className="absolute right-7 top-1/2 -translate-y-1/2 p-1 rounded text-slate-500 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                      title="Save / Star Chat"
-                    >
-                      <Star size={11} />
-                    </button>
-
-                    {/* Delete button */}
-                    <button
-                      onClick={(e) => deleteChat(chat.id, e)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer duration-150 text-slate-500"
-                      title="Delete Chat"
-                    >
-                      <Trash2 size={11} />
-                    </button>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-        </div>
 
         {/* Sidebar Footer User Panel */}
         <div className={`p-4 border-t backdrop-blur-xl flex flex-col gap-2 ${
@@ -1610,14 +1465,6 @@ export default function App() {
                 <div className="text-[9px] text-slate-400 font-medium">To save workspace profile</div>
               </div>
             </div>
-          )}
-          {conversations.length > 0 && (
-            <button
-              onClick={clearAllChats}
-              className="mt-2 w-full py-1.5 text-center text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer border border-rose-500/20"
-            >
-              Clear all history
-            </button>
           )}
         </div>
       </aside>
@@ -3272,6 +3119,8 @@ export default function App() {
         selectedVoice={selectedVoice}
         onSelectVoice={setSelectedVoice}
         userProfile={userProfile}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         selectedModel={activeConversation ? activeConversation.model : "gemini-2.5-flash"}
         onSelectModel={(model) => {
           if (activeConversation) {
@@ -3300,6 +3149,22 @@ export default function App() {
         isDark={theme === "dark"}
         freeMessagesLeft={freeMessagesLeft}
         isProUser={isProUser}
+      />
+
+      {/* Complete Chat History Modal */}
+      <ChatHistoryModal
+        isOpen={showChatHistoryModal}
+        onClose={() => setShowChatHistoryModal(false)}
+        conversations={conversations}
+        activeId={activeId}
+        onSelectConversation={(id) => {
+          setActiveId(id);
+          setActiveView("chat");
+        }}
+        onDeleteConversation={deleteChat}
+        onToggleFavorite={toggleFavorite}
+        onClearAll={clearAllChats}
+        theme={theme}
       />
     </div>
   );
