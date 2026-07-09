@@ -770,6 +770,11 @@ export default function App() {
     customImage?: AttachedImage,
     customDocument?: AttachedDocument
   ) => {
+    if (!userProfile) {
+      setShowAuthModal(true);
+      return;
+    }
+
     const textToSend = customText !== undefined ? customText : inputText;
     const imgToSend = customImage !== undefined ? customImage : attachedImage;
     const docToSend = customDocument !== undefined ? customDocument : attachedDocument;
