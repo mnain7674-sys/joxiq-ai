@@ -1174,7 +1174,7 @@ export default function App() {
     .sort((a, b) => b.timestamp - a.timestamp);
 
   return (
-    <div className={`relative w-full h-screen flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
+    <div className={`relative w-full h-[100dvh] flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
       theme === "dark" ? "bg-[#050b18] text-slate-200 dark" : "bg-[#f4f7fc] text-slate-800"
     }`}>
       {/* Mesh Gradient Background Elements */}
@@ -1909,18 +1909,18 @@ export default function App() {
         <div className="flex-1 overflow-y-auto px-4 md:px-24 py-4 md:py-6 space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
           {!activeConversation || activeConversation.messages.length === 0 ? (
             /* Starter welcome dashboard */
-            <div className="max-w-3xl mx-auto min-h-full flex flex-col justify-center items-center py-2 sm:py-4 my-auto space-y-4">
+            <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-4 px-4 space-y-4 my-auto">
               <div className="text-center space-y-3">
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.4 }}
-                  className="mx-auto flex items-center justify-center"
+                  className="mx-auto flex items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 shadow-xl mb-1 w-20 h-20 sm:w-24 sm:h-24"
                 >
                   <img
                     src={joxiqLogo}
                     alt="JOXIQ AI Logo"
-                    className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-xl rounded-2xl"
+                    className="w-full h-full object-contain rounded-xl"
                     referrerPolicy="no-referrer"
                   />
                 </motion.div>
