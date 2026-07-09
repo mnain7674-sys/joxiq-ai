@@ -112,11 +112,11 @@ export default function App() {
   // --- Conversations and active state ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string>("");
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => typeof window !== "undefined" && window.innerWidth >= 768);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => typeof window !== "undefined" && window.innerWidth >= 1024);
 
   const handleSidebarItemClick = (action: () => void) => {
     action();
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
       setSidebarOpen(false);
     }
   };
@@ -1185,25 +1185,25 @@ export default function App() {
       {sidebarOpen && (
         <div
           onClick={() => {
-            if (typeof window !== "undefined" && window.innerWidth < 768) {
+            if (typeof window !== "undefined" && window.innerWidth < 1024) {
               setSidebarOpen(false);
             }
           }}
-          className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-xs transition-opacity duration-300"
+          className="fixed inset-0 bg-black/60 z-30 lg:hidden backdrop-blur-xs transition-opacity duration-300"
         />
       )}
 
       {/* Sidebar: Navigation & History */}
       <aside
         id="chat-sidebar"
-        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition-all duration-300 ease-in-out md:shrink-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col transition-all duration-300 ease-in-out lg:shrink-0 ${
           theme === "dark" 
             ? "bg-[#0b1329] border-white/10 text-slate-200" 
             : "bg-white border-slate-200 text-slate-800"
         } backdrop-blur-3xl ${
           sidebarOpen 
-            ? "translate-x-0 md:translate-x-0 md:relative md:w-72 md:opacity-100 shadow-2xl md:shadow-none md:border-r" 
-            : "-translate-x-full md:translate-x-0 md:relative md:w-0 md:opacity-0 md:overflow-hidden md:border-r-0 md:pointer-events-none"
+            ? "translate-x-0 lg:translate-x-0 lg:relative lg:w-72 lg:opacity-100 shadow-2xl lg:shadow-none lg:border-r" 
+            : "-translate-x-full lg:translate-x-0 lg:relative lg:w-0 lg:opacity-0 lg:overflow-hidden lg:border-r-0 lg:pointer-events-none"
         }`}
       >
         {/* Sidebar Header */}
@@ -1227,7 +1227,7 @@ export default function App() {
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className={`md:hidden p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-slate-400 cursor-pointer`}
+            className={`lg:hidden p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 text-slate-400 cursor-pointer`}
           >
             <X size={16} />
           </button>
@@ -1432,7 +1432,7 @@ export default function App() {
                     onClick={() => {
                       setActiveId(chat.id);
                       setActiveView("chat");
-                      if (typeof window !== "undefined" && window.innerWidth < 768) {
+                      if (typeof window !== "undefined" && window.innerWidth < 1024) {
                         setSidebarOpen(false);
                       }
                     }}
@@ -1494,7 +1494,7 @@ export default function App() {
                     onClick={() => {
                       setActiveId(chat.id);
                       setActiveView("chat");
-                      if (typeof window !== "undefined" && window.innerWidth < 768) {
+                      if (typeof window !== "undefined" && window.innerWidth < 1024) {
                         setSidebarOpen(false);
                       }
                     }}
