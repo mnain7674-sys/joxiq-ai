@@ -1906,30 +1906,30 @@ export default function App() {
         </div>
 
         {/* Message container */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-24 py-6 space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
+        <div className="flex-1 overflow-y-auto px-4 md:px-24 py-4 md:py-6 space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
           {!activeConversation || activeConversation.messages.length === 0 ? (
             /* Starter welcome dashboard */
-            <div className="max-w-3xl mx-auto h-full flex flex-col justify-center items-center py-4 space-y-6">
+            <div className="max-w-3xl mx-auto h-full flex flex-col justify-center items-center py-4 my-auto space-y-5">
               <div className="text-center space-y-3">
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.4 }}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-white/20 flex items-center justify-center mx-auto shadow-2xl bg-slate-900 p-2"
+                  className="mx-auto flex items-center justify-center"
                 >
                   <img
                     src={joxiqLogo}
                     alt="JOXIQ AI Logo"
-                    className="w-full h-full object-contain"
+                    className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-xl rounded-2xl"
                     referrerPolicy="no-referrer"
                   />
                 </motion.div>
-                <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight mt-4 ${
+                <h1 className={`text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mt-3 ${
                   theme === "dark" ? "text-white bg-gradient-to-r from-white via-indigo-200 to-slate-300" : "text-slate-900 bg-gradient-to-r from-slate-900 via-indigo-950 to-indigo-900"
                 } bg-clip-text text-transparent`}>
                   How can I support you today?
                 </h1>
-                <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto text-sm leading-relaxed">
+                <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto text-xs sm:text-sm leading-relaxed px-4">
                   Start a conversation below, choose a chat mode, upload a document or code file, or use real-time search grounding.
                 </p>
               </div>
@@ -2382,8 +2382,8 @@ export default function App() {
         </div>
 
         {/* Chat Input Bar area */}
-        <footer className={`p-3 md:p-6 pb-4 md:pb-6 flex flex-col items-center shrink-0 border-t ${
-          theme === "dark" ? "border-white/5 bg-slate-950/20" : "border-slate-200/50 bg-white/40"
+        <footer className={`sticky bottom-0 z-20 p-3 md:p-6 pb-4 md:pb-6 flex flex-col items-center shrink-0 border-t ${
+          theme === "dark" ? "border-white/5 bg-slate-950/90 backdrop-blur-xl" : "border-slate-200/50 bg-white/90 backdrop-blur-xl"
         }`}>
           <div className="w-full max-w-3xl relative">
             {/* Draggable/clickable visual representation container */}
