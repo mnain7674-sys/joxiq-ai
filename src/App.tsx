@@ -1219,11 +1219,6 @@ export default function App() {
                 referrerPolicy="no-referrer"
               />
             </div>
-            <span className={`font-bold text-base tracking-tight ${
-              theme === "dark" ? "bg-gradient-to-r from-white to-slate-400" : "bg-gradient-to-r from-slate-900 to-indigo-950"
-            } bg-clip-text text-transparent`}>
-              JOXIQ AI Chat
-            </span>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -1915,12 +1910,12 @@ export default function App() {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.4 }}
-                  className="mx-auto flex items-center justify-center p-3 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 shadow-xl mb-1 w-20 h-20 sm:w-24 sm:h-24"
+                  className="mx-auto flex items-center justify-center mb-4"
                 >
                   <img
                     src={joxiqLogo}
                     alt="JOXIQ AI Logo"
-                    className="w-full h-full object-contain rounded-xl"
+                    className="w-28 h-28 sm:w-36 sm:h-36 object-contain drop-shadow-2xl"
                     referrerPolicy="no-referrer"
                   />
                 </motion.div>
