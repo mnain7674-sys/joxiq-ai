@@ -73,8 +73,7 @@ import { AboutPage } from "./components/AboutPage";
 import { ToolsPage } from "./components/ToolsPage";
 import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import { AdminDashboard } from "./components/AdminDashboard";
-import joxiqEmblem from "./assets/images/joxiq_emblem_1783529116595.jpg";
-import joxiqLogo from "./assets/images/joxiq_logo_black_bg_1783530406544.jpg";
+import joxiqLogo from "./assets/images/joxiq_logo_icon_1783612642404.jpg";
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);
@@ -1210,12 +1209,24 @@ export default function App() {
         <div className={`p-6 flex items-center justify-between border-b ${
           theme === "dark" ? "border-white/5" : "border-slate-200/40"
         }`}>
-          <div className="flex items-center gap-2">
-            <div className="w-12 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-lg shadow-indigo-600/30 border border-white/10 bg-slate-900 p-0.5">
+          <div 
+            onClick={() => {
+              setActiveView("chat");
+              const emptyChat = conversations.find(c => c.messages.length === 0);
+              if (emptyChat) {
+                setActiveId(emptyChat.id);
+              } else {
+                createNewChat();
+              }
+            }}
+            className="flex items-center gap-2 cursor-pointer group"
+            title="Return to Home"
+          >
+            <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-md border border-white/20 bg-slate-900 p-0.5 group-hover:scale-105 transition-transform">
               <img
                 src={joxiqLogo}
                 alt="JOXIQ AI Logo"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover rounded-full"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -1629,6 +1640,30 @@ export default function App() {
               <Menu size={18} />
             </button>
 
+            {/* Top-Left Homepage Logo */}
+            <div
+              onClick={() => {
+                setActiveView("chat");
+                const emptyChat = conversations.find(c => c.messages.length === 0);
+                if (emptyChat) {
+                  setActiveId(emptyChat.id);
+                } else {
+                  createNewChat();
+                }
+              }}
+              className="flex items-center gap-2 cursor-pointer group"
+              title="JOXIQ AI Home"
+            >
+              <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-md border border-white/20 bg-slate-900 p-0.5 group-hover:scale-105 transition-transform">
+                <img
+                  src={joxiqLogo}
+                  alt="JOXIQ AI Logo"
+                  className="w-full h-full object-cover rounded-full"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            </div>
+
             {/* Home / Return to Home Dashboard Button */}
             <button
               id="btn-header-home"
@@ -1912,12 +1947,14 @@ export default function App() {
                   transition={{ duration: 0.4 }}
                   className="mx-auto flex items-center justify-center mb-4"
                 >
-                  <img
-                    src={joxiqLogo}
-                    alt="JOXIQ AI Logo"
-                    className="w-28 h-28 sm:w-36 sm:h-36 object-contain drop-shadow-2xl"
-                    referrerPolicy="no-referrer"
-                  />
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden shadow-2xl border-2 border-indigo-500/50 bg-slate-900 p-1 flex items-center justify-center">
+                    <img
+                      src={joxiqLogo}
+                      alt="JOXIQ AI Logo"
+                      className="w-full h-full object-cover rounded-full"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
                 </motion.div>
                 <h1 className={`text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mt-3 ${
                   theme === "dark" ? "text-white bg-gradient-to-r from-white via-indigo-200 to-slate-300" : "text-slate-900 bg-gradient-to-r from-slate-900 via-indigo-950 to-indigo-900"
@@ -2034,9 +2071,9 @@ export default function App() {
                     {!isUser && (
                       <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 border border-white/10 shadow-sm overflow-hidden mt-0.5">
                         <img
-                          src={joxiqEmblem}
+                          src={joxiqLogo}
                           alt="JOXIQ AI Avatar"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover rounded-full"
                           referrerPolicy="no-referrer"
                         />
                       </div>
@@ -2296,9 +2333,9 @@ export default function App() {
                 <div className="flex items-start gap-4 justify-start w-full">
                   <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 border border-white/10 shadow-sm overflow-hidden mt-0.5">
                     <img
-                      src={joxiqEmblem}
+                      src={joxiqLogo}
                       alt="JOXIQ AI Avatar"
-                      className="w-full h-full object-cover animate-pulse"
+                      className="w-full h-full object-cover rounded-full animate-pulse"
                       referrerPolicy="no-referrer"
                     />
                   </div>
