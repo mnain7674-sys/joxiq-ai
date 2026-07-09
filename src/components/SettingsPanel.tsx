@@ -111,7 +111,7 @@ export function SettingsPanel({
                     </span>
                   )}
                 </h3>
-                <div className={`grid ${isOwnerAdmin ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
+                <div className={`grid ${isOwnerAdmin ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"} gap-3`}>
                   <div
                     onClick={() => onSelectModel("gemini-2.5-flash")}
                     className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
@@ -219,7 +219,7 @@ export function SettingsPanel({
                   <Sparkles size={16} className="text-yellow-500" />
                   <span>Assistant Persona</span>
                 </h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SYSTEM_PERSONAS.map((persona) => (
                     <button
                       key={persona.id}

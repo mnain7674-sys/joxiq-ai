@@ -430,7 +430,7 @@ export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: Tools
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                             Artistic Style
@@ -519,7 +519,7 @@ export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: Tools
                             />
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2.5">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             <button
                               onClick={() => copyToClipboard(generatedImgUrl)}
                               className={`py-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
@@ -763,7 +763,7 @@ Ensure there is an elegant subject line, clear paragraphs, polite greetings, and
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                         Source Language

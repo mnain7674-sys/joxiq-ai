@@ -2723,7 +2723,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg border rounded-2xl p-6 shadow-2xl z-50 backdrop-blur-3xl ${
+              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg border rounded-2xl p-6 shadow-2xl z-50 backdrop-blur-3xl ${
                 theme === "dark" ? "bg-gray-900 border-gray-800 text-gray-100" : "bg-white border-gray-200 text-gray-900"
               }`}
             >
@@ -2810,7 +2810,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg border rounded-2xl p-6 shadow-2xl z-50 backdrop-blur-3xl ${
+              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg border rounded-2xl p-6 shadow-2xl z-50 backdrop-blur-3xl ${
                 theme === "dark" ? "bg-gray-900 border-gray-800 text-gray-100" : "bg-white border-gray-200 text-gray-900"
               }`}
             >
@@ -2913,7 +2913,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md border rounded-2xl p-6 shadow-2xl z-50 backdrop-blur-3xl ${
+              className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md border rounded-2xl p-6 shadow-2xl z-50 backdrop-blur-3xl ${
                 theme === "dark" ? "bg-gray-900/95 border-gray-800 text-gray-100" : "bg-white/95 border-gray-200 text-gray-900"
               }`}
             >
