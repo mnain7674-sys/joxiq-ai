@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { syncUserToFirestore, auth, googleProvider } from "./lib/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import {
   Plus,
   Send,

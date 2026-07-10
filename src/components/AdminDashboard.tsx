@@ -125,20 +125,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         querySnapshot.forEach((docSnap) => {
           fbUsers.push({ id: docSnap.id, ...docSnap.data() });
         });
-        if (fbUsers.length > 0) {
-          setUsersList(fbUsers);
-          return;
-        }
+        setUsersList(fbUsers);
       } catch (err) {
-        console.error("Firestore user fetch error, falling back to API", err);
+        console.error("Firestore user fetch error", err);
+        fetch("/api/admin/users")
+          .then(res => res.json())
+          .then(data => {
+            if (data.users) setUsersList(data.users);
+          })
+          .catch(e => console.error("Failed to load users", e));
       }
-      
-      fetch("/api/admin/users")
-        .then(res => res.json())
-        .then(data => {
-          if (data.users) setUsersList(data.users);
-        })
-        .catch(err => console.error("Failed to load users", err));
     }
     loadUsers();
   }, []);

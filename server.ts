@@ -482,19 +482,7 @@ app.post("/api/user/theme", (req, res) => {
 /**
  * Admin User Management System API Endpoints
  */
-let registeredUsers = [
-  {
-    id: "u-1",
-    name: "Owner Admin",
-    email: "mnain7674@gmail.com",
-    role: "Owner Admin",
-    status: "Active",
-    createdAt: "2026-01-01",
-    lastLogin: "Just now",
-    subscriptionStatus: "Pro VIP",
-    tokensUsed: "142,500"
-  }
-];
+let registeredUsers: any[] = [];
 
 app.get("/api/admin/users", (req, res) => {
   res.json({ users: registeredUsers, totalCount: registeredUsers.length });
