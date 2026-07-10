@@ -19,3 +19,9 @@ html, body, #root {
 *, *:before, *:after {
   box-sizing: inherit;
 }
+
+/* Force high contrast bright text in dark mode markdown & prose */
+.dark-mode-text *, .prose-invert, .prose-invert p, .prose-invert li, .prose-invert strong, .prose-invert h1, .prose-invert h2, .prose-invert h3, .prose-invert h4 {
+  color: #ffffff !important;
+}
+

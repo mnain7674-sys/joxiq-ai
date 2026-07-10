@@ -507,11 +507,11 @@ Please explain step by step in ${nativeLang}, give clear examples in ${selectedL
                 msg.role === "user"
                   ? "bg-indigo-600 text-white rounded-tr-none max-w-xl font-medium"
                   : theme === "dark"
-                    ? "bg-slate-900 border border-white/20 text-slate-100 rounded-tl-none max-w-2xl"
+                    ? "bg-slate-900 border border-white/30 text-white rounded-tl-none max-w-2xl dark-mode-text font-medium"
                     : "bg-white border border-slate-200 text-slate-900 rounded-tl-none max-w-2xl"
               }`}>
                 {msg.role === "assistant" ? (
-                  <div className={`prose prose-invert max-w-none ${theme === "dark" ? "text-slate-100 font-normal" : "text-slate-900"}`}>
+                  <div className={`prose prose-invert max-w-none ${theme === "dark" ? "text-white font-medium" : "text-slate-900"}`}>
                     <Markdown>{msg.content}</Markdown>
                   </div>
                 ) : (
