@@ -237,6 +237,28 @@ export default function App() {
   const [streamError, setStreamError] = useState<string | null>(null);
   const [activeSpeechMsgId, setActiveSpeechMsgId] = useState<string | null>(null);
   const [isGeneratingTts, setIsGeneratingTts] = useState<boolean>(false);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+
+    const handleResize = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      }
+    };
+
+    window.visualViewport.addEventListener("resize", handleResize);
+    window.visualViewport.addEventListener("scroll", handleResize);
+    setViewportHeight(window.visualViewport.height);
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", handleResize);
+        window.visualViewport.removeEventListener("scroll", handleResize);
+      }
+    };
+  }, []);
 
   // --- Attachment options (Plus Menu) & Camera States ---
   const [plusMenuOpen, setPlusMenuOpen] = useState<boolean>(false);
@@ -1214,9 +1236,12 @@ export default function App() {
     .sort((a, b) => b.timestamp - a.timestamp);
 
   return (
-    <div className={`relative w-full h-[100dvh] flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
-      theme === "dark" ? "bg-[#050b18] text-slate-200 dark" : "bg-[#f4f7fc] text-slate-800"
-    }`}>
+    <div
+      className={`relative w-full h-[100dvh] flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
+        theme === "dark" ? "bg-[#050b18] text-slate-200 dark" : "bg-[#f4f7fc] text-slate-800"
+      }`}
+      style={viewportHeight ? { height: `${viewportHeight}px`, position: 'fixed', top: 0, left: 0, right: 0 } : undefined}
+    >
       {/* Mesh Gradient Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-violet-600/15 rounded-full blur-[150px] pointer-events-none" />
