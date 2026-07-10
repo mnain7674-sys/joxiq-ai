@@ -74,6 +74,7 @@ import { ToolsPage } from "./components/ToolsPage";
 import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
+import { LanguageCoach } from "./components/LanguageCoach";
 import joxiqLogo from "./assets/images/joxiq_logo_icon_1783612642404.jpg";
 
 function cleanErrorMessage(err: any): string {
@@ -107,7 +108,7 @@ function cleanErrorMessage(err: any): string {
 
 export default function App() {
   // --- Active main layout view ---
-  const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools" | "admin">("chat");
+  const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools" | "admin" | "language-coach">("chat");
 
   // --- Conversations and active state ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -151,7 +152,10 @@ export default function App() {
   const [showChatHistoryModal, setShowChatHistoryModal] = useState<boolean>(false);
 
   // --- Theme Mode state ---
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light" | "midnight" | "emerald" | "amber" | "rose">(() => {
+    const saved = localStorage.getItem("gemini_theme");
+    return (saved as any) || "dark";
+  });
 
   // --- Input state ---
   const [inputText, setInputText] = useState<string>("");
@@ -305,14 +309,35 @@ export default function App() {
     }
   }, []);
 
-  // Sync theme changes
+  // Sync theme changes & auto-sync across users/sessions
   useEffect(() => {
     localStorage.setItem("gemini_theme", theme);
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
+    if (theme === "light") {
       document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
     }
+  }, [theme]);
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "gemini_theme" && e.newValue) {
+        if (["dark", "light", "midnight", "emerald", "amber", "rose"].includes(e.newValue)) {
+          setTheme(e.newValue as any);
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem("gemini_theme");
+      if (stored && stored !== theme && ["dark", "light", "midnight", "emerald", "amber", "rose"].includes(stored)) {
+        setTheme(stored as any);
+      }
+    }, 1000);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      clearInterval(interval);
+    };
   }, [theme]);
 
   // Sync state changes to localStorage
@@ -1374,6 +1399,19 @@ export default function App() {
             <span className="text-[9px] uppercase font-extrabold tracking-widest bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded-md">Advanced</span>
           </button>
 
+          <button
+            onClick={() => setActiveView("language-coach")}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              activeView === "language-coach"
+                ? (theme === "dark" ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold")
+                : "border-transparent text-slate-500 hover:text-slate-400 dark:hover:text-slate-200"
+            }`}
+          >
+            <Languages size={14} className="text-pink-500" />
+            <span className="flex-1 text-left">Language Coach</span>
+            <span className="text-[9px] uppercase font-extrabold tracking-widest bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded-md border border-amber-500/20">PRO</span>
+          </button>
+
           {userProfile?.email?.toLowerCase() === "mnain7674@gmail.com" && (
             <button
               onClick={() => setActiveView("admin")}
@@ -1699,6 +1737,7 @@ export default function App() {
             <AdminDashboard 
               theme={theme} 
               onToggleTheme={toggleTheme}
+              onThemeChange={setTheme}
               userProfile={userProfile} 
               onBackToChat={() => setActiveView("chat")} 
               conversations={conversations}
@@ -1708,16 +1747,48 @@ export default function App() {
           </div>
         ) : activeView === "education" ? (
           <div className="flex-1 overflow-y-auto">
-            <EducationalSuite theme={theme} userProfile={userProfile} />
+            <EducationalSuite theme={theme === "light" ? "light" : "dark"} userProfile={userProfile} />
+          </div>
+        ) : activeView === "language-coach" ? (
+          <div className="flex-1 overflow-y-auto">
+            <LanguageCoach 
+              theme={theme === "light" ? "light" : "dark"} 
+              userProfile={userProfile} 
+              isProUser={isProUser}
+              onUpgrade={() => setProModalOpen(true)}
+              onStartLanguageChat={(lang, level, feature) => {
+                setActiveView("chat");
+                setSelectedPersonaId("translator");
+                const newChat: Conversation = {
+                  id: Math.random().toString(36).substring(2, 11),
+                  title: `${lang} Coach (${level})`,
+                  messages: [
+                    {
+                      id: Math.random().toString(36).substring(2, 11),
+                      role: "assistant",
+                      content: `Hello! I am your AI Language Coach for **${lang}** at a **${level}** level. We are focusing on **${feature}**.\n\nHow would you like to begin today? We can practice conversation, review grammar, or build vocabulary!`,
+                      timestamp: Date.now()
+                    }
+                  ],
+                  model: "gemini-2.5-flash",
+                  systemInstruction: `You are an expert, friendly AI Language Coach teaching ${lang} at a ${level} level. Focus on ${feature}. Explain concepts step by step in simple and easy language, correct grammar mistakes, suggest better vocabulary, and answer language-related questions.`,
+                  temperature: 0.7,
+                  useSearch: true,
+                  timestamp: Date.now()
+                };
+                setConversations(prev => [newChat, ...prev]);
+                setActiveId(newChat.id);
+              }}
+            />
           </div>
         ) : activeView === "about" ? (
           <div className="flex-1 overflow-y-auto">
-            <AboutPage theme={theme} />
+            <AboutPage theme={theme === "light" ? "light" : "dark"} />
           </div>
         ) : activeView === "tools" ? (
           <div className="flex-1 overflow-y-auto">
             <ToolsPage 
-              theme={theme} 
+              theme={theme === "light" ? "light" : "dark"} 
               onStartToolSession={startToolSession} 
               onNavigateToChat={() => {
                 setActiveView("chat");
@@ -3119,7 +3190,7 @@ export default function App() {
         selectedVoice={selectedVoice}
         onSelectVoice={setSelectedVoice}
         userProfile={userProfile}
-        theme={theme}
+        theme={theme === "light" ? "light" : "dark"}
         onToggleTheme={toggleTheme}
         selectedModel={activeConversation ? activeConversation.model : "gemini-2.5-flash"}
         onSelectModel={(model) => {
@@ -3164,7 +3235,7 @@ export default function App() {
         onDeleteConversation={deleteChat}
         onToggleFavorite={toggleFavorite}
         onClearAll={clearAllChats}
-        theme={theme}
+        theme={theme === "light" ? "light" : "dark"}
       />
     </div>
   );

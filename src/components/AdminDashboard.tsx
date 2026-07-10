@@ -30,8 +30,9 @@ import {
 import { motion } from "motion/react";
 
 interface AdminDashboardProps {
-  theme: "dark" | "light";
+  theme: "dark" | "light" | "midnight" | "emerald" | "amber" | "rose";
   onToggleTheme: () => void;
+  onThemeChange: (theme: "dark" | "light" | "midnight" | "emerald" | "amber" | "rose") => void;
   userProfile: { name: string; email: string } | null;
   onBackToChat: () => void;
   conversations?: any[];
@@ -42,18 +43,20 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   theme,
   onToggleTheme,
+  onThemeChange,
   userProfile,
   onBackToChat,
   conversations = [],
   onClearAllChats,
   onDeleteChat,
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats" | "theme">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [systemStatus, setSystemStatus] = useState<"optimal" | "warning">("optimal");
   const [auditMessage, setAuditMessage] = useState<string | null>(null);
+  const [themeSuccessMsg, setThemeSuccessMsg] = useState<string | null>(null);
 
-  const isDark = theme === "dark";
+  const isDark = theme !== "light";
 
   // User directory for admin management
   const [usersList, setUsersList] = useState([
@@ -200,6 +203,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             { id: "security", label: "Security & RBAC", icon: Lock },
             { id: "logs", label: "Audit Telemetry", icon: Server },
             { id: "models", label: "AI Quota & Models", icon: Cpu },
+            { id: "theme", label: "Theme & Color Settings", icon: Sun },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -696,6 +700,76 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <p className="text-[11px] text-slate-500 italic">
                   Token pooling is automatically balanced across nodes with zero rate-limit exceptions.
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 7: Theme & Color Settings */}
+        {activeTab === "theme" && (
+          <div className="space-y-6">
+            <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500">
+                  <Sun size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm">Global Theme & Color Preset Control</h3>
+                  <p className="text-xs text-slate-400">Select the master theme color. Changes apply automatically to all active user sessions instantly.</p>
+                </div>
+              </div>
+
+              {themeSuccessMsg && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle2 size={16} />
+                  <span>{themeSuccessMsg}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                {[
+                  { id: "dark", name: "Classic Dark Slate", desc: "Deep dark slate with indigo accents", bg: "bg-[#0d1117] border-slate-700 text-slate-100", accent: "bg-indigo-500" },
+                  { id: "light", name: "Clean Light", desc: "Crisp white & clean slate grey UI", bg: "bg-white border-slate-200 text-slate-900", accent: "bg-indigo-600" },
+                  { id: "midnight", name: "Midnight Indigo", desc: "Deep rich indigo blue night theme", bg: "bg-[#0a0f1d] border-indigo-900/50 text-indigo-100", accent: "bg-blue-500" },
+                  { id: "emerald", name: "Emerald Obsidian", desc: "Dark obsidian with emerald highlights", bg: "bg-[#051510] border-emerald-900/50 text-emerald-100", accent: "bg-emerald-500" },
+                  { id: "amber", name: "Sunset Amber", desc: "Warm amber & cozy gold tones", bg: "bg-[#181109] border-amber-900/50 text-amber-100", accent: "bg-amber-500" },
+                  { id: "rose", name: "Rose Velvet", desc: "Luxurious wine and rose velvet theme", bg: "bg-[#1c0c14] border-rose-900/50 text-rose-100", accent: "bg-rose-500" },
+                ].map((preset) => {
+                  const isSelected = theme === preset.id;
+                  return (
+                    <div
+                      key={preset.id}
+                      onClick={() => {
+                        onThemeChange(preset.id as any);
+                        setThemeSuccessMsg(`Master theme changed to "${preset.name}". Synchronized across all users.`);
+                        setTimeout(() => setThemeSuccessMsg(null), 4000);
+                      }}
+                      className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-4 relative overflow-hidden group hover:scale-[1.02] ${
+                        isSelected 
+                          ? "border-amber-500 shadow-xl ring-2 ring-amber-500/20" 
+                          : isDark ? "border-slate-800 bg-slate-950/50 hover:border-slate-700" : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-extrabold text-[10px]">
+                          ACTIVE MASTER
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-6 h-6 rounded-lg ${preset.accent} shadow-md`} />
+                          <h4 className="font-bold text-sm">{preset.name}</h4>
+                        </div>
+                        <p className="text-xs text-slate-400">{preset.desc}</p>
+                      </div>
+
+                      <div className={`p-3 rounded-xl border ${preset.bg} text-xs font-semibold flex items-center justify-between`}>
+                        <span>Preview Card</span>
+                        <span className={`w-3 h-3 rounded-full ${preset.accent}`} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
