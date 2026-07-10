@@ -56,6 +56,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [auditMessage, setAuditMessage] = useState<string | null>(null);
   const [themeSuccessMsg, setThemeSuccessMsg] = useState<string | null>(null);
 
+  // Chat Themes management state
+  const [themesList, setThemesList] = useState<any[]>([
+    { id: "dark", name: "Classic Dark Slate", desc: "Deep dark slate with indigo accents", accent: "indigo" },
+    { id: "light", name: "Clean Light", desc: "Crisp white & clean slate grey UI", accent: "indigo" },
+    { id: "midnight", name: "Midnight Indigo", desc: "Deep rich indigo blue night theme", accent: "blue" },
+    { id: "emerald", name: "Emerald Obsidian", desc: "Dark obsidian with emerald highlights", accent: "emerald" },
+    { id: "amber", name: "Sunset Amber", desc: "Warm amber & cozy gold tones", accent: "amber" },
+    { id: "rose", name: "Rose Velvet", desc: "Luxurious wine and rose velvet theme", accent: "rose" },
+  ]);
+  const [showAddThemeModal, setShowAddThemeModal] = useState(false);
+  const [newThemeId, setNewThemeId] = useState("");
+  const [newThemeName, setNewThemeName] = useState("");
+  const [newThemeDesc, setNewThemeDesc] = useState("");
+  const [newThemeAccent, setNewThemeAccent] = useState("indigo");
+
+  React.useEffect(() => {
+    fetch("/api/themes")
+      .then(res => res.json())
+      .then(data => {
+        if (data.themes) setThemesList(data.themes);
+      })
+      .catch(err => console.error("Failed to load themes", err));
+  }, []);
+
+  const handleCreateTheme = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newThemeId || !newThemeName) return;
+    try {
+      const res = await fetch("/api/admin/themes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: newThemeId.toLowerCase().replace(/\s+/g, "-"),
+          name: newThemeName,
+          desc: newThemeDesc,
+          accent: newThemeAccent,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setThemesList(data.themes);
+        setNewThemeId("");
+        setNewThemeName("");
+        setNewThemeDesc("");
+        setShowAddThemeModal(false);
+        setThemeSuccessMsg("New chat theme successfully created and added to database.");
+        setTimeout(() => setThemeSuccessMsg(null), 4000);
+      }
+    } catch (err) {
+      console.error("Failed to create theme", err);
+    }
+  };
+
   const isDark = theme !== "light";
 
   // User directory for admin management
@@ -709,14 +762,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {activeTab === "theme" && (
           <div className="space-y-6">
             <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500">
-                  <Sun size={20} />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500">
+                    <Sun size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm">Chat Theme Management System</h3>
+                    <p className="text-xs text-slate-400">Create multiple chat themes, select a default master theme that automatically applies to all users.</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-sm">Global Theme & Color Preset Control</h3>
-                  <p className="text-xs text-slate-400">Select the master theme color. Changes apply automatically to all active user sessions instantly.</p>
-                </div>
+                <button
+                  onClick={() => setShowAddThemeModal(true)}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>+ Create New Theme</span>
+                </button>
               </div>
 
               {themeSuccessMsg && (
@@ -726,22 +787,101 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               )}
 
+              {/* Add Theme Modal */}
+              {showAddThemeModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className={`w-full max-w-md p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-900"} shadow-2xl space-y-4`}
+                  >
+                    <h3 className="font-bold text-base">Create New Chat Theme</h3>
+                    <form onSubmit={handleCreateTheme} className="space-y-3">
+                      <div>
+                        <label className="text-xs font-semibold text-slate-400 block mb-1">Theme ID (slug)</label>
+                        <input
+                          type="text"
+                          required
+                          value={newThemeId}
+                          onChange={(e) => setNewThemeId(e.target.value)}
+                          placeholder="e.g. cyber-neon"
+                          className="w-full p-2.5 text-xs rounded-xl border border-slate-700 bg-slate-950 text-slate-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-400 block mb-1">Theme Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={newThemeName}
+                          onChange={(e) => setNewThemeName(e.target.value)}
+                          placeholder="e.g. Cyber Neon"
+                          className="w-full p-2.5 text-xs rounded-xl border border-slate-700 bg-slate-950 text-slate-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-400 block mb-1">Description</label>
+                        <input
+                          type="text"
+                          value={newThemeDesc}
+                          onChange={(e) => setNewThemeDesc(e.target.value)}
+                          placeholder="e.g. Futuristic high contrast neon glow theme"
+                          className="w-full p-2.5 text-xs rounded-xl border border-slate-700 bg-slate-950 text-slate-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-slate-400 block mb-1">Accent Color</label>
+                        <select
+                          value={newThemeAccent}
+                          onChange={(e) => setNewThemeAccent(e.target.value)}
+                          className="w-full p-2.5 text-xs rounded-xl border border-slate-700 bg-slate-950 text-slate-100 cursor-pointer"
+                        >
+                          <option value="indigo">Indigo</option>
+                          <option value="blue">Blue</option>
+                          <option value="emerald">Emerald</option>
+                          <option value="amber">Amber</option>
+                          <option value="rose">Rose</option>
+                          <option value="purple">Purple</option>
+                        </select>
+                      </div>
+                      <div className="flex justify-end gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddThemeModal(false)}
+                          className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 text-xs font-semibold rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 cursor-pointer"
+                        >
+                          Save Theme
+                        </button>
+                      </div>
+                    </form>
+                  </motion.div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-                {[
-                  { id: "dark", name: "Classic Dark Slate", desc: "Deep dark slate with indigo accents", bg: "bg-[#0d1117] border-slate-700 text-slate-100", accent: "bg-indigo-500" },
-                  { id: "light", name: "Clean Light", desc: "Crisp white & clean slate grey UI", bg: "bg-white border-slate-200 text-slate-900", accent: "bg-indigo-600" },
-                  { id: "midnight", name: "Midnight Indigo", desc: "Deep rich indigo blue night theme", bg: "bg-[#0a0f1d] border-indigo-900/50 text-indigo-100", accent: "bg-blue-500" },
-                  { id: "emerald", name: "Emerald Obsidian", desc: "Dark obsidian with emerald highlights", bg: "bg-[#051510] border-emerald-900/50 text-emerald-100", accent: "bg-emerald-500" },
-                  { id: "amber", name: "Sunset Amber", desc: "Warm amber & cozy gold tones", bg: "bg-[#181109] border-amber-900/50 text-amber-100", accent: "bg-amber-500" },
-                  { id: "rose", name: "Rose Velvet", desc: "Luxurious wine and rose velvet theme", bg: "bg-[#1c0c14] border-rose-900/50 text-rose-100", accent: "bg-rose-500" },
-                ].map((preset) => {
+                {themesList.map((preset) => {
                   const isSelected = theme === preset.id;
                   return (
                     <div
                       key={preset.id}
-                      onClick={() => {
+                      onClick={async () => {
                         onThemeChange(preset.id as any);
-                        setThemeSuccessMsg(`Master theme changed to "${preset.name}". Synchronized across all users.`);
+                        try {
+                          await fetch("/api/admin/default-theme", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ themeId: preset.id }),
+                          });
+                        } catch (err) {
+                          console.error("Failed to set default theme", err);
+                        }
+                        setThemeSuccessMsg(`Master theme changed to "${preset.name}". Automatically applied to all users.`);
                         setTimeout(() => setThemeSuccessMsg(null), 4000);
                       }}
                       className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-4 relative overflow-hidden group hover:scale-[1.02] ${
@@ -752,20 +892,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     >
                       {isSelected && (
                         <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-extrabold text-[10px]">
-                          ACTIVE MASTER
+                          DEFAULT MASTER
                         </div>
                       )}
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded-lg ${preset.accent} shadow-md`} />
+                          <div className={`w-6 h-6 rounded-lg bg-${preset.accent || 'indigo'}-500 shadow-md`} />
                           <h4 className="font-bold text-sm">{preset.name}</h4>
                         </div>
-                        <p className="text-xs text-slate-400">{preset.desc}</p>
+                        <p className="text-xs text-slate-400">{preset.desc || "Custom chat theme preset"}</p>
                       </div>
 
-                      <div className={`p-3 rounded-xl border ${preset.bg} text-xs font-semibold flex items-center justify-between`}>
+                      <div className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between ${
+                        preset.id === 'light' ? 'bg-white border-slate-200 text-slate-900' : 'bg-slate-950 border-slate-800 text-slate-100'
+                      }`}>
                         <span>Preview Card</span>
-                        <span className={`w-3 h-3 rounded-full ${preset.accent}`} />
+                        <span className={`w-3 h-3 rounded-full bg-${preset.accent || 'indigo'}-500`} />
                       </div>
                     </div>
                   );

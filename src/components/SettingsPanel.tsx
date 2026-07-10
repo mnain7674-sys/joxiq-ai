@@ -20,8 +20,8 @@ interface SettingsPanelProps {
   onSelectModel: (val: string) => void;
   onReset: () => void;
   userProfile?: { name: string; email: string } | null;
-  theme: "light" | "dark";
-  onToggleTheme: () => void;
+  theme: string;
+  onThemeChange: (theme: string) => void;
 }
 
 const PREBUILT_VOICES = [
@@ -52,9 +52,29 @@ export function SettingsPanel({
   onReset,
   userProfile,
   theme,
-  onToggleTheme,
+  onThemeChange,
 }: SettingsPanelProps) {
   const isOwnerAdmin = userProfile?.email?.toLowerCase() === OWNER_ADMIN_EMAIL.toLowerCase();
+
+  const [themesList, setThemesList] = React.useState<any[]>([
+    { id: "dark", name: "Classic Dark Slate", desc: "Deep dark slate with indigo accents" },
+    { id: "light", name: "Clean Light", desc: "Crisp white & clean slate grey UI" },
+    { id: "midnight", name: "Midnight Indigo", desc: "Deep rich indigo blue night theme" },
+    { id: "emerald", name: "Emerald Obsidian", desc: "Dark obsidian with emerald highlights" },
+    { id: "amber", name: "Sunset Amber", desc: "Warm amber & cozy gold tones" },
+    { id: "rose", name: "Rose Velvet", desc: "Luxurious wine and rose velvet theme" },
+  ]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      fetch("/api/themes")
+        .then(res => res.json())
+        .then(data => {
+          if (data.themes) setThemesList(data.themes);
+        })
+        .catch(err => console.error("Failed to load themes", err));
+    }
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -106,35 +126,42 @@ export function SettingsPanel({
               <div className="space-y-3">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                   <Sun size={16} className="text-indigo-500" />
-                  <span>Theme Color & Appearance</span>
+                  <span>Chat Theme Preference (Personal Account)</span>
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => {
-                      if (theme === "dark") onToggleTheme();
-                    }}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col items-center justify-center gap-2 ${
-                      theme === "light"
-                        ? "border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-200 shadow-sm"
-                        : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-850"
-                    }`}
-                  >
-                    <Sun size={20} className={theme === "light" ? "text-indigo-600" : "text-gray-400"} />
-                    <span className="font-semibold text-xs">Normal / Light</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (theme === "light") onToggleTheme();
-                    }}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col items-center justify-center gap-2 ${
-                      theme === "dark"
-                        ? "border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/50 text-indigo-200 shadow-sm"
-                        : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-gray-850"
-                    }`}
-                  >
-                    <Moon size={20} className={theme === "dark" ? "text-yellow-400" : "text-gray-400"} />
-                    <span className="font-semibold text-xs">Dark Mode</span>
-                  </button>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {themesList.map((t) => {
+                    const isSelected = theme === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={async () => {
+                          onThemeChange(t.id);
+                          if (userProfile?.email) {
+                            try {
+                              await fetch("/api/user/theme", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: userProfile.email, themeId: t.id }),
+                              });
+                            } catch (err) {
+                              console.error("Failed to save user theme preference", err);
+                            }
+                          }
+                        }}
+                        className={`p-3 rounded-xl border cursor-pointer transition-all flex flex-col items-start gap-1 text-left ${
+                          isSelected
+                            ? "border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/50 text-indigo-950 dark:text-indigo-200 shadow-sm ring-1 ring-indigo-500/30"
+                            : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-850"
+                        }`}
+                      >
+                        <span className="font-semibold text-xs flex items-center justify-between w-full">
+                          <span>{t.name}</span>
+                          {isSelected && <span className="w-2 h-2 rounded-full bg-indigo-500" />}
+                        </span>
+                        <span className="text-[10px] text-gray-400 line-clamp-1">{t.desc || t.id}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               {/* AI Model Selector (Admin Only for Pro models, Flash for regular users) */}

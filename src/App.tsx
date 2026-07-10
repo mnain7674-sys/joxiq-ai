@@ -3190,8 +3190,8 @@ export default function App() {
         selectedVoice={selectedVoice}
         onSelectVoice={setSelectedVoice}
         userProfile={userProfile}
-        theme={theme === "light" ? "light" : "dark"}
-        onToggleTheme={toggleTheme}
+        theme={theme}
+        onThemeChange={(newTheme) => setTheme(newTheme as any)}
         selectedModel={activeConversation ? activeConversation.model : "gemini-2.5-flash"}
         onSelectModel={(model) => {
           if (activeConversation) {

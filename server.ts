@@ -406,6 +406,80 @@ app.post("/api/create-checkout-session", async (req, res) => {
 });
 
 /**
+ * Chat Theme Management System API Endpoints
+ */
+let chatThemes = [
+  { id: "dark", name: "Classic Dark Slate", desc: "Deep dark slate with indigo accents", accent: "indigo" },
+  { id: "light", name: "Clean Light", desc: "Crisp white & clean slate grey UI", accent: "indigo" },
+  { id: "midnight", name: "Midnight Indigo", desc: "Deep rich indigo blue night theme", accent: "blue" },
+  { id: "emerald", name: "Emerald Obsidian", desc: "Dark obsidian with emerald highlights", accent: "emerald" },
+  { id: "amber", name: "Sunset Amber", desc: "Warm amber & cozy gold tones", accent: "amber" },
+  { id: "rose", name: "Rose Velvet", desc: "Luxurious wine and rose velvet theme", accent: "rose" },
+];
+let adminDefaultTheme = "dark";
+const userThemePreferences: Record<string, string> = {}; // email -> themeId
+
+app.get("/api/themes", (req, res) => {
+  res.json({ themes: chatThemes, defaultTheme: adminDefaultTheme });
+});
+
+app.post("/api/admin/themes", (req, res) => {
+  try {
+    const { id, name, desc, accent } = req.body;
+    if (!id || !name) {
+      return res.status(400).json({ error: "Theme ID and name are required." });
+    }
+    const existing = chatThemes.find(t => t.id === id);
+    if (existing) {
+      existing.name = name;
+      existing.desc = desc || existing.desc;
+      existing.accent = accent || existing.accent;
+    } else {
+      chatThemes.push({ id, name, desc: desc || "", accent: accent || "indigo" });
+    }
+    res.json({ success: true, themes: chatThemes });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/admin/default-theme", (req, res) => {
+  try {
+    const { themeId } = req.body;
+    if (!themeId) {
+      return res.status(400).json({ error: "Theme ID is required." });
+    }
+    adminDefaultTheme = themeId;
+    res.json({ success: true, defaultTheme: adminDefaultTheme });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/user/theme", (req, res) => {
+  try {
+    const email = req.query.email as string;
+    const themeId = (email && userThemePreferences[email]) || adminDefaultTheme;
+    res.json({ themeId, defaultTheme: adminDefaultTheme });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/user/theme", (req, res) => {
+  try {
+    const { email, themeId } = req.body;
+    if (!email || !themeId) {
+      return res.status(400).json({ error: "Email and themeId are required." });
+    }
+    userThemePreferences[email] = themeId;
+    res.json({ success: true, themeId });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * Start the Express + Vite server
  */
 async function startServer() {
