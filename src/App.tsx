@@ -238,6 +238,7 @@ export default function App() {
   const [activeSpeechMsgId, setActiveSpeechMsgId] = useState<string | null>(null);
   const [isGeneratingTts, setIsGeneratingTts] = useState<boolean>(false);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [viewportOffsetTop, setViewportOffsetTop] = useState<number>(0);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
@@ -245,12 +246,14 @@ export default function App() {
     const handleResize = () => {
       if (window.visualViewport) {
         setViewportHeight(window.visualViewport.height);
+        setViewportOffsetTop(window.visualViewport.offsetTop || 0);
       }
     };
 
     window.visualViewport.addEventListener("resize", handleResize);
     window.visualViewport.addEventListener("scroll", handleResize);
     setViewportHeight(window.visualViewport.height);
+    setViewportOffsetTop(window.visualViewport.offsetTop || 0);
 
     return () => {
       if (window.visualViewport) {
@@ -1240,7 +1243,7 @@ export default function App() {
       className={`relative w-full h-[100dvh] flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
         theme === "dark" ? "bg-[#050b18] text-slate-200 dark" : "bg-[#f4f7fc] text-slate-800"
       }`}
-      style={viewportHeight ? { height: `${viewportHeight}px`, position: 'fixed', top: 0, left: 0, right: 0 } : undefined}
+      style={viewportHeight !== null ? { height: `${viewportHeight}px`, top: `${viewportOffsetTop}px`, position: 'fixed', left: 0, right: 0 } : undefined}
     >
       {/* Mesh Gradient Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
@@ -2369,7 +2372,7 @@ export default function App() {
         </div>
 
         {/* Chat Input Bar area */}
-        <footer className={`sticky bottom-0 left-0 right-0 z-20 p-2 sm:p-4 md:p-6 pb-3 sm:pb-5 flex flex-col items-center shrink-0 border-t ${
+        <footer className={`sticky bottom-0 left-0 right-0 z-20 p-2 sm:p-4 md:p-6 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center shrink-0 border-t ${
           theme === "dark" ? "border-white/5 bg-slate-950/95 backdrop-blur-xl" : "border-slate-200/50 bg-white/95 backdrop-blur-xl"
         }`}>
           <div className="w-full max-w-3xl relative">
