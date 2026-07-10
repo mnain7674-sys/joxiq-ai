@@ -3014,6 +3014,12 @@ export default function App() {
                       users.push(newUser);
                       localStorage.setItem("joxiq_registered_users", JSON.stringify(users));
 
+                      fetch("/api/auth/register-or-login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name, email, isPro: isProUser })
+                      }).catch(err => console.error("Sync user error", err));
+
                       const profile = { name, email };
                       setUserProfile(profile);
                       localStorage.setItem("julkar_user_profile", JSON.stringify(profile));
@@ -3041,6 +3047,11 @@ export default function App() {
                               setUserProfile(data.profile);
                               localStorage.setItem("julkar_user_profile", JSON.stringify(data.profile));
                               setShowAuthModal(false);
+                              fetch("/api/auth/register-or-login", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ name: data.profile.name, email: data.profile.email, isPro: true })
+                              }).catch(err => console.error("Sync admin error", err));
                             } else {
                               setAuthError(data.error || "Invalid admin credentials.");
                             }
@@ -3059,6 +3070,12 @@ export default function App() {
                         setAuthError("Invalid email or password. Please verify your credentials or sign up.");
                         return;
                       }
+
+                      fetch("/api/auth/register-or-login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: found.name, email: found.email, isPro: isProUser })
+                      }).catch(err => console.error("Sync user error", err));
 
                       const profile = { name: found.name, email: found.email };
                       setUserProfile(profile);

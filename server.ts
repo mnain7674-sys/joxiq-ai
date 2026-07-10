@@ -493,39 +493,6 @@ let registeredUsers = [
     lastLogin: "Just now",
     subscriptionStatus: "Pro VIP",
     tokensUsed: "142,500"
-  },
-  {
-    id: "u-2",
-    name: "Jubayer Ahmed",
-    email: "jubayer@example.com",
-    role: "Standard User",
-    status: "Active",
-    createdAt: "2026-03-15",
-    lastLogin: "12m ago",
-    subscriptionStatus: "Free",
-    tokensUsed: "12,400"
-  },
-  {
-    id: "u-3",
-    name: "Sarah Jenkins",
-    email: "sarah.j@example.com",
-    role: "Standard User",
-    status: "Active",
-    createdAt: "2026-04-02",
-    lastLogin: "2h ago",
-    subscriptionStatus: "Pro",
-    tokensUsed: "8,900"
-  },
-  {
-    id: "u-4",
-    name: "Alex Rivera",
-    email: "alex.r@example.com",
-    role: "Standard User",
-    status: "Inactive",
-    createdAt: "2026-05-10",
-    lastLogin: "3d ago",
-    subscriptionStatus: "Free",
-    tokensUsed: "1,200"
   }
 ];
 
