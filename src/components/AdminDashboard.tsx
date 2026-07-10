@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { db } from "../lib/firebase";
-import { collection, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
 
 interface AdminDashboardProps {
   theme: "dark" | "light" | "midnight" | "emerald" | "amber" | "rose";
@@ -204,12 +204,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
     if (confirm(`Are you sure you want to remove user ${email}?`)) {
       try {
+        await deleteDoc(doc(db, "users", id));
         const res = await fetch(`/api/admin/users/${id}`, {
           method: "DELETE",
         });
         const data = await res.json();
         if (data.success && data.users) {
           setUsersList(data.users);
+        } else {
+          setUsersList(prev => prev.filter(u => u.id !== id));
         }
       } catch (err) {
         console.error("Failed to delete user", err);
@@ -221,6 +224,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     e.preventDefault();
     if (!newUserName || !newUserEmail) return;
     try {
+      const now = new Date().toISOString();
+      await setDoc(doc(db, "users", newUserEmail), {
+        id: `u-${Date.now()}`,
+        name: newUserName,
+        email: newUserEmail,
+        role: newUserRole,
+        status: "Active",
+        createdAt: now.split('T')[0],
+        lastLogin: "Just now",
+        subscriptionStatus: newUserSub,
+        tokensUsed: "0"
+      }, { merge: true });
+
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
