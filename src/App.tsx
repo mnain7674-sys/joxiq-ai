@@ -3052,7 +3052,8 @@ export default function App() {
                               localStorage.setItem("julkar_user_profile", JSON.stringify(data.profile));
                               setShowAuthModal(false);
                               syncUserToFirestore({ uid: data.profile.email, email: data.profile.email, displayName: data.profile.name, isPro: true }).catch(err => console.error("Firestore sync admin error", err));
-                              syncUserToFirestore({ uid: found.email, email: found.email, displayName: found.name, isPro: isProUser }).catch(err => console.error("Firestore sync error", err));
+
+
 
                        fetch("/api/auth/register-or-login", {
                                 method: "POST",
