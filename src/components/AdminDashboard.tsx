@@ -28,6 +28,8 @@ import {
   Star
 } from "lucide-react";
 import { motion } from "motion/react";
+import { db } from "../lib/firebase";
+import { collection, getDocs, doc, deleteDoc, updateDoc } from "firebase/firestore";
 
 interface AdminDashboardProps {
   theme: "dark" | "light" | "midnight" | "emerald" | "amber" | "rose";
@@ -116,12 +118,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [userFilter, setUserFilter] = useState<string>("all");
 
   React.useEffect(() => {
-    fetch("/api/admin/users")
-      .then(res => res.json())
-      .then(data => {
-        if (data.users) setUsersList(data.users);
-      })
-      .catch(err => console.error("Failed to load users", err));
+    async function loadUsers() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        const fbUsers: any[] = [];
+        querySnapshot.forEach((docSnap) => {
+          fbUsers.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        if (fbUsers.length > 0) {
+          setUsersList(fbUsers);
+          return;
+        }
+      } catch (err) {
+        console.error("Firestore user fetch error, falling back to API", err);
+      }
+      
+      fetch("/api/admin/users")
+        .then(res => res.json())
+        .then(data => {
+          if (data.users) setUsersList(data.users);
+        })
+        .catch(err => console.error("Failed to load users", err));
+    }
+    loadUsers();
   }, []);
 
   const [auditLogs, setAuditLogs] = useState([

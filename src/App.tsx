@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import { syncUserToFirestore, auth, googleProvider } from "./lib/firebase";
+import { signInWithPopup } from "firebase/auth";
 import {
   Plus,
   Send,
@@ -3014,6 +3016,8 @@ export default function App() {
                       users.push(newUser);
                       localStorage.setItem("joxiq_registered_users", JSON.stringify(users));
 
+                      syncUserToFirestore({ uid: email, email, displayName: name, isPro: isProUser }).catch(err => console.error("Firestore sync error", err));
+
                       fetch("/api/auth/register-or-login", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -3047,7 +3051,10 @@ export default function App() {
                               setUserProfile(data.profile);
                               localStorage.setItem("julkar_user_profile", JSON.stringify(data.profile));
                               setShowAuthModal(false);
-                              fetch("/api/auth/register-or-login", {
+                              syncUserToFirestore({ uid: data.profile.email, email: data.profile.email, displayName: data.profile.name, isPro: true }).catch(err => console.error("Firestore sync admin error", err));
+                              syncUserToFirestore({ uid: found.email, email: found.email, displayName: found.name, isPro: isProUser }).catch(err => console.error("Firestore sync error", err));
+
+                       fetch("/api/auth/register-or-login", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ name: data.profile.name, email: data.profile.email, isPro: true })
