@@ -1214,7 +1214,7 @@ export const EducationalSuite: React.FC<EducationalSuiteProps> = ({ theme, userP
             {isGenerating && (
               <div className="my-auto text-center py-20 space-y-3">
                 <div className="w-10 h-10 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto" />
-                <p className="text-xs text-slate-500 font-medium">Julkar AI Curriculum Designer is building customized tracking boards...</p>
+                <p className="text-xs text-slate-500 font-medium">JOXIQ AI Curriculum Designer is building customized tracking boards...</p>
               </div>
             )}
 

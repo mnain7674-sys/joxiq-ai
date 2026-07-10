@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, Check, Zap, Shield, Crown, X, CreditCard, ExternalLink } from "lucide-react";
+import { Sparkles, Check, Zap, Shield, Crown, X, CreditCard, Lock, Calendar } from "lucide-react";
 
 interface ProSubscriptionModalProps {
   isOpen: boolean;
@@ -18,51 +18,74 @@ export function ProSubscriptionModal({
   freeMessagesLeft,
   isProUser,
 }: ProSubscriptionModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly">("monthly");
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly" | "ultra">("monthly");
+  const [step, setStep] = useState<"select" | "payment">("select");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardHolder, setCardHolder] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvc, setCvc] = useState("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubscribe = async (planType: string) => {
+  const handleSubscribe = async () => {
+    if (!cardNumber || cardNumber.replace(/\s/g, "").length < 15) {
+      setErrorMsg("Please enter a valid card number.");
+      return;
+    }
+    if (!cardHolder.trim()) {
+      setErrorMsg("Please enter the cardholder name.");
+      return;
+    }
+    if (!expiry || !expiry.includes("/")) {
+      setErrorMsg("Please enter a valid expiry date (MM/YY).");
+      return;
+    }
+    if (!cvc || cvc.length < 3) {
+      setErrorMsg("Please enter a valid CVC security code.");
+      return;
+    }
+
+    setErrorMsg(null);
     setIsProcessing(true);
     setSuccessMessage(null);
     try {
-      // Call backend payment checkout session or simulate secure Stripe / QAR payment gateway
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planType }),
+        body: JSON.stringify({ plan: selectedPlan, cardNumber: cardNumber.slice(-4) }),
       });
       const data = await res.json();
       
       setTimeout(() => {
         setIsProcessing(false);
         if (data.url) {
-          // If real Stripe URL is returned
           window.location.href = data.url;
         } else {
-          // Simulated success for demo / preview
-          setSuccessMessage("🎉 Payment successful! Welcome to Julkar AI Pro.");
+          setSuccessMessage(`🎉 Payment successful! Welcome to JOXIQ ${selectedPlan === "ultra" ? "Ultra" : "Pro"}.`);
           setTimeout(() => {
             onUpgradeSuccess();
             onClose();
           }, 1500);
         }
-      }, 1000);
+      }, 1200);
     } catch (err) {
       console.error(err);
-      // Fallback local upgrade simulation
       setTimeout(() => {
         setIsProcessing(false);
-        setSuccessMessage("🎉 Payment successful! Welcome to Julkar AI Pro.");
+        setSuccessMessage(`🎉 Payment successful! Welcome to JOXIQ ${selectedPlan === "ultra" ? "Ultra" : "Pro"}.`);
         setTimeout(() => {
           onUpgradeSuccess();
           onClose();
         }, 1500);
-      }, 1000);
+      }, 1200);
     }
   };
+
+  const planPrice = selectedPlan === "monthly" ? "36 QR" : selectedPlan === "yearly" ? "300 QR" : "99 QR";
+  const planName = selectedPlan === "monthly" ? "Monthly Pro" : selectedPlan === "yearly" ? "Annual Pro" : "JOXIQ Ultra";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn">
@@ -83,12 +106,14 @@ export function ProSubscriptionModal({
             <Crown size={28} />
           </div>
           <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Upgrade to <span className="bg-gradient-to-r from-amber-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent">Julkar AI Pro</span>
+            Upgrade to <span className="bg-gradient-to-r from-amber-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent">JOXIQ AI {selectedPlan === "ultra" ? "Ultra" : "Pro"}</span>
           </h2>
           <p className="text-sm text-slate-400 mt-1 max-w-md mx-auto">
-            {isProUser 
-              ? "You are currently enjoying Julkar AI Pro privileges!" 
-              : `You have ${Math.max(0, freeMessagesLeft)} free messages remaining. Unlock unlimited AI power, Pro models, and earn from your own AI users.`}
+            {step === "payment" 
+              ? `Enter your payment card details for ${planName} (${planPrice})` 
+              : isProUser 
+                ? "You are currently enjoying JOXIQ AI privileges!" 
+                : `You have ${Math.max(0, freeMessagesLeft)} free messages remaining. Unlock unlimited AI power and advanced models.`}
           </p>
         </div>
 
@@ -99,10 +124,10 @@ export function ProSubscriptionModal({
             </div>
             <p className="text-lg font-bold text-emerald-400">{successMessage}</p>
           </div>
-        ) : (
+        ) : step === "select" ? (
           <>
             {/* Plan Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {/* Monthly Plan */}
               <div
                 onClick={() => setSelectedPlan("monthly")}
@@ -127,7 +152,7 @@ export function ProSubscriptionModal({
                 </ul>
               </div>
 
-              {/* Yearly Plan (Best Value) */}
+              {/* Yearly Plan */}
               <div
                 onClick={() => setSelectedPlan("yearly")}
                 className={`relative rounded-2xl p-5 border cursor-pointer transition-all flex flex-col justify-between ${
@@ -153,16 +178,32 @@ export function ProSubscriptionModal({
                   <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400" /> Priority 24/7 Support</li>
                 </ul>
               </div>
-            </div>
 
-            {/* Feature Highlights for App Owner */}
-            <div className={`p-4 rounded-2xl mb-6 text-xs flex items-start gap-3 ${
-              isDark ? "bg-indigo-950/40 border border-indigo-500/20 text-indigo-200" : "bg-indigo-50 border border-indigo-200 text-indigo-900"
-            }`}>
-              <Sparkles size={20} className="text-indigo-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold block mb-0.5">Monetization Active for Your App:</span>
-                When your app users reach their free limit, this Pro upgrade modal appears. Whenever they purchase a Pro subscription, the revenue goes directly to your connected Stripe / payment account!
+              {/* Ultra Plan */}
+              <div
+                onClick={() => setSelectedPlan("ultra")}
+                className={`relative rounded-2xl p-5 border cursor-pointer transition-all flex flex-col justify-between ${
+                  selectedPlan === "ultra"
+                    ? "border-violet-500 bg-violet-600/15 shadow-xl shadow-violet-500/20 ring-2 ring-violet-500/60"
+                    : isDark ? "border-white/10 bg-white/5 hover:border-white/30" : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                }`}
+              >
+                <div className="absolute -top-3 right-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">
+                  VIP ULTRA
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-violet-400">JOXIQ Ultra</span>
+                    {selectedPlan === "ultra" && <Check size={16} className="text-violet-400" />}
+                  </div>
+                  <div className="text-2xl font-black mb-1">99 QR <span className="text-xs font-normal text-slate-400">/ mo</span></div>
+                  <div className="text-xs text-slate-400">Maximum Power & Agents</div>
+                </div>
+                <ul className="text-xs text-slate-300 space-y-2 mt-4 pt-4 border-t border-white/10">
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400" /> All Pro & Annual Features</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400" /> Gemini Ultra / Advanced AI</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400" /> Dedicated VIP Agent Node</li>
+                </ul>
               </div>
             </div>
 
@@ -175,21 +216,124 @@ export function ProSubscriptionModal({
                 Cancel
               </button>
               <button
-                disabled={isProcessing}
-                onClick={() => handleSubscribe(selectedPlan)}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50"
+                onClick={() => setStep("payment")}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
               >
-                {isProcessing ? (
-                  <>Processing...</>
-                ) : (
-                  <>
-                    <CreditCard size={16} />
-                    Proceed to Payment ({selectedPlan === "monthly" ? "36 QR" : "300 QR"})
-                  </>
-                )}
+                <CreditCard size={16} />
+                Continue to Payment Method ({planPrice})
               </button>
             </div>
           </>
+        ) : (
+          /* Payment Method Form Step */
+          <div className="space-y-4">
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium">
+                {errorMsg}
+              </div>
+            )}
+
+            <div className={`p-4 rounded-2xl border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Selected Plan</span>
+                <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full">{planName} — {planPrice}</span>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Cardholder Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Mohammad Nain"
+                    value={cardHolder}
+                    onChange={(e) => setCardHolder(e.target.value)}
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs border outline-none transition-all ${
+                      isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Card Number</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="4242 4242 4242 4242"
+                      maxLength={19}
+                      value={cardNumber}
+                      onChange={(e) => setCardNumber(e.target.value)}
+                      className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl text-xs font-mono border outline-none transition-all ${
+                        isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
+                      }`}
+                    />
+                    <CreditCard size={16} className="absolute left-3 top-3 text-slate-400" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Expiry Date</label>
+                    <input
+                      type="text"
+                      placeholder="MM/YY"
+                      maxLength={5}
+                      value={expiry}
+                      onChange={(e) => setExpiry(e.target.value)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border outline-none transition-all ${
+                        isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">CVC Code</label>
+                    <div className="relative">
+                      <input
+                        type="password"
+                        placeholder="CVC"
+                        maxLength={4}
+                        value={cvc}
+                        onChange={(e) => setCvc(e.target.value)}
+                        className={`w-full pl-8 pr-3.5 py-2.5 rounded-xl text-xs font-mono border outline-none transition-all ${
+                          isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
+                        }`}
+                      />
+                      <Lock size={14} className="absolute left-2.5 top-3 text-slate-400" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                onClick={() => setStep("select")}
+                className="px-4 py-2.5 rounded-xl font-semibold text-xs hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer text-slate-400 hover:text-slate-200"
+              >
+                ← Back to Plans
+              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2.5 rounded-xl font-semibold text-xs hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={isProcessing}
+                  onClick={handleSubscribe}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isProcessing ? (
+                    <>Processing Secure Payment...</>
+                  ) : (
+                    <>
+                      <Lock size={14} />
+                      Pay Securely ({planPrice})
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

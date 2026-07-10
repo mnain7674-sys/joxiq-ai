@@ -196,7 +196,7 @@ export default function App() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Julkar AI Response",
+          title: "JOXIQ AI Response",
           text: msg.content,
         });
       } catch (err) {
