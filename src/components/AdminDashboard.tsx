@@ -112,12 +112,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const isDark = theme !== "light";
 
   // User directory for admin management
-  const [usersList, setUsersList] = useState([
-    { id: "u-1", name: "Owner Admin", email: "mnain7674@gmail.com", role: "Owner Admin", status: "Active", lastLogin: "Just now", tokensUsed: "142,500" },
-    { id: "u-2", name: "Jubayer Ahmed", email: "jubayer@example.com", role: "Standard User", status: "Active", lastLogin: "12m ago", tokensUsed: "12,400" },
-    { id: "u-3", name: "Sarah Jenkins", email: "sarah.j@example.com", role: "Standard User", status: "Active", lastLogin: "2h ago", tokensUsed: "8,900" },
-    { id: "u-4", name: "Alex Rivera", email: "alex.r@example.com", role: "Standard User", status: "Inactive", lastLogin: "3d ago", tokensUsed: "1,200" },
-  ]);
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [userFilter, setUserFilter] = useState<string>("all");
+
+  React.useEffect(() => {
+    fetch("/api/admin/users")
+      .then(res => res.json())
+      .then(data => {
+        if (data.users) setUsersList(data.users);
+      })
+      .catch(err => console.error("Failed to load users", err));
+  }, []);
 
   const [auditLogs, setAuditLogs] = useState([
     { id: "log-1", time: "11:42 AM", user: "mnain7674@gmail.com", action: "SECURITY_AUDIT_RAN", status: "SUCCESS", ip: "192.168.1.45" },
@@ -130,6 +135,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserRole, setNewUserRole] = useState("Standard User");
+  const [newUserSub, setNewUserSub] = useState("Free");
 
   const handleRunAudit = () => {
     const newLog = {
@@ -155,49 +161,79 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     downloadAnchor.remove();
   };
 
-  const handleToggleUserStatus = (id: string) => {
-    setUsersList(usersList.map(u => {
-      if (u.id === id) {
-        if (u.email === "mnain7674@gmail.com") return u; // Cannot disable owner admin
-        const nextStatus = u.status === "Active" ? "Inactive" : "Active";
-        return { ...u, status: nextStatus };
+  const handleToggleUserStatus = async (id: string, email: string) => {
+    if (email === "mnain7674@gmail.com") return;
+    try {
+      const res = await fetch(`/api/admin/users/${id}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.success && data.users) {
+        setUsersList(data.users);
       }
-      return u;
-    }));
+    } catch (err) {
+      console.error("Failed to toggle status", err);
+    }
   };
 
-  const handleDeleteUser = (id: string, email: string) => {
+  const handleDeleteUser = async (id: string, email: string) => {
     if (email === "mnain7674@gmail.com") {
       alert("Cannot delete master owner admin account.");
       return;
     }
     if (confirm(`Are you sure you want to remove user ${email}?`)) {
-      setUsersList(usersList.filter(u => u.id !== id));
+      try {
+        const res = await fetch(`/api/admin/users/${id}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+        if (data.success && data.users) {
+          setUsersList(data.users);
+        }
+      } catch (err) {
+        console.error("Failed to delete user", err);
+      }
     }
   };
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserName || !newUserEmail) return;
-    const newUser = {
-      id: `u-${Date.now()}`,
-      name: newUserName,
-      email: newUserEmail,
-      role: newUserRole,
-      status: "Active",
-      lastLogin: "Just now",
-      tokensUsed: "0"
-    };
-    setUsersList([...usersList, newUser]);
-    setNewUserName("");
-    setNewUserEmail("");
-    setShowAddUserModal(false);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newUserName,
+          email: newUserEmail,
+          role: newUserRole,
+          subscriptionStatus: newUserSub,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.users) {
+        setUsersList(data.users);
+        setNewUserName("");
+        setNewUserEmail("");
+        setShowAddUserModal(false);
+      }
+    } catch (err) {
+      console.error("Failed to add user", err);
+    }
   };
 
-  const filteredUsers = usersList.filter(u => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = usersList.filter(u => {
+    const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          u.email.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+    if (userFilter === "active") return u.status === "Active";
+    if (userFilter === "inactive") return u.status === "Inactive";
+    if (userFilter === "pro") return u.subscriptionStatus?.toLowerCase().includes("pro");
+    if (userFilter === "free") return u.subscriptionStatus?.toLowerCase().includes("free");
+    return true;
+  });
 
   return (
     <div className={`min-h-screen ${isDark ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"} font-sans flex flex-col`}>
@@ -336,13 +372,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Tab 2: Users & Roles */}
         {activeTab === "users" && (
-          <div className={`rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} overflow-hidden`}>
+          <div className={`rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} overflow-hidden space-y-4`}>
             <div className="p-5 border-b border-slate-500/10 flex items-center justify-between flex-wrap gap-4">
               <div>
-                <h2 className="font-bold text-sm">User Directory & Role Authorization</h2>
-                <p className="text-xs text-slate-400">Manage user accounts, permissions, and administrative access privileges.</p>
+                <div className="flex items-center gap-3">
+                  <h2 className="font-bold text-sm">User Directory & Role Authorization</h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 font-mono font-bold text-xs border border-indigo-500/30">
+                    Total Registered: {usersList.length}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">Manage user accounts, creation dates, last login times, and subscription statuses securely.</p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Filter Selector */}
+                <select
+                  value={userFilter}
+                  onChange={(e) => setUserFilter(e.target.value)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold ${isDark ? "bg-slate-950 border-slate-800 text-slate-200" : "bg-slate-100 border-slate-200 text-slate-800"} cursor-pointer`}
+                >
+                  <option value="all">Filter: All Users</option>
+                  <option value="active">Active Status</option>
+                  <option value="inactive">Inactive Status</option>
+                  <option value="pro">Pro Subscribers</option>
+                  <option value="free">Free Tier</option>
+                </select>
+
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${isDark ? "bg-slate-950 border-slate-800" : "bg-slate-100 border-slate-200"}`}>
                   <Search size={14} className="text-slate-400" />
                   <input
@@ -365,7 +419,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Add User Modal / Panel */}
             {showAddUserModal && (
-              <div className="p-4 border-b border-indigo-500/20 bg-indigo-500/5">
+              <div className="p-4 border-b border-indigo-500/20 bg-indigo-500/5 mx-5 rounded-xl">
                 <form onSubmit={handleAddUser} className="flex flex-col sm:flex-row items-center gap-3">
                   <input
                     type="text"
@@ -392,6 +446,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <option value="Pro User">Pro User</option>
                     <option value="Moderator">Moderator</option>
                   </select>
+                  <select
+                    value={newUserSub}
+                    onChange={(e) => setNewUserSub(e.target.value)}
+                    className={`p-2 rounded-xl border text-xs ${isDark ? "bg-slate-950 border-slate-800 text-slate-100" : "bg-white border-slate-200 text-slate-800"}`}
+                  >
+                    <option value="Free">Free</option>
+                    <option value="Pro">Pro</option>
+                    <option value="Pro VIP">Pro VIP</option>
+                  </select>
                   <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                     <button
                       type="button"
@@ -416,10 +479,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <thead>
                   <tr className={`border-b text-xs font-semibold uppercase tracking-wider ${isDark ? "border-slate-800 text-slate-400 bg-slate-950/50" : "border-slate-200 text-slate-500 bg-slate-50"}`}>
                     <th className="py-3.5 px-6">User / Email</th>
-                    <th className="py-3.5 px-6">Assigned Role</th>
+                    <th className="py-3.5 px-6">Subscription</th>
+                    <th className="py-3.5 px-6">Created Date</th>
+                    <th className="py-3.5 px-6">Last Login</th>
                     <th className="py-3.5 px-6">Status</th>
-                    <th className="py-3.5 px-6">Token Usage</th>
-                    <th className="py-3.5 px-6">Last Active</th>
                     <th className="py-3.5 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -431,19 +494,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="text-[11px] text-slate-400 font-mono">{user.email}</div>
                       </td>
                       <td className="py-4 px-6">
-                        {user.role === "Owner Admin" ? (
-                          <span className="px-2 py-1 rounded bg-amber-500/10 text-amber-500 border border-amber-500/30 font-bold text-[10px]">
-                            👑 Owner Admin
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium text-[10px]">
-                            {user.role}
-                          </span>
-                        )}
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          user.subscriptionStatus?.includes("Pro")
+                            ? "bg-amber-500/10 text-amber-500 border border-amber-500/30"
+                            : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                        }`}>
+                          {user.subscriptionStatus || "Free"}
+                        </span>
                       </td>
+                      <td className="py-4 px-6 font-mono text-slate-300">{user.createdAt || "2026-01-01"}</td>
+                      <td className="py-4 px-6 text-slate-400">{user.lastLogin || "Just now"}</td>
                       <td className="py-4 px-6">
                         <button
-                          onClick={() => handleToggleUserStatus(user.id)}
+                          onClick={() => handleToggleUserStatus(user.id, user.email)}
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold cursor-pointer transition-all ${user.status === "Active" ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" : "bg-slate-500/10 text-slate-400 hover:bg-slate-500/20"}`}
                           title="Click to toggle status"
                         >
@@ -451,13 +514,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {user.status}
                         </button>
                       </td>
-                      <td className="py-4 px-6 font-mono font-medium">{user.tokensUsed}</td>
-                      <td className="py-4 px-6 text-slate-400">{user.lastLogin}</td>
                       <td className="py-4 px-6 text-right flex items-center justify-end gap-2">
                         {user.email !== "mnain7674@gmail.com" ? (
                           <>
                             <button
-                              onClick={() => alert(`User config for ${user.email}:\n- Reset Password\n- Revoke Session\n- Upgrade to Pro`)}
+                              onClick={() => alert(`User Details for ${user.email}:\n- Role: ${user.role || 'Standard'}\n- Tokens Used: ${user.tokensUsed || '0'}\n- Status: ${user.status}`)}
                               className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] transition-colors cursor-pointer"
                             >
                               Configure
@@ -471,7 +532,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             </button>
                           </>
                         ) : (
-                          <span className="text-[11px] text-amber-500 font-medium italic">Immutable</span>
+                          <span className="text-[11px] text-amber-500 font-medium italic">Immutable Admin</span>
                         )}
                       </td>
                     </tr>

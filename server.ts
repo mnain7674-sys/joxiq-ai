@@ -480,6 +480,153 @@ app.post("/api/user/theme", (req, res) => {
 });
 
 /**
+ * Admin User Management System API Endpoints
+ */
+let registeredUsers = [
+  {
+    id: "u-1",
+    name: "Owner Admin",
+    email: "mnain7674@gmail.com",
+    role: "Owner Admin",
+    status: "Active",
+    createdAt: "2026-01-01",
+    lastLogin: "Just now",
+    subscriptionStatus: "Pro VIP",
+    tokensUsed: "142,500"
+  },
+  {
+    id: "u-2",
+    name: "Jubayer Ahmed",
+    email: "jubayer@example.com",
+    role: "Standard User",
+    status: "Active",
+    createdAt: "2026-03-15",
+    lastLogin: "12m ago",
+    subscriptionStatus: "Free",
+    tokensUsed: "12,400"
+  },
+  {
+    id: "u-3",
+    name: "Sarah Jenkins",
+    email: "sarah.j@example.com",
+    role: "Standard User",
+    status: "Active",
+    createdAt: "2026-04-02",
+    lastLogin: "2h ago",
+    subscriptionStatus: "Pro",
+    tokensUsed: "8,900"
+  },
+  {
+    id: "u-4",
+    name: "Alex Rivera",
+    email: "alex.r@example.com",
+    role: "Standard User",
+    status: "Inactive",
+    createdAt: "2026-05-10",
+    lastLogin: "3d ago",
+    subscriptionStatus: "Free",
+    tokensUsed: "1,200"
+  }
+];
+
+app.get("/api/admin/users", (req, res) => {
+  res.json({ users: registeredUsers, totalCount: registeredUsers.length });
+});
+
+app.post("/api/admin/users", (req, res) => {
+  try {
+    const { name, email, role, subscriptionStatus } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: "Name and email are required." });
+    }
+    const existing = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      existing.name = name;
+      existing.role = role || existing.role;
+      existing.subscriptionStatus = subscriptionStatus || existing.subscriptionStatus;
+    } else {
+      registeredUsers.push({
+        id: `u-${Date.now()}`,
+        name,
+        email,
+        role: role || "Standard User",
+        status: "Active",
+        createdAt: new Date().toISOString().split('T')[0],
+        lastLogin: "Just now",
+        subscriptionStatus: subscriptionStatus || "Free",
+        tokensUsed: "0"
+      });
+    }
+    res.json({ success: true, users: registeredUsers, totalCount: registeredUsers.length });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/auth/register-or-login", (req, res) => {
+  try {
+    const { name, email, isPro } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+    const existing = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const nowStr = "Just now";
+    if (existing) {
+      existing.lastLogin = nowStr;
+      if (name) existing.name = name;
+      if (isPro) existing.subscriptionStatus = "Pro";
+    } else {
+      registeredUsers.push({
+        id: `u-${Date.now()}`,
+        name: name || email.split('@')[0],
+        email,
+        role: email.toLowerCase() === "mnain7674@gmail.com" ? "Owner Admin" : "Standard User",
+        status: "Active",
+        createdAt: new Date().toISOString().split('T')[0],
+        lastLogin: nowStr,
+        subscriptionStatus: isPro ? "Pro" : "Free",
+        tokensUsed: "150"
+      });
+    }
+    res.json({ success: true, users: registeredUsers, totalCount: registeredUsers.length });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/admin/users/:id/status", (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const user = registeredUsers.find(u => u.id === id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (user.email === "mnain7674@gmail.com") {
+      return res.status(400).json({ error: "Cannot modify master owner admin account status." });
+    }
+    user.status = status || (user.status === "Active" ? "Inactive" : "Active");
+    res.json({ success: true, users: registeredUsers });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/admin/users/:id", (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = registeredUsers.find(u => u.id === id);
+    if (user && user.email === "mnain7674@gmail.com") {
+      return res.status(400).json({ error: "Cannot delete master owner admin account." });
+    }
+    registeredUsers = registeredUsers.filter(u => u.id !== id);
+    res.json({ success: true, users: registeredUsers, totalCount: registeredUsers.length });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * Start the Express + Vite server
  */
 async function startServer() {
