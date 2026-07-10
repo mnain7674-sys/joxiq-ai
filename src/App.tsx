@@ -411,7 +411,7 @@ export default function App() {
 
   // Auto scroll logic
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   };
 
   useEffect(() => {
@@ -1856,7 +1856,7 @@ export default function App() {
         </div>
 
         {/* Message container */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-24 py-4 md:py-6 space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-24 py-4 md:py-6 space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
           {!activeConversation || activeConversation.messages.length === 0 ? (
             /* Starter welcome dashboard */
             <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-4 px-4 space-y-4 my-auto">
@@ -2334,7 +2334,7 @@ export default function App() {
         </div>
 
         {/* Chat Input Bar area */}
-        <footer className={`sticky bottom-0 z-20 p-2 sm:p-4 md:p-6 pb-3 sm:pb-5 flex flex-col items-center shrink-0 border-t ${
+        <footer className={`sticky bottom-0 left-0 right-0 z-20 p-2 sm:p-4 md:p-6 pb-3 sm:pb-5 flex flex-col items-center shrink-0 border-t ${
           theme === "dark" ? "border-white/5 bg-slate-950/95 backdrop-blur-xl" : "border-slate-200/50 bg-white/95 backdrop-blur-xl"
         }`}>
           <div className="w-full max-w-3xl relative">
