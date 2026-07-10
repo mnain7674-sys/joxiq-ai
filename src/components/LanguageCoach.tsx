@@ -505,13 +505,13 @@ Please explain step by step in ${nativeLang}, give clear examples in ${selectedL
 
               <div className={`p-4 md:p-5 rounded-2xl text-xs md:text-sm leading-relaxed shadow-sm ${
                 msg.role === "user"
-                  ? "bg-indigo-600 text-white rounded-tr-none max-w-xl"
+                  ? "bg-indigo-600 text-white rounded-tr-none max-w-xl font-medium"
                   : theme === "dark"
-                    ? "bg-slate-900 border border-white/10 text-slate-200 rounded-tl-none max-w-2xl"
-                    : "bg-white border border-slate-200 text-slate-800 rounded-tl-none max-w-2xl"
+                    ? "bg-slate-900 border border-white/20 text-slate-100 rounded-tl-none max-w-2xl"
+                    : "bg-white border border-slate-200 text-slate-900 rounded-tl-none max-w-2xl"
               }`}>
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-invert max-w-none">
+                  <div className={`prose prose-invert max-w-none ${theme === "dark" ? "text-slate-100 font-normal" : "text-slate-900"}`}>
                     <Markdown>{msg.content}</Markdown>
                   </div>
                 ) : (
@@ -1009,7 +1009,7 @@ Please explain step by step in ${nativeLang}, give clear examples in ${selectedL
 
           {aiResponse && (
             <div className={`p-6 rounded-2xl border space-y-4 ${
-              theme === "dark" ? "bg-black/40 border-indigo-500/30 text-slate-200" : "bg-indigo-50/40 border-indigo-200 text-slate-800"
+              theme === "dark" ? "bg-black/40 border-indigo-500/30 text-slate-100" : "bg-indigo-50/40 border-indigo-200 text-slate-900"
             }`}>
               <div className="flex items-center justify-between border-b pb-3 border-indigo-500/20">
                 <div className="flex items-center gap-2 font-bold text-xs text-indigo-400">
@@ -1023,7 +1023,7 @@ Please explain step by step in ${nativeLang}, give clear examples in ${selectedL
                   Clear
                 </button>
               </div>
-              <div className="prose prose-invert max-w-none text-xs md:text-sm leading-relaxed">
+              <div className={`prose prose-invert max-w-none text-xs md:text-sm leading-relaxed ${theme === "dark" ? "text-slate-100" : "text-slate-900"}`}>
                 <Markdown>{aiResponse}</Markdown>
               </div>
             </div>
