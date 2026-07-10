@@ -19,6 +19,7 @@ export function ProSubscriptionModal({
   isProUser,
 }: ProSubscriptionModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly" | "ultra">("monthly");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"visa" | "mastercard" | "amex" | "apple_pay" | "google_pay" | "paypal">("visa");
   const [step, setStep] = useState<"select" | "payment">("select");
   const [cardNumber, setCardNumber] = useState("");
   const [cardHolder, setCardHolder] = useState("");
@@ -31,21 +32,23 @@ export function ProSubscriptionModal({
   if (!isOpen) return null;
 
   const handleSubscribe = async () => {
-    if (!cardNumber || cardNumber.replace(/\s/g, "").length < 15) {
-      setErrorMsg("Please enter a valid card number.");
-      return;
-    }
-    if (!cardHolder.trim()) {
-      setErrorMsg("Please enter the cardholder name.");
-      return;
-    }
-    if (!expiry || !expiry.includes("/")) {
-      setErrorMsg("Please enter a valid expiry date (MM/YY).");
-      return;
-    }
-    if (!cvc || cvc.length < 3) {
-      setErrorMsg("Please enter a valid CVC security code.");
-      return;
+    if (selectedPaymentMethod === "visa" || selectedPaymentMethod === "mastercard" || selectedPaymentMethod === "amex") {
+      if (!cardNumber || cardNumber.replace(/\s/g, "").length < 15) {
+        setErrorMsg("Please enter a valid card number.");
+        return;
+      }
+      if (!cardHolder.trim()) {
+        setErrorMsg("Please enter the cardholder name.");
+        return;
+      }
+      if (!expiry || !expiry.includes("/")) {
+        setErrorMsg("Please enter a valid expiry date (MM/YY).");
+        return;
+      }
+      if (!cvc || cvc.length < 3) {
+        setErrorMsg("Please enter a valid CVC security code.");
+        return;
+      }
     }
 
     setErrorMsg(null);
@@ -55,7 +58,7 @@ export function ProSubscriptionModal({
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: selectedPlan, cardNumber: cardNumber.slice(-4) }),
+        body: JSON.stringify({ plan: selectedPlan, paymentMethod: selectedPaymentMethod, cardNumber: cardNumber.slice(-4) }),
       });
       const data = await res.json();
       
@@ -64,7 +67,7 @@ export function ProSubscriptionModal({
         if (data.url) {
           window.location.href = data.url;
         } else {
-          setSuccessMessage(`🎉 Payment successful! Welcome to JOXIQ ${selectedPlan === "ultra" ? "Ultra" : "Pro"}.`);
+          setSuccessMessage(`🎉 Payment successful via ${selectedPaymentMethod.replace('_', ' ').toUpperCase()}! Welcome to JOXIQ ${selectedPlan === "ultra" ? "Ultra" : "Pro"}.`);
           setTimeout(() => {
             onUpgradeSuccess();
             onClose();
@@ -75,7 +78,7 @@ export function ProSubscriptionModal({
       console.error(err);
       setTimeout(() => {
         setIsProcessing(false);
-        setSuccessMessage(`🎉 Payment successful! Welcome to JOXIQ ${selectedPlan === "ultra" ? "Ultra" : "Pro"}.`);
+        setSuccessMessage(`🎉 Payment successful via ${selectedPaymentMethod.replace('_', ' ').toUpperCase()}! Welcome to JOXIQ ${selectedPlan === "ultra" ? "Ultra" : "Pro"}.`);
         setTimeout(() => {
           onUpgradeSuccess();
           onClose();
@@ -233,74 +236,121 @@ export function ProSubscriptionModal({
               </div>
             )}
 
+            {/* Payment Method Selector */}
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Select Payment Method</label>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {[
+                  { id: "visa", label: "Visa", icon: "💳" },
+                  { id: "mastercard", label: "Mastercard", icon: "💳" },
+                  { id: "amex", label: "Amex", icon: "💳" },
+                  { id: "apple_pay", label: "Apple Pay", icon: "" },
+                  { id: "google_pay", label: "Google Pay", icon: "G" },
+                  { id: "paypal", label: "PayPal", icon: "P" },
+                ].map((method) => (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPaymentMethod(method.id as any);
+                      setErrorMsg(null);
+                    }}
+                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      selectedPaymentMethod === method.id
+                        ? "border-indigo-500 bg-indigo-600/20 text-indigo-300 shadow-md ring-2 ring-indigo-500/40"
+                        : isDark ? "border-white/10 bg-white/5 hover:border-white/20 text-slate-300" : "border-slate-200 bg-slate-50 hover:border-slate-300 text-slate-700"
+                    }`}
+                  >
+                    <span className="text-base mb-1">{method.icon}</span>
+                    <span className="text-[10px] truncate max-w-full">{method.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className={`p-4 rounded-2xl border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Selected Plan</span>
                 <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full">{planName} — {planPrice}</span>
               </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Cardholder Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Mohammad Nain"
-                    value={cardHolder}
-                    onChange={(e) => setCardHolder(e.target.value)}
-                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs border outline-none transition-all ${
-                      isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
-                    }`}
-                  />
-                </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Card Number</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="4242 4242 4242 4242"
-                      maxLength={19}
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl text-xs font-mono border outline-none transition-all ${
-                        isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
-                      }`}
-                    />
-                    <CreditCard size={16} className="absolute left-3 top-3 text-slate-400" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+              {(selectedPaymentMethod === "visa" || selectedPaymentMethod === "mastercard" || selectedPaymentMethod === "amex") ? (
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Expiry Date</label>
+                    <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Cardholder Name</label>
                     <input
                       type="text"
-                      placeholder="MM/YY"
-                      maxLength={5}
-                      value={expiry}
-                      onChange={(e) => setExpiry(e.target.value)}
-                      className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border outline-none transition-all ${
+                      placeholder="e.g. Mohammad Nain"
+                      value={cardHolder}
+                      onChange={(e) => setCardHolder(e.target.value)}
+                      className={`w-full px-3.5 py-2.5 rounded-xl text-xs border outline-none transition-all ${
                         isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
                       }`}
                     />
                   </div>
+
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">CVC Code</label>
+                    <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">{selectedPaymentMethod.toUpperCase()} Card Number</label>
                     <div className="relative">
                       <input
-                        type="password"
-                        placeholder="CVC"
-                        maxLength={4}
-                        value={cvc}
-                        onChange={(e) => setCvc(e.target.value)}
-                        className={`w-full pl-8 pr-3.5 py-2.5 rounded-xl text-xs font-mono border outline-none transition-all ${
+                        type="text"
+                        placeholder="4242 4242 4242 4242"
+                        maxLength={19}
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
+                        className={`w-full pl-9 pr-3.5 py-2.5 rounded-xl text-xs font-mono border outline-none transition-all ${
                           isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
                         }`}
                       />
-                      <Lock size={14} className="absolute left-2.5 top-3 text-slate-400" />
+                      <CreditCard size={16} className="absolute left-3 top-3 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Expiry Date</label>
+                      <input
+                        type="text"
+                        placeholder="MM/YY"
+                        maxLength={5}
+                        value={expiry}
+                        onChange={(e) => setExpiry(e.target.value)}
+                        className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-mono border outline-none transition-all ${
+                          isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">CVC Code</label>
+                      <div className="relative">
+                        <input
+                          type="password"
+                          placeholder="CVC"
+                          maxLength={4}
+                          value={cvc}
+                          onChange={(e) => setCvc(e.target.value)}
+                          className={`w-full pl-8 pr-3.5 py-2.5 rounded-xl text-xs font-mono border outline-none transition-all ${
+                            isDark ? "bg-black/30 border-white/15 focus:border-indigo-500 text-white" : "bg-white border-slate-300 focus:border-indigo-600 text-slate-900"
+                          }`}
+                        />
+                        <Lock size={14} className="absolute left-2.5 top-3 text-slate-400" />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="py-6 text-center space-y-2">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-500/10 text-indigo-400 mb-1">
+                    <Shield size={22} />
+                  </div>
+                  <div className="text-sm font-bold capitalize">
+                    {selectedPaymentMethod === "apple_pay" ? "Apple Pay" : selectedPaymentMethod === "google_pay" ? "Google Pay" : "PayPal"} Checkout
+                  </div>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                    You will be securely redirected to authorize your {selectedPaymentMethod === "apple_pay" ? "Apple Pay" : selectedPaymentMethod === "google_pay" ? "Google Pay" : "PayPal"} payment of <span className="font-bold text-white">{planPrice}</span>.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
