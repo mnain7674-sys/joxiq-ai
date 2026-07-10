@@ -30,7 +30,8 @@ import {
   ArrowLeft,
   Clock,
   Zap,
-  GraduationCap
+  GraduationCap,
+  Search
 } from "lucide-react";
 import Markdown from "react-markdown";
 
@@ -156,9 +157,18 @@ export const LanguageCoach: React.FC<LanguageCoachProps> = ({
   const [nativeLang, setNativeLang] = useState<string>(() => {
     return localStorage.getItem("joxiq_native_lang") || "English";
   });
-  const [showNativeModal, setShowNativeModal] = useState<boolean>(() => {
-    return !localStorage.getItem("joxiq_native_lang");
+
+  // Onboarding Wizard States
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    return localStorage.getItem("joxiq_onboarding_completed") !== "true";
   });
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2>(1);
+  const [tempLearningLang, setTempLearningLang] = useState<string>("Spanish");
+  const [tempNativeLang, setTempNativeLang] = useState<string>("English");
+  const [searchQueryLearn, setSearchQueryLearn] = useState("");
+  const [searchQueryNative, setSearchQueryNative] = useState("");
+
+  const [showNativeModal, setShowNativeModal] = useState<boolean>(false);
   const [customNativeInput, setCustomNativeInput] = useState("");
   const [showCustomNativeModal, setShowCustomNativeModal] = useState(false);
 
@@ -592,42 +602,29 @@ Please explain step by step in ${nativeLang}, give clear examples in ${selectedL
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Native Language Button */}
+            {/* Change Language Settings Button */}
             <button
-              onClick={() => setShowNativeModal(true)}
+              onClick={() => {
+                setTempLearningLang(selectedLang);
+                setTempNativeLang(nativeLang);
+                setOnboardingStep(1);
+                setShowOnboarding(true);
+              }}
               className={`px-4 py-3 rounded-2xl font-bold text-xs shadow-md border cursor-pointer outline-none transition-all flex items-center gap-2 ${
                 theme === "dark" 
                   ? "bg-slate-900 border-white/10 text-white hover:bg-slate-800" 
                   : "bg-white border-indigo-200 text-slate-800 hover:bg-slate-50"
               }`}
             >
-              <span>🗣️ Native: {nativeLang}</span>
-              <span className="text-[10px] text-indigo-400 font-extrabold underline">Change</span>
+              <span>⚙️ Change Language Settings</span>
             </button>
 
-            {/* Language Selector Dropdown */}
-            <select
-              value={selectedLang}
-              onChange={(e) => {
-                if (e.target.value === "custom") {
-                  setShowCustomModal(true);
-                } else {
-                  setSelectedLang(e.target.value);
-                }
-              }}
-              className={`px-4 py-3 rounded-2xl font-bold text-xs shadow-md border cursor-pointer outline-none transition-all ${
-                theme === "dark" 
-                  ? "bg-slate-900 border-white/10 text-white hover:bg-slate-800" 
-                  : "bg-white border-indigo-200 text-slate-800 hover:bg-slate-50"
-              }`}
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l.name} value={l.name}>
-                  {l.flag} {l.name} ({l.native})
-                </option>
-              ))}
-              <option value="custom">➕ Add Other Language...</option>
-            </select>
+            {/* Native Language Display */}
+            <div className={`px-4 py-3 rounded-2xl font-bold text-xs shadow-md border flex items-center gap-2 ${
+              theme === "dark" ? "bg-slate-900/60 border-white/10 text-slate-300" : "bg-white/80 border-indigo-200 text-slate-700"
+            }`}>
+              <span>🗣️ Teaching in: <strong>{nativeLang}</strong></span>
+            </div>
           </div>
         </div>
       </div>
@@ -1216,6 +1213,148 @@ Please explain step by step in ${nativeLang}, give clear examples in ${selectedL
                 Start Learning
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2-Step Onboarding Wizard Modal */}
+      {showOnboarding && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className={`w-full max-w-xl p-8 rounded-3xl border shadow-2xl space-y-6 relative overflow-hidden ${
+            theme === "dark" ? "bg-slate-900 border-indigo-500/30 text-white" : "bg-white border-indigo-200 text-slate-900"
+          }`}>
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+            
+            {onboardingStep === 1 ? (
+              <div className="space-y-6">
+                <div className="space-y-2 text-center">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-400">Step 1 of 2</span>
+                  <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+                    Which language would you like to learn?
+                  </h3>
+                  <p className={`text-xs md:text-sm ${theme === "dark" ? "text-slate-300" : "text-slate-600"}`}>
+                    Choose from popular languages or search below to start your immersive AI lessons.
+                  </p>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative">
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQueryLearn}
+                    onChange={(e) => setSearchQueryLearn(e.target.value)}
+                    placeholder="Search languages (e.g. Japanese, French, Arabic...)"
+                    className={`w-full pl-11 pr-4 py-3.5 rounded-2xl border text-xs md:text-sm outline-none transition-all ${
+                      theme === "dark" ? "bg-black/40 border-white/10 text-white placeholder-slate-500 focus:border-indigo-500" : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500"
+                    }`}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-1">
+                  {LANGUAGES
+                    .filter(l => l.name.toLowerCase().includes(searchQueryLearn.toLowerCase()) || l.native.toLowerCase().includes(searchQueryLearn.toLowerCase()))
+                    .map((l) => (
+                      <button
+                        key={l.name}
+                        onClick={() => setTempLearningLang(l.name)}
+                        className={`p-3.5 rounded-2xl border text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${
+                          tempLearningLang === l.name
+                            ? "bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-400/50"
+                            : theme === "dark" ? "bg-white/[0.03] border-white/10 hover:bg-white/[0.08]" : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span className="text-xl">{l.flag}</span>
+                        <div className="text-left truncate">
+                          <p className="truncate font-extrabold">{l.name}</p>
+                          <p className="text-[10px] opacity-70 truncate">{l.native}</p>
+                        </div>
+                      </button>
+                    ))}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => setOnboardingStep(2)}
+                    className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs md:text-sm shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <span>Next: Choose Teaching Language</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="space-y-2 text-center">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-400">Step 2 of 2</span>
+                  <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+                    Which language would you like the lessons to be explained in?
+                  </h3>
+                  <p className={`text-xs md:text-sm ${theme === "dark" ? "text-slate-300" : "text-slate-600"}`}>
+                    Your AI teacher will explain all grammar, rules, tips, and corrections in this language while teaching <strong>{tempLearningLang}</strong>.
+                  </p>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative">
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQueryNative}
+                    onChange={(e) => setSearchQueryNative(e.target.value)}
+                    placeholder="Search teaching languages (e.g. English, Bengali, Hindi...)"
+                    className={`w-full pl-11 pr-4 py-3.5 rounded-2xl border text-xs md:text-sm outline-none transition-all ${
+                      theme === "dark" ? "bg-black/40 border-white/10 text-white placeholder-slate-500 focus:border-indigo-500" : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500"
+                    }`}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto pr-1">
+                  {NATIVE_LANGUAGES
+                    .filter(nl => nl.name.toLowerCase().includes(searchQueryNative.toLowerCase()))
+                    .map((nl) => (
+                      <button
+                        key={nl.name}
+                        onClick={() => setTempNativeLang(nl.name)}
+                        className={`p-3.5 rounded-2xl border text-xs font-bold transition-all flex items-center gap-3 cursor-pointer ${
+                          tempNativeLang === nl.name
+                            ? "bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-400/50"
+                            : theme === "dark" ? "bg-white/[0.03] border-white/10 hover:bg-white/[0.08]" : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span className="text-xl">{nl.flag}</span>
+                        <span className="truncate font-extrabold">{nl.name}</span>
+                      </button>
+                    ))}
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setOnboardingStep(1)}
+                    className={`px-5 py-4 rounded-2xl border font-extrabold text-xs md:text-sm transition-all cursor-pointer ${
+                      theme === "dark" ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200"
+                    }`}
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedLang(tempLearningLang);
+                      setNativeLang(tempNativeLang);
+                      localStorage.setItem("joxiq_lang_coach_lang", tempLearningLang);
+                      localStorage.setItem("joxiq_native_lang", tempNativeLang);
+                      localStorage.setItem("joxiq_onboarding_completed", "true");
+                      setShowOnboarding(false);
+                      setActiveTab("dashboard");
+                    }}
+                    className="flex-1 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs md:text-sm shadow-xl transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <span>Start Learning ({tempLearningLang} in {tempNativeLang})</span>
+                    <Sparkles size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
