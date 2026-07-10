@@ -2372,7 +2372,7 @@ export default function App() {
         </div>
 
         {/* Chat Input Bar area */}
-        <footer className={`sticky bottom-0 left-0 right-0 z-20 p-2 sm:p-4 md:p-6 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center shrink-0 border-t ${
+        <footer className={`relative w-full z-20 p-2 sm:p-4 md:p-6 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center shrink-0 border-t ${
           theme === "dark" ? "border-white/5 bg-slate-950/95 backdrop-blur-xl" : "border-slate-200/50 bg-white/95 backdrop-blur-xl"
         }`}>
           <div className="w-full max-w-3xl relative">
@@ -2606,6 +2606,9 @@ export default function App() {
                   value={inputText}
                   onChange={handleTextareaChange}
                   onKeyDown={handleKeyDown}
+                  onFocus={() => {
+                    setTimeout(scrollToBottom, 250);
+                  }}
                   placeholder={isListening ? "Listening closely... Speak now..." : "Ask JOXIQ AI anything..."}
                   rows={1}
                   className={`flex-1 px-2 py-3 text-sm min-h-[44px] bg-transparent resize-none focus:outline-none max-h-[200px] ${
