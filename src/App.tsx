@@ -57,6 +57,7 @@ import {
   MoreVertical
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { Analytics } from "@vercel/analytics/react";
 
 import {
   Message,
@@ -3346,6 +3347,7 @@ export default function App() {
         onClearAll={clearAllChats}
         theme={theme === "light" ? "light" : "dark"}
       />
+      <Analytics />
     </div>
   );
 }
