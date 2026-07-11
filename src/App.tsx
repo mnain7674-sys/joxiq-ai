@@ -2024,9 +2024,7 @@ export default function App() {
         </div>
 
         {/* Message container */}
-        <div className={`flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 md:px-24 py-2 sm:py-4 md:py-6 ${
-          !isKeyboardOpen ? "pb-36 sm:pb-40 md:pb-6" : "pb-24 sm:pb-28 md:pb-6"
-        } space-y-4 md:space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5`}>
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 md:px-24 py-2 sm:py-4 md:py-6 pb-24 sm:pb-28 md:pb-6 space-y-4 md:space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
           {!activeConversation || activeConversation.messages.length === 0 ? (
             /* Starter welcome dashboard */
             <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-4 px-4 space-y-4 my-auto">
@@ -2504,11 +2502,7 @@ export default function App() {
         </div>
 
         {/* Chat Input Bar area */}
-        <footer className={`z-20 p-2 sm:p-4 md:p-6 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center shrink-0 border-t ${
-          !isKeyboardOpen
-            ? "fixed bottom-16 left-0 right-0 md:relative md:bottom-auto md:w-full"
-            : "fixed bottom-0 left-0 right-0 md:relative md:bottom-auto md:w-full"
-        } ${
+        <footer className={`z-20 p-2 sm:p-4 md:p-6 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center shrink-0 border-t fixed bottom-0 left-0 right-0 md:relative md:bottom-auto md:w-full ${
           theme === "dark" ? "border-white/5 bg-slate-950/95 backdrop-blur-xl" : "border-slate-200/50 bg-white/95 backdrop-blur-xl"
         }`}>
           <div className="w-full max-w-3xl relative">
@@ -2791,58 +2785,7 @@ export default function App() {
           </>
         )}
 
-        {/* Mobile Bottom Navigation Bar (ChatGPT style mobile navigation) */}
-        {!isKeyboardOpen && (
-          <div className={`md:hidden fixed bottom-0 left-0 right-0 z-30 h-16 border-t flex items-center justify-around px-4 shadow-2xl ${
-            theme === "dark" ? "bg-[#0b1329]/95 border-white/10 text-slate-200" : "bg-white/95 border-slate-200 text-slate-800"
-          } backdrop-blur-lg`}>
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
-              title="Open Sidebar Menu"
-            >
-              <Menu size={20} />
-              <span>Menu</span>
-            </button>
-
-            <button
-              onClick={() => {
-                const emptyChat = conversations.find(c => c.messages.length === 0);
-                if (emptyChat) {
-                  setActiveId(emptyChat.id);
-                  setActiveView("chat");
-                } else {
-                  createNewChat();
-                }
-              }}
-              className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
-              title="Return to Home Dashboard"
-            >
-              <Compass size={20} className="text-indigo-500" />
-              <span>Home</span>
-            </button>
-
-            <button
-              onClick={() => createNewChat()}
-              className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
-              title="Start New Chat"
-            >
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-md">
-                <Plus size={18} />
-              </div>
-              <span>New Chat</span>
-            </button>
-
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
-              title="Open Settings"
-            >
-              <Settings size={20} />
-              <span>Settings</span>
-            </button>
-          </div>
-        )}
+        {/* Mobile bottom navigation bar removed per user request */}
       </main>
 
       {/* Share conversation modal popup */}
