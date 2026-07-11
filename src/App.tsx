@@ -1589,19 +1589,19 @@ export default function App() {
       {/* Main Content Area: Chat Interface */}
       <main className="relative flex-1 flex flex-col h-full overflow-hidden z-0 min-w-0 w-full">
         {/* Top Navbar */}
-        <header className={`h-16 flex items-center justify-between px-3 sm:px-6 md:px-8 border-b shrink-0 z-10 ${
+        <header className={`h-12 md:h-16 flex items-center justify-between px-2 sm:px-4 md:px-8 border-b shrink-0 z-10 ${
           theme === "dark" ? "bg-white/5 border-white/10" : "bg-white/60 border-slate-200/60"
         } backdrop-blur-md`}>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <button
               id="btn-sidebar-toggle"
               onClick={() => setSidebarOpen(prev => !prev)}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+              className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
                 theme === "dark" ? "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
               }`}
               title="Toggle Sidebar Menu"
             >
-              <Menu size={18} />
+              <Menu size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
 
             {/* Top-Left Homepage Logo */}
@@ -1615,10 +1615,10 @@ export default function App() {
                   createNewChat();
                 }
               }}
-              className="flex items-center gap-2 cursor-pointer group"
+              className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group"
               title="JOXIQ AI Home"
             >
-              <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-md border border-white/20 bg-slate-900 p-0.5 group-hover:scale-105 transition-transform">
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full overflow-hidden flex items-center justify-center shadow-md border border-white/20 bg-slate-900 p-0.5 group-hover:scale-105 transition-transform">
                 <img
                   src={joxiqLogo}
                   alt="JOXIQ AI Logo"
@@ -1640,29 +1640,29 @@ export default function App() {
                   createNewChat();
                 }
               }}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+              className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
                 theme === "dark" ? "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
               }`}
               title="Return to Home Dashboard"
             >
-              <Compass size={18} className="text-indigo-500" />
+              <Compass size={16} className="sm:w-[18px] sm:h-[18px] text-indigo-500" />
             </button>
 
             {/* Quick New Chat Button */}
             <button
               id="btn-header-new-chat"
               onClick={() => createNewChat()}
-              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl border transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
                 theme === "dark" ? "bg-indigo-600/20 border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30" : "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
               }`}
               title="Start New Chat"
             >
-              <Plus size={16} />
-              <span className="text-xs font-bold hidden xs:inline sm:inline">New Chat</span>
+              <Plus size={14} className="sm:w-4 sm:h-4" />
+              <span className="text-[11px] sm:text-xs font-bold hidden xs:inline sm:inline">New</span>
             </button>
 
             {/* Quick Model Selector Toggle */}
-            <div className={`hidden sm:flex items-center p-1 rounded-xl border ${
+            <div className={`hidden md:flex items-center p-1 rounded-xl border ${
               theme === "dark" ? "bg-white/5 border-white/10" : "bg-slate-100 border-slate-200"
             }`}>
               <button
@@ -1701,15 +1701,15 @@ export default function App() {
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <span className="text-xs font-semibold text-slate-400 hidden md:inline">Mode:</span>
               <div
                 onClick={() => setSettingsOpen(true)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-full cursor-pointer transition-all shadow-sm active:scale-95 ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 border rounded-full cursor-pointer transition-all shadow-sm active:scale-95 ${
                   theme === "dark" ? "bg-white/10 border-white/20 text-indigo-400" : "bg-white border-slate-200 text-indigo-600"
                 }`}
               >
-                <span className="text-xs font-bold uppercase tracking-wider">
+                <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider">
                   {currentPersona ? currentPersona.name : "Custom AI"}
                 </span>
                 <ChevronRight size={12} className="text-slate-400 rotate-90" />
@@ -1718,11 +1718,11 @@ export default function App() {
           </div>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Settings Button */}
             <button
               onClick={() => setSettingsOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
               }`}
               title="Open AI Model & Advanced Settings"
@@ -1734,10 +1734,10 @@ export default function App() {
             {/* Upgrade to Pro Button */}
             <button
               onClick={() => setProModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer animate-pulse"
+              className="flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-[11px] sm:text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer animate-pulse"
             >
               <Crown size={14} />
-              <span>{isProUser ? "Pro ⭐" : <><span className="hidden sm:inline">Upgrade Pro </span><span>({freeMessagesLeft} left)</span></>}</span>
+              <span>{isProUser ? "Pro ⭐" : <><span className="hidden sm:inline">Upgrade Pro </span><span>({freeMessagesLeft})</span></>}</span>
             </button>
             {useSearch && (
               <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
@@ -1750,12 +1750,12 @@ export default function App() {
             {activeConversation && activeConversation.messages.length > 0 && (
               <button
                 onClick={clearCurrentChatMessages}
-                className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
                   theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
                 }`}
                 title="Clear current messages (preserve settings)"
               >
-                <Trash2 size={16} />
+                <Trash2 size={14} className="sm:w-4 sm:h-4" />
               </button>
             )}
 
@@ -1763,14 +1763,14 @@ export default function App() {
             {activeConversation && (
               <button
                 onClick={(e) => toggleFavorite(activeConversation.id, e)}
-                className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
                   activeConversation.isFavorite 
                     ? "bg-amber-500/10 border-amber-500/30 text-amber-500" 
                     : (theme === "dark" ? "bg-white/5 border-white/10 text-slate-400" : "bg-white border-slate-200 text-slate-500")
                 }`}
                 title="Favorite / Star Chat"
               >
-                <Star size={16} className={activeConversation.isFavorite ? "fill-amber-500" : ""} />
+                <Star size={14} className={`sm:w-4 sm:h-4 ${activeConversation.isFavorite ? "fill-amber-500" : ""}`} />
               </button>
             )}
 
@@ -1778,35 +1778,35 @@ export default function App() {
             {activeConversation && activeConversation.messages.length > 0 && (
               <button
                 onClick={() => setShareModalOpen(true)}
-                className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
                   theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
                 }`}
                 title="Share Chat"
               >
-                <Share2 size={16} />
+                <Share2 size={14} className="sm:w-4 sm:h-4" />
               </button>
             )}
 
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+              className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
                 theme === "dark" ? "bg-white/5 border-white/10 text-yellow-400" : "bg-white border-slate-200 text-indigo-600"
               }`}
               title="Toggle light/dark mode"
             >
-              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+              {theme === "dark" ? <Sun size={14} className="sm:w-4 sm:h-4" /> : <Moon size={14} className="sm:w-4 sm:h-4" />}
             </button>
 
             <button
               id="btn-open-settings"
               onClick={() => setSettingsOpen(true)}
-              className={`p-2 rounded-xl border transition-all cursor-pointer shadow-sm ${
+              className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer shadow-sm ${
                 theme === "dark" ? "bg-white/5 border-white/10 text-slate-200" : "bg-white border-slate-200 text-slate-700"
               }`}
               title="Chat Settings"
             >
-              <Settings size={16} />
+              <Settings size={14} className="sm:w-4 sm:h-4" />
             </button>
           </div>
         </header>
