@@ -479,6 +479,22 @@ app.post("/api/user/theme", (req, res) => {
   }
 });
 
+let adminGlobalSearch = false;
+
+app.get("/api/admin/web-search", (req, res) => {
+  res.json({ useSearch: adminGlobalSearch });
+});
+
+app.post("/api/admin/web-search", (req, res) => {
+  try {
+    const { useSearch } = req.body;
+    adminGlobalSearch = Boolean(useSearch);
+    res.json({ success: true, useSearch: adminGlobalSearch });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 /**
  * Admin User Management System API Endpoints
  */

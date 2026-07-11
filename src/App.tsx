@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { syncUserToFirestore, auth, googleProvider } from "./lib/firebase";
-import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "firebase/auth";
 import {
   Plus,
   Send,
@@ -247,6 +247,7 @@ export default function App() {
       if (window.visualViewport) {
         setViewportHeight(window.visualViewport.height);
         setViewportOffsetTop(window.visualViewport.offsetTop || 0);
+        setTimeout(scrollToBottom, 150);
       }
     };
 
@@ -285,6 +286,15 @@ export default function App() {
 
   // Load initial settings, history, and theme from localStorage
   useEffect(() => {
+    fetch("/api/admin/web-search")
+      .then(res => res.json())
+      .then(data => {
+        if (typeof data.useSearch === "boolean") {
+          setUseSearch(data.useSearch);
+        }
+      })
+      .catch(err => console.error("Failed to load admin web search", err));
+
     const saved = localStorage.getItem("gemini_conversations");
     const active = localStorage.getItem("gemini_active_conv_id");
     const savedVoice = localStorage.getItem("gemini_selected_voice");
@@ -295,14 +305,6 @@ export default function App() {
 
     if (savedVoice) setSelectedVoice(savedVoice);
     if (savedSearch) setUseSearch(savedSearch === "true");
-    const savedProfile = localStorage.getItem("julkar_user_profile");
-    if (savedProfile) {
-      try {
-        setUserProfile(JSON.parse(savedProfile));
-      } catch (e) {
-        console.error("Failed to parse user profile", e);
-      }
-    }
     if (savedTheme) {
       setTheme(savedTheme);
     } else {
@@ -335,6 +337,29 @@ export default function App() {
       createNewChat();
     }
   }, []);
+
+  // Firebase Auth state listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const email = firebaseUser.email || "";
+        const displayName = firebaseUser.displayName || email.split("@")[0] || "User";
+        const profile = { name: displayName, email };
+        setUserProfile(profile);
+        setShowAuthModal(false);
+        await syncUserToFirestore({
+          uid: firebaseUser.uid,
+          email,
+          displayName,
+          isPro: isProUser || email.toLowerCase() === "mnain7674@gmail.com"
+        }).catch(err => console.error("Firestore sync auth state error", err));
+      } else {
+        setUserProfile(null);
+        setShowAuthModal(true);
+      }
+    });
+    return () => unsubscribe();
+  }, [isProUser]);
 
   // Sync theme changes & auto-sync across users/sessions
   useEffect(() => {
@@ -407,6 +432,15 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem("gemini_use_search", String(useSearch));
+  }, [useSearch]);
+
+  useEffect(() => {
+    setConversations((prev) =>
+      prev.map((c) => ({
+        ...c,
+        useSearch: useSearch,
+      }))
+    );
   }, [useSearch]);
 
   // Handle active conversation settings modification
@@ -1509,9 +1543,14 @@ export default function App() {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  localStorage.removeItem("julkar_user_profile");
+                onClick={async () => {
+                  try {
+                    await signOut(auth);
+                  } catch (e) {
+                    console.error("Sign out error", e);
+                  }
                   setUserProfile(null);
+                  setShowAuthModal(true);
                 }}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   theme === "dark" ? "text-slate-400 hover:text-rose-400 hover:bg-white/5" : "text-slate-500 hover:text-rose-500 hover:bg-black/5"
@@ -1783,6 +1822,8 @@ export default function App() {
               conversations={conversations}
               onClearAllChats={clearAllChats}
               onDeleteChat={deleteChat}
+              useSearch={useSearch}
+              onUseSearchChange={setUseSearch}
             />
           </div>
         ) : activeView === "education" ? (
@@ -2897,7 +2938,9 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowAuthModal(false)}
+              onClick={() => {
+                if (userProfile) setShowAuthModal(false);
+              }}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 cursor-pointer"
             />
 
@@ -2923,12 +2966,14 @@ export default function App() {
                     <p className="text-[10px] text-slate-500 font-medium">JOXIQ AI Platform Access</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowAuthModal(false)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
+                {userProfile && (
+                  <button
+                    onClick={() => setShowAuthModal(false)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
+                )}
               </div>
 
               {/* Toggle Mode Tabs */}
@@ -3002,21 +3047,16 @@ export default function App() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         if (!forgotEmailInput.trim()) {
                           setAuthError("Please enter your registered email address.");
                           return;
                         }
-                        const users = JSON.parse(localStorage.getItem("joxiq_registered_users") || "[]");
-                        if (forgotEmailInput.trim().toLowerCase() === "mnain7674@gmail.com") {
-                          setForgotMsg("Owner Admin password recovery security verification link dispatched to master admin email.");
-                          return;
-                        }
-                        const found = users.find((u: any) => u.email.toLowerCase() === forgotEmailInput.trim().toLowerCase());
-                        if (!found) {
-                          setAuthError("No registered account found with this email address.");
-                        } else {
-                          setForgotMsg(`Password recovery instructions sent to ${forgotEmailInput}. (Saved password: ${found.password})`);
+                        try {
+                          await sendPasswordResetEmail(auth, forgotEmailInput.trim());
+                          setForgotMsg(`Password recovery instructions sent to ${forgotEmailInput.trim()}.`);
+                        } catch (err: any) {
+                          setAuthError(err.message || "Failed to send password reset email.");
                         }
                       }}
                       className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
@@ -3027,7 +3067,7 @@ export default function App() {
                 </div>
               ) : (
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
                     setAuthError(null);
                     setForgotMsg(null);
@@ -3047,28 +3087,20 @@ export default function App() {
                         return;
                       }
 
-                      const users = JSON.parse(localStorage.getItem("joxiq_registered_users") || "[]");
-                      if (users.some((u: any) => u.email.toLowerCase() === email.toLowerCase())) {
-                        setAuthError("An account with this email already exists. Please log in.");
-                        return;
+                      try {
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        const firebaseUser = userCredential.user;
+
+                        await syncUserToFirestore({
+                          uid: firebaseUser.uid,
+                          email: firebaseUser.email || email,
+                          displayName: name,
+                          isPro: isProUser
+                        });
+                      } catch (err: any) {
+                        console.error("Firebase signup error:", err);
+                        setAuthError(err.message || "Failed to create Firebase Authentication user.");
                       }
-
-                      const newUser = { name, email, password };
-                      users.push(newUser);
-                      localStorage.setItem("joxiq_registered_users", JSON.stringify(users));
-
-                      syncUserToFirestore({ uid: email, email, displayName: name, isPro: isProUser }).catch(err => console.error("Firestore sync error", err));
-
-                      fetch("/api/auth/register-or-login", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name, email, isPro: isProUser })
-                      }).catch(err => console.error("Sync user error", err));
-
-                      const profile = { name, email };
-                      setUserProfile(profile);
-                      localStorage.setItem("julkar_user_profile", JSON.stringify(profile));
-                      setShowAuthModal(false);
                     } else {
                       // Log In
                       const email = authEmailInput.trim();
@@ -3079,57 +3111,21 @@ export default function App() {
                         return;
                       }
 
-                      // Check if owner admin - verify via backend API securely
-                      if (email.toLowerCase() === "mnain7674@gmail.com") {
-                        fetch("/api/auth/admin-login", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ email, password })
-                        })
-                          .then(async (res) => {
-                            const data = await res.json();
-                            if (res.ok && data.success) {
-                              setUserProfile(data.profile);
-                              localStorage.setItem("julkar_user_profile", JSON.stringify(data.profile));
-                              setShowAuthModal(false);
-                              syncUserToFirestore({ uid: data.profile.email, email: data.profile.email, displayName: data.profile.name, isPro: true }).catch(err => console.error("Firestore sync admin error", err));
+                      try {
+                        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                        const firebaseUser = userCredential.user;
 
-
-
-                       fetch("/api/auth/register-or-login", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ name: data.profile.name, email: data.profile.email, isPro: true })
-                              }).catch(err => console.error("Sync admin error", err));
-                            } else {
-                              setAuthError(data.error || "Invalid admin credentials.");
-                            }
-                          })
-                          .catch((err) => {
-                            console.error("Admin login network error:", err);
-                            setAuthError("Failed to connect to backend verification server.");
-                          });
-                        return;
+                        const profileName = firebaseUser.displayName || email.split('@')[0];
+                        await syncUserToFirestore({
+                          uid: firebaseUser.uid,
+                          email: firebaseUser.email || email,
+                          displayName: profileName,
+                          isPro: email.toLowerCase() === "mnain7674@gmail.com" || isProUser
+                        });
+                      } catch (err: any) {
+                        console.error("Firebase login error:", err);
+                        setAuthError(err.message || "Invalid email or password. Please verify your credentials or sign up.");
                       }
-
-                      const users = JSON.parse(localStorage.getItem("joxiq_registered_users") || "[]");
-                      const found = users.find((u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-
-                      if (!found) {
-                        setAuthError("Invalid email or password. Please verify your credentials or sign up.");
-                        return;
-                      }
-
-                      fetch("/api/auth/register-or-login", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ name: found.name, email: found.email, isPro: isProUser })
-                      }).catch(err => console.error("Sync user error", err));
-
-                      const profile = { name: found.name, email: found.email };
-                      setUserProfile(profile);
-                      localStorage.setItem("julkar_user_profile", JSON.stringify(profile));
-                      setShowAuthModal(false);
                     }
                   }}
                   className="space-y-4 text-left"
@@ -3251,8 +3247,6 @@ export default function App() {
         onCustomInstructionChange={setCustomInstruction}
         temperature={temperature}
         onTemperatureChange={setTemperature}
-        useSearch={useSearch}
-        onUseSearchChange={setUseSearch}
         selectedVoice={selectedVoice}
         onSelectVoice={setSelectedVoice}
         userProfile={userProfile}

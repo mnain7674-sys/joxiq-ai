@@ -26,6 +26,7 @@ export async function syncUserToFirestore(user: { uid: string; email: string | n
   if (!snap.exists()) {
     await setDoc(userRef, {
       id: user.uid || user.email,
+      uid: user.uid,
       name: user.displayName || user.email.split('@')[0],
       email: user.email,
       role: user.email.toLowerCase() === "mnain7674@gmail.com" ? "Owner Admin" : "Standard User",
@@ -37,6 +38,7 @@ export async function syncUserToFirestore(user: { uid: string; email: string | n
     });
   } else {
     await updateDoc(userRef, {
+      uid: user.uid,
       lastLogin: now,
       ...(user.displayName ? { name: user.displayName } : {})
     });

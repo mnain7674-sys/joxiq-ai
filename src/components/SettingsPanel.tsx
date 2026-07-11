@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Sliders, Globe, MessageSquareCode, Volume2, Sparkles, HelpCircle, RotateCcw, Sun, Moon } from "lucide-react";
+import { X, Sliders, MessageSquareCode, Volume2, Sparkles, HelpCircle, RotateCcw, Sun, Moon } from "lucide-react";
 import { SYSTEM_PERSONAS, Persona } from "../types";
 
 interface SettingsPanelProps {
@@ -12,8 +12,6 @@ interface SettingsPanelProps {
   onCustomInstructionChange: (val: string) => void;
   temperature: number;
   onTemperatureChange: (val: number) => void;
-  useSearch: boolean;
-  onUseSearchChange: (val: boolean) => void;
   selectedVoice: string;
   onSelectVoice: (val: string) => void;
   selectedModel: string;
@@ -43,8 +41,6 @@ export function SettingsPanel({
   onCustomInstructionChange,
   temperature,
   onTemperatureChange,
-  useSearch,
-  onUseSearchChange,
   selectedVoice,
   onSelectVoice,
   selectedModel,
@@ -223,32 +219,6 @@ export function SettingsPanel({
                     ℹ️ Pro AI models and advanced administrative controls are restricted to the owner admin.
                   </p>
                 )}
-              </div>
-
-              {/* Google Search Grounding Toggle */}
-              <div className="space-y-3 bg-indigo-50/40 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-100/50 dark:border-indigo-900/30">
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-2.5">
-                    <div className="p-2 bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 rounded-lg">
-                      <Globe size={18} />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-gray-950 dark:text-gray-50">Google Search Grounding</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        Incorporate real-time, verified Google Search results into responses.
-                      </p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={useSearch}
-                      onChange={(e) => onUseSearchChange(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
-                </div>
               </div>
 
               {/* Temperature Selector (Admin Only or simplified) */}

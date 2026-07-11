@@ -40,6 +40,8 @@ interface AdminDashboardProps {
   conversations?: any[];
   onClearAllChats?: () => void;
   onDeleteChat?: (id: string, e: React.MouseEvent) => void;
+  useSearch?: boolean;
+  onUseSearchChange?: (val: boolean) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -51,12 +53,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   conversations = [],
   onClearAllChats,
   onDeleteChat,
+  useSearch = false,
+  onUseSearchChange,
 }) => {
   const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats" | "theme">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [systemStatus, setSystemStatus] = useState<"optimal" | "warning">("optimal");
   const [auditMessage, setAuditMessage] = useState<string | null>(null);
   const [themeSuccessMsg, setThemeSuccessMsg] = useState<string | null>(null);
+  const [adminGlobalSearch, setAdminGlobalSearch] = useState(useSearch);
+  const [searchSuccessMsg, setSearchSuccessMsg] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/admin/web-search")
+      .then(res => res.json())
+      .then(data => {
+        if (typeof data.useSearch === "boolean") {
+          setAdminGlobalSearch(data.useSearch);
+          if (onUseSearchChange) onUseSearchChange(data.useSearch);
+        }
+      })
+      .catch(err => console.error("Failed to load global web search", err));
+  }, []);
 
   // Chat Themes management state
   const [themesList, setThemesList] = useState<any[]>([
@@ -793,59 +811,106 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Tab 6: AI Quotas & Models */}
         {activeTab === "models" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400">
-                  <Cpu size={20} />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400">
+                    <Cpu size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm">Gemini AI Engine Allocation</h3>
+                    <p className="text-xs text-slate-400">Model tiering for standard users vs admin.</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-sm">Gemini AI Engine Allocation</h3>
-                  <p className="text-xs text-slate-400">Model tiering for standard users vs admin.</p>
+                <div className="space-y-3 pt-2 text-xs">
+                  <div className="p-3.5 rounded-xl border border-slate-500/10 bg-slate-500/5 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold">Gemini 2.5 Flash (Standard)</div>
+                      <div className="text-[11px] text-slate-400">Assigned to all registered users</div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold text-[10px]">Active</span>
+                  </div>
+                  <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-amber-500">Gemini 2.5 Pro (Admin Exclusive)</div>
+                      <div className="text-[11px] text-slate-400">Restricted to mnain7674@gmail.com</div>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 font-bold text-[10px]">Protected 👑</span>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-3 pt-2 text-xs">
-                <div className="p-3.5 rounded-xl border border-slate-500/10 bg-slate-500/5 flex items-center justify-between">
-                  <div>
-                    <div className="font-bold">Gemini 2.5 Flash (Standard)</div>
-                    <div className="text-[11px] text-slate-400">Assigned to all registered users</div>
+
+              <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500">
+                    <BarChart2 size={20} />
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold text-[10px]">Active</span>
+                  <div>
+                    <h3 className="font-bold text-sm">Global Token Quota</h3>
+                    <p className="text-xs text-slate-400">Daily consumption limits and throttling.</p>
+                  </div>
                 </div>
-                <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 flex items-center justify-between">
+                <div className="space-y-3 pt-2">
                   <div>
-                    <div className="font-bold text-amber-500">Gemini 2.5 Pro (Admin Exclusive)</div>
-                    <div className="text-[11px] text-slate-400">Restricted to mnain7674@gmail.com</div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-slate-400">Daily Token Pool</span>
+                      <span className="font-mono font-bold">165,400 / 1,000,000</span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                      <div className="w-[16%] h-full bg-indigo-500 rounded-full" />
+                    </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 font-bold text-[10px]">Protected 👑</span>
+                  <p className="text-[11px] text-slate-500 italic">
+                    Token pooling is automatically balanced across nodes with zero rate-limit exceptions.
+                  </p>
                 </div>
               </div>
             </div>
 
+            {/* Global Web Search Grounding Control Card */}
             <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500">
-                  <BarChart2 size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm">Global Token Quota</h3>
-                  <p className="text-xs text-slate-400">Daily consumption limits and throttling.</p>
-                </div>
-              </div>
-              <div className="space-y-3 pt-2">
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-400">Daily Token Pool</span>
-                    <span className="font-mono font-bold">165,400 / 1,000,000</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
+                    <Search size={20} />
                   </div>
-                  <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                    <div className="w-[16%] h-full bg-indigo-500 rounded-full" />
+                  <div>
+                    <h3 className="font-bold text-sm">Global AI Web Search Grounding</h3>
+                    <p className="text-xs text-slate-400">When enabled from here, web search is automatically turned on for all user chats platform-wide.</p>
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-500 italic">
-                  Token pooling is automatically balanced across nodes with zero rate-limit exceptions.
-                </p>
+                <label className="relative inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={adminGlobalSearch}
+                    onChange={async (e) => {
+                      const val = e.target.checked;
+                      setAdminGlobalSearch(val);
+                      try {
+                        await fetch("/api/admin/web-search", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ useSearch: val }),
+                        });
+                        if (onUseSearchChange) onUseSearchChange(val);
+                        setSearchSuccessMsg(val ? "Global Web Search Grounding enabled platform-wide." : "Global Web Search Grounding disabled.");
+                        setTimeout(() => setSearchSuccessMsg(null), 4000);
+                      } catch (err) {
+                        console.error("Failed to update global web search", err);
+                      }
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
               </div>
+              {searchSuccessMsg && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                  <CheckCircle2 size={16} />
+                  <span>{searchSuccessMsg}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
