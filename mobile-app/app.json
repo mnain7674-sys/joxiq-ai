@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "JOXIQ AI",
+    "slug": "joxiq-ai-mobile",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b1329"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.joxiq.ai.mobile"
+    },
+    "android": {
+      "package": "com.joxiq.ai.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b1329"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0b1329"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "joxiq-ai-mobile-production"
+      }
+    }
+  }
+}

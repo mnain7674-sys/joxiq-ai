@@ -1,0 +1,21 @@
+{
+  "name": "JOXIQ AI",
+  "short_name": "JOXIQ AI",
+  "description": "Unified Cross-Platform AI Intelligence Platform for Web, Android, iOS, and Desktop",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1329",
+  "theme_color": "#0b1329",
+  "icons": [
+    {
+      "src": "/src/assets/images/joxiq_logo_custom_1783530310762.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/src/assets/images/joxiq_logo_custom_1783530310762.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
