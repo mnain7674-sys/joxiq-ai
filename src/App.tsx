@@ -242,32 +242,66 @@ export default function App() {
   const [isKeyboardOpen, setIsKeyboardOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.visualViewport) return;
+    if (typeof window === "undefined") return;
 
     const handleResize = () => {
       if (window.visualViewport) {
         const height = window.visualViewport.height;
         setViewportHeight(height);
         setViewportOffsetTop(window.visualViewport.offsetTop || 0);
-        const keyboardActive = window.innerHeight - height > 150;
+        const keyboardActive = window.innerHeight - height > 100;
         setIsKeyboardOpen(keyboardActive);
         if (keyboardActive) {
           setTimeout(scrollToBottom, 100);
           setTimeout(scrollToBottom, 300);
         }
+      } else {
+        const keyboardActive = window.innerHeight < 550;
+        setIsKeyboardOpen(keyboardActive);
       }
     };
 
-    window.visualViewport.addEventListener("resize", handleResize);
-    window.visualViewport.addEventListener("scroll", handleResize);
-    setViewportHeight(window.visualViewport.height);
-    setViewportOffsetTop(window.visualViewport.offsetTop || 0);
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        if (window.innerWidth < 768) {
+          setIsKeyboardOpen(true);
+        }
+      }
+    };
+
+    const handleFocusOut = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        setTimeout(() => {
+          if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+            if (!window.visualViewport || Math.abs(window.innerHeight - window.visualViewport.height) < 80) {
+              setIsKeyboardOpen(false);
+            }
+          }
+        }, 300);
+      }
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", handleResize);
+      window.visualViewport.addEventListener("scroll", handleResize);
+      setViewportHeight(window.visualViewport.height);
+      setViewportOffsetTop(window.visualViewport.offsetTop || 0);
+    } else {
+      setViewportHeight(window.innerHeight);
+    }
+
+    window.addEventListener("focusin", handleFocusIn);
+    window.addEventListener("focusout", handleFocusOut);
 
     return () => {
       if (window.visualViewport) {
         window.visualViewport.removeEventListener("resize", handleResize);
         window.visualViewport.removeEventListener("scroll", handleResize);
       }
+      window.removeEventListener("focusin", handleFocusIn);
+      window.removeEventListener("focusout", handleFocusOut);
     };
   }, []);
 
