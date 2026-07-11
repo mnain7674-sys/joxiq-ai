@@ -239,15 +239,22 @@ export default function App() {
   const [isGeneratingTts, setIsGeneratingTts] = useState<boolean>(false);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const [viewportOffsetTop, setViewportOffsetTop] = useState<number>(0);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.visualViewport) return;
 
     const handleResize = () => {
       if (window.visualViewport) {
-        setViewportHeight(window.visualViewport.height);
+        const height = window.visualViewport.height;
+        setViewportHeight(height);
         setViewportOffsetTop(window.visualViewport.offsetTop || 0);
-        setTimeout(scrollToBottom, 150);
+        const keyboardActive = window.innerHeight - height > 150;
+        setIsKeyboardOpen(keyboardActive);
+        if (keyboardActive) {
+          setTimeout(scrollToBottom, 100);
+          setTimeout(scrollToBottom, 300);
+        }
       }
     };
 
@@ -1589,7 +1596,7 @@ export default function App() {
       {/* Main Content Area: Chat Interface */}
       <main className="relative flex-1 flex flex-col h-full overflow-hidden z-0 min-w-0 w-full">
         {/* Top Navbar */}
-        <header className={`h-12 md:h-16 flex items-center justify-between px-2 sm:px-4 md:px-8 border-b shrink-0 z-10 ${
+        <header className={`h-11 sm:h-16 flex items-center justify-between px-2 sm:px-4 md:px-8 border-b shrink-0 z-10 ${
           theme === "dark" ? "bg-white/5 border-white/10" : "bg-white/60 border-slate-200/60"
         } backdrop-blur-md`}>
           <div className="flex items-center gap-1.5 sm:gap-3">
@@ -1604,7 +1611,7 @@ export default function App() {
               <Menu size={16} className="sm:w-[18px] sm:h-[18px]" />
             </button>
 
-            {/* Top-Left Homepage Logo */}
+            {/* Top-Left Homepage Logo & Title */}
             <div
               onClick={() => {
                 setActiveView("chat");
@@ -1615,10 +1622,10 @@ export default function App() {
                   createNewChat();
                 }
               }}
-              className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group"
+              className="flex items-center gap-2 cursor-pointer group"
               title="JOXIQ AI Home"
             >
-              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full overflow-hidden flex items-center justify-center shadow-md border border-white/20 bg-slate-900 p-0.5 group-hover:scale-105 transition-transform">
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full overflow-hidden flex items-center justify-center shadow-md border border-white/20 bg-slate-900 p-0.5 group-hover:scale-105 transition-transform shrink-0">
                 <img
                   src={joxiqLogo}
                   alt="JOXIQ AI Logo"
@@ -1626,6 +1633,7 @@ export default function App() {
                   referrerPolicy="no-referrer"
                 />
               </div>
+              <span className="font-extrabold text-xs sm:text-sm tracking-tight text-slate-800 dark:text-slate-100">JOXIQ AI</span>
             </div>
 
             {/* Home / Return to Home Dashboard Button */}
@@ -1640,7 +1648,7 @@ export default function App() {
                   createNewChat();
                 }
               }}
-              className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
+              className={`hidden sm:flex p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
                 theme === "dark" ? "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
               }`}
               title="Return to Home Dashboard"
@@ -1652,13 +1660,13 @@ export default function App() {
             <button
               id="btn-header-new-chat"
               onClick={() => createNewChat()}
-              className={`flex items-center gap-1 px-2 py-1.5 sm:px-2.5 sm:py-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
+              className={`hidden sm:flex items-center gap-1 px-2.5 py-2 rounded-xl border transition-all cursor-pointer ${
                 theme === "dark" ? "bg-indigo-600/20 border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30" : "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
               }`}
               title="Start New Chat"
             >
-              <Plus size={14} className="sm:w-4 sm:h-4" />
-              <span className="text-[11px] sm:text-xs font-bold hidden xs:inline sm:inline">New</span>
+              <Plus size={16} />
+              <span className="text-xs font-bold">New Chat</span>
             </button>
 
             {/* Quick Model Selector Toggle */}
@@ -1722,7 +1730,7 @@ export default function App() {
             {/* Settings Button */}
             <button
               onClick={() => setSettingsOpen(true)}
-              className={`flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
               }`}
               title="Open AI Model & Advanced Settings"
@@ -1734,10 +1742,10 @@ export default function App() {
             {/* Upgrade to Pro Button */}
             <button
               onClick={() => setProModalOpen(true)}
-              className="flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-[11px] sm:text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer animate-pulse"
+              className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer animate-pulse"
             >
               <Crown size={14} />
-              <span>{isProUser ? "Pro ⭐" : <><span className="hidden sm:inline">Upgrade Pro </span><span>({freeMessagesLeft})</span></>}</span>
+              <span>{isProUser ? "Pro ⭐" : <>Upgrade Pro ({freeMessagesLeft})</>}</span>
             </button>
             {useSearch && (
               <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
@@ -1750,12 +1758,12 @@ export default function App() {
             {activeConversation && activeConversation.messages.length > 0 && (
               <button
                 onClick={clearCurrentChatMessages}
-                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
+                className={`hidden sm:flex p-2 rounded-xl border transition-all cursor-pointer ${
                   theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
                 }`}
                 title="Clear current messages (preserve settings)"
               >
-                <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                <Trash2 size={16} />
               </button>
             )}
 
@@ -1763,14 +1771,14 @@ export default function App() {
             {activeConversation && (
               <button
                 onClick={(e) => toggleFavorite(activeConversation.id, e)}
-                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
+                className={`hidden sm:flex p-2 rounded-xl border transition-all cursor-pointer ${
                   activeConversation.isFavorite 
                     ? "bg-amber-500/10 border-amber-500/30 text-amber-500" 
                     : (theme === "dark" ? "bg-white/5 border-white/10 text-slate-400" : "bg-white border-slate-200 text-slate-500")
                 }`}
                 title="Favorite / Star Chat"
               >
-                <Star size={14} className={`sm:w-4 sm:h-4 ${activeConversation.isFavorite ? "fill-amber-500" : ""}`} />
+                <Star size={16} className={activeConversation.isFavorite ? "fill-amber-500" : ""} />
               </button>
             )}
 
@@ -1778,24 +1786,24 @@ export default function App() {
             {activeConversation && activeConversation.messages.length > 0 && (
               <button
                 onClick={() => setShareModalOpen(true)}
-                className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
+                className={`hidden sm:flex p-2 rounded-xl border transition-all cursor-pointer ${
                   theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
                 }`}
                 title="Share Chat"
               >
-                <Share2 size={14} className="sm:w-4 sm:h-4" />
+                <Share2 size={16} />
               </button>
             )}
 
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
+              className={`hidden sm:flex p-2 rounded-xl border transition-all cursor-pointer ${
                 theme === "dark" ? "bg-white/5 border-white/10 text-yellow-400" : "bg-white border-slate-200 text-indigo-600"
               }`}
               title="Toggle light/dark mode"
             >
-              {theme === "dark" ? <Sun size={14} className="sm:w-4 sm:h-4" /> : <Moon size={14} className="sm:w-4 sm:h-4" />}
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
             <button
@@ -1806,7 +1814,7 @@ export default function App() {
               }`}
               title="Chat Settings"
             >
-              <Settings size={14} className="sm:w-4 sm:h-4" />
+              <Settings size={16} />
             </button>
           </div>
         </header>
@@ -1880,62 +1888,62 @@ export default function App() {
         ) : (
           <>
             {/* Chat Modes Segmented Selection Bar (dynamic helper for ChatGPT modes) */}
-        <div className={`px-4 md:px-8 py-2.5 border-b flex items-center justify-start gap-2 overflow-x-auto scrollbar-none z-10 ${
+        <div className={`px-2 sm:px-4 md:px-8 py-1.5 sm:py-2.5 border-b flex items-center justify-start gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none z-10 ${
           theme === "dark" ? "bg-black/10 border-white/5" : "bg-white/20 border-slate-200/30"
         }`}>
-          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0 mr-1">Modes:</span>
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0 mr-1 hidden sm:inline">Modes:</span>
           
           <button
             onClick={() => selectMode("general")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all shrink-0 ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold cursor-pointer transition-all shrink-0 ${
               selectedPersonaId === "general"
                 ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-105"
                 : (theme === "dark" ? "bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300" : "bg-white hover:bg-slate-50 border border-slate-200 text-slate-700")
             }`}
           >
-            <Sparkles size={12} />
+            <Sparkles size={11} className="sm:w-3 sm:h-3" />
             <span>JOXIQ AI</span>
           </button>
 
           <button
             onClick={() => selectMode("socratic")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all shrink-0 ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold cursor-pointer transition-all shrink-0 ${
               selectedPersonaId === "socratic"
                 ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-105"
                 : (theme === "dark" ? "bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300" : "bg-white hover:bg-slate-50 border border-slate-200 text-slate-700")
             }`}
           >
-            <GraduationCap size={12} />
+            <GraduationCap size={11} className="sm:w-3 sm:h-3" />
             <span>Study Mode</span>
           </button>
 
           <button
             onClick={() => selectMode("coder")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all shrink-0 ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold cursor-pointer transition-all shrink-0 ${
               selectedPersonaId === "coder"
                 ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-105"
                 : (theme === "dark" ? "bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300" : "bg-white hover:bg-slate-50 border border-slate-200 text-slate-700")
             }`}
           >
-            <Code size={12} />
+            <Code size={11} className="sm:w-3 sm:h-3" />
             <span>Coding Mode</span>
           </button>
 
           <button
             onClick={() => selectMode("translator")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all shrink-0 ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold cursor-pointer transition-all shrink-0 ${
               selectedPersonaId === "translator"
                 ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-105"
                 : (theme === "dark" ? "bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300" : "bg-white hover:bg-slate-50 border border-slate-200 text-slate-700")
             }`}
           >
-            <Languages size={12} />
+            <Languages size={11} className="sm:w-3 sm:h-3" />
             <span>Translation Mode</span>
           </button>
         </div>
 
         {/* Message container */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 md:px-24 py-4 md:py-6 space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 md:px-24 py-2 sm:py-4 md:py-6 space-y-4 md:space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
           {!activeConversation || activeConversation.messages.length === 0 ? (
             /* Starter welcome dashboard */
             <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-4 px-4 space-y-4 my-auto">
@@ -2414,6 +2422,8 @@ export default function App() {
 
         {/* Chat Input Bar area */}
         <footer className={`relative w-full z-20 p-2 sm:p-4 md:p-6 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center shrink-0 border-t ${
+          !isKeyboardOpen ? "mb-16 md:mb-0" : "mb-0"
+        } ${
           theme === "dark" ? "border-white/5 bg-slate-950/95 backdrop-blur-xl" : "border-slate-200/50 bg-white/95 backdrop-blur-xl"
         }`}>
           <div className="w-full max-w-3xl relative">
@@ -2648,7 +2658,16 @@ export default function App() {
                   onChange={handleTextareaChange}
                   onKeyDown={handleKeyDown}
                   onFocus={() => {
-                    setTimeout(scrollToBottom, 250);
+                    setIsKeyboardOpen(true);
+                    setTimeout(scrollToBottom, 100);
+                    setTimeout(scrollToBottom, 300);
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => {
+                      if (window.visualViewport && window.innerHeight - window.visualViewport.height <= 150) {
+                        setIsKeyboardOpen(false);
+                      }
+                    }, 200);
                   }}
                   placeholder={isListening ? "Listening closely... Speak now..." : "Ask JOXIQ AI anything..."}
                   rows={1}
@@ -2688,55 +2707,57 @@ export default function App() {
         )}
 
         {/* Mobile Bottom Navigation Bar (ChatGPT style mobile navigation) */}
-        <div className={`md:hidden fixed bottom-0 left-0 right-0 z-30 h-16 border-t flex items-center justify-around px-4 shadow-2xl ${
-          theme === "dark" ? "bg-[#0b1329]/95 border-white/10 text-slate-200" : "bg-white/95 border-slate-200 text-slate-800"
-        } backdrop-blur-lg`}>
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
-            title="Open Sidebar Menu"
-          >
-            <Menu size={20} />
-            <span>Menu</span>
-          </button>
+        {!isKeyboardOpen && (
+          <div className={`md:hidden fixed bottom-0 left-0 right-0 z-30 h-16 border-t flex items-center justify-around px-4 shadow-2xl ${
+            theme === "dark" ? "bg-[#0b1329]/95 border-white/10 text-slate-200" : "bg-white/95 border-slate-200 text-slate-800"
+          } backdrop-blur-lg`}>
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
+              title="Open Sidebar Menu"
+            >
+              <Menu size={20} />
+              <span>Menu</span>
+            </button>
 
-          <button
-            onClick={() => {
-              const emptyChat = conversations.find(c => c.messages.length === 0);
-              if (emptyChat) {
-                setActiveId(emptyChat.id);
-                setActiveView("chat");
-              } else {
-                createNewChat();
-              }
-            }}
-            className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
-            title="Return to Home Dashboard"
-          >
-            <Compass size={20} className="text-indigo-500" />
-            <span>Home</span>
-          </button>
+            <button
+              onClick={() => {
+                const emptyChat = conversations.find(c => c.messages.length === 0);
+                if (emptyChat) {
+                  setActiveId(emptyChat.id);
+                  setActiveView("chat");
+                } else {
+                  createNewChat();
+                }
+              }}
+              className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
+              title="Return to Home Dashboard"
+            >
+              <Compass size={20} className="text-indigo-500" />
+              <span>Home</span>
+            </button>
 
-          <button
-            onClick={() => createNewChat()}
-            className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
-            title="Start New Chat"
-          >
-            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-md">
-              <Plus size={18} />
-            </div>
-            <span>New Chat</span>
-          </button>
+            <button
+              onClick={() => createNewChat()}
+              className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
+              title="Start New Chat"
+            >
+              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-md">
+                <Plus size={18} />
+              </div>
+              <span>New Chat</span>
+            </button>
 
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
-            title="Open Settings"
-          >
-            <Settings size={20} />
-            <span>Settings</span>
-          </button>
-        </div>
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-slate-400 hover:text-indigo-500 cursor-pointer p-1"
+              title="Open Settings"
+            >
+              <Settings size={20} />
+              <span>Settings</span>
+            </button>
+          </div>
+        )}
       </main>
 
       {/* Share conversation modal popup */}
