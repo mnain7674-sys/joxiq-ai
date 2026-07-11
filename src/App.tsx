@@ -1070,64 +1070,61 @@ export default function App() {
     }
   };
 
-  // Speak assistant content out loud via Server-Sent TTS API
-  const handleSpeakTts = async (msg: Message) => {
+  // --- Browser Web Speech API Text-to-Speech ---
+  const handleSpeakTts = (msg: Message) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      alert("Text-to-speech (speechSynthesis) is not supported in your browser.");
+      return;
+    }
+
     if (activeSpeechMsgId === msg.id) {
       stopTts();
       return;
     }
 
-    stopTts(); // stop any active audio
-    setIsGeneratingTts(true);
+    stopTts(); // stop any active speech
     setActiveSpeechMsgId(msg.id);
+    setIsGeneratingTts(false);
 
     try {
       const cleanText = msg.content
-        .replace(/`{3}[\s\S]*?`{3}/g, "") // Strip code blocks from speech
+        .replace(/`{3}[\s\S]*?`{3}/g, "") // Strip code blocks
         .replace(/[*_#`\-]/g, "") // Strip markdown symbols
-        .substring(0, 600); // Guard rails to speak only digestible chunks
+        .trim();
 
-      const response = await fetch("/api/chat/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: cleanText || "Rendering text elements...",
-          voice: selectedVoice,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Speech synthesis failed");
+      if (!cleanText) {
+        setActiveSpeechMsgId(null);
+        return;
       }
 
-      const { audio } = await response.json();
-      const audioUrl = `data:audio/mp3;base64,${audio}`;
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
 
-      const sound = new Audio(audioUrl);
-      sound.play();
-      sound.onended = () => {
+      utterance.onend = () => {
         setActiveSpeechMsgId(null);
       };
-      audioRef.current = sound;
-    } catch (err) {
-      console.warn("Backend TTS failed, falling back to local speech synthesis.", err);
-      try {
-        const cleanText = msg.content
-          .replace(/`{3}[\s\S]*?`{3}/g, "") // Strip code blocks from speech
-          .replace(/[*_#`\-]/g, "") // Strip markdown symbols
-          .substring(0, 600);
-        speakLocalSpeech(cleanText);
-      } catch (localErr) {
-        console.error(localErr);
-        alert("Could not load voice synthesizer.");
+
+      utterance.onerror = (e) => {
+        console.warn("Speech synthesis error:", e);
+        alert("An error occurred during speech playback.");
         setActiveSpeechMsgId(null);
-      }
-    } finally {
-      setIsGeneratingTts(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.error("Speech synthesis failed:", err);
+      alert("Failed to start voice playback. Please check browser settings.");
+      setActiveSpeechMsgId(null);
     }
   };
 
   const stopTts = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
