@@ -36,11 +36,35 @@ export async function syncUserToFirestore(user: { uid: string; email: string | n
       subscriptionStatus: user.isPro ? "Pro" : "Free",
       tokensUsed: "150"
     });
+    try {
+      await setDoc(doc(collection(db, "audit_logs")), {
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        timestamp: Date.now(),
+        user: user.email,
+        action: "USER_SIGNUP",
+        status: "SUCCESS",
+        ip: "Web Client"
+      });
+    } catch (e) {
+      console.error("Failed to log signup audit", e);
+    }
   } else {
     await updateDoc(userRef, {
       uid: user.uid,
       lastLogin: now,
       ...(user.displayName ? { name: user.displayName } : {})
     });
+    try {
+      await setDoc(doc(collection(db, "audit_logs")), {
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        timestamp: Date.now(),
+        user: user.email,
+        action: "USER_LOGIN",
+        status: "SUCCESS",
+        ip: "Web Client"
+      });
+    } catch (e) {
+      console.error("Failed to log login audit", e);
+    }
   }
 }

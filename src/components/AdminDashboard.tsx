@@ -146,23 +146,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         setUsersList(fbUsers);
       } catch (err) {
         console.error("Firestore user fetch error", err);
-        fetch("/api/admin/users")
-          .then(res => res.json())
-          .then(data => {
-            if (data.users) setUsersList(data.users);
-          })
-          .catch(e => console.error("Failed to load users", e));
+        setUsersList([]);
       }
     }
     loadUsers();
   }, []);
 
-  const [auditLogs, setAuditLogs] = useState([
-    { id: "log-1", time: "11:42 AM", user: "mnain7674@gmail.com", action: "SECURITY_AUDIT_RAN", status: "SUCCESS", ip: "192.168.1.45" },
-    { id: "log-2", time: "10:15 AM", user: "jubayer@example.com", action: "MODEL_QUERY_FLASH", status: "SUCCESS", ip: "10.0.4.12" },
-    { id: "log-3", time: "09:30 AM", user: "mnain7674@gmail.com", action: "ROLE_POLICY_UPDATED", status: "SUCCESS", ip: "192.168.1.45" },
-    { id: "log-4", time: "Yesterday", user: "sarah.j@example.com", action: "DOC_UPLOAD_PDF", status: "SUCCESS", ip: "172.16.8.9" },
-  ]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    async function loadAuditLogs() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "audit_logs"));
+        const logs: any[] = [];
+        querySnapshot.forEach((docSnap) => {
+          logs.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        logs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        setAuditLogs(logs);
+      } catch (err) {
+        console.error("Firestore audit logs fetch error", err);
+        setAuditLogs([]);
+      }
+    }
+    loadAuditLogs();
+  }, []);
 
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserName, setNewUserName] = useState("");
@@ -170,16 +178,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newUserRole, setNewUserRole] = useState("Standard User");
   const [newUserSub, setNewUserSub] = useState("Free");
 
-  const handleRunAudit = () => {
+  const handleRunAudit = async () => {
     const newLog = {
-      id: `log-${Date.now()}`,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      timestamp: Date.now(),
       user: userProfile?.email || "mnain7674@gmail.com",
       action: "SECURITY_AUDIT_MANUAL",
       status: "SUCCESS",
-      ip: "192.168.1.45"
+      ip: "Web Client"
     };
-    setAuditLogs([newLog, ...auditLogs]);
+    try {
+      await setDoc(doc(collection(db, "audit_logs")), newLog);
+      const querySnapshot = await getDocs(collection(db, "audit_logs"));
+      const logs: any[] = [];
+      querySnapshot.forEach((docSnap) => {
+        logs.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      logs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      setAuditLogs(logs);
+    } catch (e) {
+      setAuditLogs([{ id: `log-${Date.now()}`, ...newLog }, ...auditLogs]);
+    }
     setAuditMessage("Security Audit successfully completed: 0 vulnerabilities found, RBAC policy verified.");
     setTimeout(() => setAuditMessage(null), 4000);
   };
@@ -368,10 +387,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { title: "Total Registered Users", value: "1,248", change: "+12% this week", icon: Users, color: "text-indigo-500" },
-                { title: "Owner Admin Account", value: "Verified", change: "mnain7674@gmail.com", icon: ShieldCheck, color: "text-amber-500" },
+                { title: "Total Registered Users", value: String(usersList.length), change: usersList.length > 0 ? `${usersList.length} verified accounts` : "No registered users", icon: Users, color: "text-indigo-500" },
+                { title: "Owner Admin Account", value: "Verified", change: userProfile?.email || "mnain7674@gmail.com", icon: ShieldCheck, color: "text-amber-500" },
                 { title: "System Uptime", value: "99.98%", change: "Zero incidents", icon: Activity, color: "text-emerald-500" },
-                { title: "Active API Sessions", value: "42", change: "Real-time streaming", icon: Cpu, color: "text-cyan-500" },
+                { title: "Active API Sessions", value: String(conversations.length), change: conversations.length > 0 ? "Real-time streaming" : "No active sessions", icon: Cpu, color: "text-cyan-500" },
               ].map((stat, idx) => {
                 const Icon = stat.icon;
                 return (
@@ -536,56 +555,64 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-500/10 text-xs">
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className={`transition-colors ${isDark ? "hover:bg-slate-850" : "hover:bg-slate-50"}`}>
-                      <td className="py-4 px-6">
-                        <div className="font-semibold text-slate-200">{user.name}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">{user.email}</div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                          user.subscriptionStatus?.includes("Pro")
-                            ? "bg-amber-500/10 text-amber-500 border border-amber-500/30"
-                            : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
-                        }`}>
-                          {user.subscriptionStatus || "Free"}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 font-mono text-slate-300">{user.createdAt || "2026-01-01"}</td>
-                      <td className="py-4 px-6 text-slate-400">{user.lastLogin || "Just now"}</td>
-                      <td className="py-4 px-6">
-                        <button
-                          onClick={() => handleToggleUserStatus(user.id, user.email)}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold cursor-pointer transition-all ${user.status === "Active" ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" : "bg-slate-500/10 text-slate-400 hover:bg-slate-500/20"}`}
-                          title="Click to toggle status"
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${user.status === "Active" ? "bg-emerald-500" : "bg-slate-400"}`} />
-                          {user.status}
-                        </button>
-                      </td>
-                      <td className="py-4 px-6 text-right flex items-center justify-end gap-2">
-                        {user.email !== "mnain7674@gmail.com" ? (
-                          <>
-                            <button
-                              onClick={() => alert(`User Details for ${user.email}:\n- Role: ${user.role || 'Standard'}\n- Tokens Used: ${user.tokensUsed || '0'}\n- Status: ${user.status}`)}
-                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] transition-colors cursor-pointer"
-                            >
-                              Configure
-                            </button>
-                            <button
-                              onClick={() => handleDeleteUser(user.id, user.email)}
-                              className="p-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors cursor-pointer"
-                              title="Remove User"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </>
-                        ) : (
-                          <span className="text-[11px] text-amber-500 font-medium italic">Immutable Admin</span>
-                        )}
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-12 text-slate-500 italic text-xs">
+                        No registered users found in Firestore.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <tr key={user.id} className={`transition-colors ${isDark ? "hover:bg-slate-850" : "hover:bg-slate-50"}`}>
+                        <td className="py-4 px-6">
+                          <div className="font-semibold text-slate-200">{user.name}</div>
+                          <div className="text-[11px] text-slate-400 font-mono">{user.email}</div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                            user.subscriptionStatus?.includes("Pro")
+                              ? "bg-amber-500/10 text-amber-500 border border-amber-500/30"
+                              : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                          }`}>
+                            {user.subscriptionStatus || "Free"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 font-mono text-slate-300">{user.createdAt || "2026-01-01"}</td>
+                        <td className="py-4 px-6 text-slate-400">{user.lastLogin || "Just now"}</td>
+                        <td className="py-4 px-6">
+                          <button
+                            onClick={() => handleToggleUserStatus(user.id, user.email)}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold cursor-pointer transition-all ${user.status === "Active" ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" : "bg-slate-500/10 text-slate-400 hover:bg-slate-500/20"}`}
+                            title="Click to toggle status"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${user.status === "Active" ? "bg-emerald-500" : "bg-slate-400"}`} />
+                            {user.status}
+                          </button>
+                        </td>
+                        <td className="py-4 px-6 text-right flex items-center justify-end gap-2">
+                          {user.email !== "mnain7674@gmail.com" ? (
+                            <>
+                              <button
+                                onClick={() => alert(`User Details for ${user.email}:\n- Role: ${user.role || 'Standard'}\n- Tokens Used: ${user.tokensUsed || '0'}\n- Status: ${user.status}`)}
+                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] transition-colors cursor-pointer"
+                              >
+                                Configure
+                              </button>
+                              <button
+                                onClick={() => handleDeleteUser(user.id, user.email)}
+                                className="p-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-colors cursor-pointer"
+                                title="Remove User"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[11px] text-amber-500 font-medium italic">Immutable Admin</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -790,19 +817,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-500/10 text-xs font-mono">
-                  {auditLogs.map((log) => (
-                    <tr key={log.id} className={isDark ? "hover:bg-slate-850" : "hover:bg-slate-50"}>
-                      <td className="py-3.5 px-6 text-slate-400">{log.time}</td>
-                      <td className="py-3.5 px-6 font-semibold">{log.user}</td>
-                      <td className="py-3.5 px-6 text-indigo-400">{log.action}</td>
-                      <td className="py-3.5 px-6">
-                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[10px] font-bold">
-                          {log.status}
-                        </span>
+                  {auditLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-12 text-slate-500 italic text-xs">
+                        No audit telemetry events recorded yet.
                       </td>
-                      <td className="py-3.5 px-6 text-slate-400">{log.ip}</td>
                     </tr>
-                  ))}
+                  ) : (
+                    auditLogs.map((log) => (
+                      <tr key={log.id} className={isDark ? "hover:bg-slate-850" : "hover:bg-slate-50"}>
+                        <td className="py-3.5 px-6 text-slate-400">{log.time}</td>
+                        <td className="py-3.5 px-6 font-semibold">{log.user}</td>
+                        <td className="py-3.5 px-6 text-indigo-400">{log.action}</td>
+                        <td className="py-3.5 px-6">
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[10px] font-bold">
+                            {log.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-6 text-slate-400">{log.ip}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
