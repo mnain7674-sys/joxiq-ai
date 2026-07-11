@@ -30,13 +30,13 @@ export function MarkdownMessage({ content }: { content: string }) {
               </code>
             );
           },
-          h1: ({ children }: any) => <h1 className="text-xl md:text-2xl font-bold mt-4 mb-2 tracking-tight text-gray-900 dark:text-gray-100">{children}</h1>,
-          h2: ({ children }: any) => <h2 className="text-lg md:text-xl font-semibold mt-3 mb-2 tracking-tight text-gray-800 dark:text-gray-200">{children}</h2>,
-          h3: ({ children }: any) => <h3 className="text-md md:text-lg font-medium mt-2 mb-1 text-gray-800 dark:text-gray-200">{children}</h3>,
-          p: ({ children }: any) => <p className="mb-2 text-gray-700 dark:text-gray-300 last:mb-0 leading-relaxed">{children}</p>,
-          ul: ({ children }: any) => <ul className="list-disc pl-5 mb-2 space-y-1 text-gray-700 dark:text-gray-300">{children}</ul>,
-          ol: ({ children }: any) => <ol className="list-decimal pl-5 mb-2 space-y-1 text-gray-700 dark:text-gray-300">{children}</ol>,
-          li: ({ children }: any) => <li className="leading-relaxed">{children}</li>,
+          h1: ({ children }: any) => <h1 className="text-xl md:text-2xl font-bold mt-4 mb-2 tracking-tight text-gray-900 dark:text-white">{children}</h1>,
+          h2: ({ children }: any) => <h2 className="text-lg md:text-xl font-semibold mt-3 mb-2 tracking-tight text-gray-800 dark:text-slate-100">{children}</h2>,
+          h3: ({ children }: any) => <h3 className="text-md md:text-lg font-medium mt-2 mb-1 text-gray-800 dark:text-slate-100">{children}</h3>,
+          p: ({ children }: any) => <p className="mb-2 text-gray-700 dark:text-slate-100 last:mb-0 leading-relaxed">{children}</p>,
+          ul: ({ children }: any) => <ul className="list-disc pl-5 mb-2 space-y-1 text-gray-700 dark:text-slate-100">{children}</ul>,
+          ol: ({ children }: any) => <ol className="list-decimal pl-5 mb-2 space-y-1 text-gray-700 dark:text-slate-100">{children}</ol>,
+          li: ({ children }: any) => <li className="leading-relaxed text-gray-700 dark:text-slate-100">{children}</li>,
           a: ({ href, children }: any) => (
             <a
               href={href}
