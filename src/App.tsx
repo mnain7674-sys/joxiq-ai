@@ -273,6 +273,22 @@ export default function App() {
 
   // --- Attachment options (Plus Menu) & Camera States ---
   const [plusMenuOpen, setPlusMenuOpen] = useState<boolean>(false);
+
+  // --- Instagram in-app browser detection ---
+  const [isInstagramBrowser, setIsInstagramBrowser] = useState<boolean>(false);
+  const [showInstagramBanner, setShowInstagramBanner] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isInsta = /Instagram/i.test(ua);
+      setIsInstagramBrowser(isInsta);
+      const dismissed = localStorage.getItem("joxiq_dismissed_insta_banner");
+      if (isInsta && !dismissed) {
+        setShowInstagramBanner(true);
+      }
+    }
+  }, []);
   const [cameraModalOpen, setCameraModalOpen] = useState<boolean>(false);
   const [cameraDevices, setCameraDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedCameraId, setSelectedCameraId] = useState<string>("");
@@ -1595,6 +1611,40 @@ export default function App() {
 
       {/* Main Content Area: Chat Interface */}
       <main className="relative flex-1 flex flex-col h-full overflow-hidden z-0 min-w-0 w-full">
+        {/* Instagram Browser Recommendation Banner */}
+        {showInstagramBanner && isInstagramBrowser && (
+          <div className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 text-white px-3 py-2 flex items-center justify-between gap-2 text-xs font-medium shrink-0 z-20 shadow-md">
+            <div className="flex items-center gap-2 min-w-0">
+              <Globe size={16} className="shrink-0 animate-pulse text-amber-300" />
+              <span className="truncate">For the best experience, open JOXIQ AI in Chrome.</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => {
+                  try {
+                    window.open(window.location.href, '_system');
+                  } catch (e) {}
+                  navigator.clipboard.writeText(window.location.href);
+                  alert("Link copied! Tap the three dots (...) in the top right corner of Instagram and select 'Open in Chrome' or 'Open in External Browser'.");
+                }}
+                className="bg-white text-indigo-900 font-bold px-2.5 py-1 rounded-md text-[11px] shadow hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Open in Chrome
+              </button>
+              <button
+                onClick={() => {
+                  setShowInstagramBanner(false);
+                  localStorage.setItem("joxiq_dismissed_insta_banner", "true");
+                }}
+                className="p-1 hover:bg-white/20 rounded transition-colors text-white/80 hover:text-white cursor-pointer"
+                title="Dismiss"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Top Navbar */}
         <header className={`h-11 sm:h-16 flex items-center justify-between px-2 sm:px-4 md:px-8 border-b shrink-0 z-10 ${
           theme === "dark" ? "bg-white/5 border-white/10" : "bg-white/60 border-slate-200/60"
