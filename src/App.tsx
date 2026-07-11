@@ -2024,7 +2024,7 @@ export default function App() {
         </div>
 
         {/* Message container */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 md:px-24 py-2 sm:py-4 md:py-6 space-y-4 md:space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 md:px-24 py-2 sm:py-4 md:py-6 pb-24 sm:pb-28 md:pb-6 space-y-4 md:space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
           {!activeConversation || activeConversation.messages.length === 0 ? (
             /* Starter welcome dashboard */
             <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-4 px-4 space-y-4 my-auto">
@@ -2502,8 +2502,10 @@ export default function App() {
         </div>
 
         {/* Chat Input Bar area */}
-        <footer className={`relative w-full z-20 p-2 sm:p-4 md:p-6 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center shrink-0 border-t ${
-          !isKeyboardOpen ? "mb-16 md:mb-0" : "mb-0"
+        <footer className={`z-20 p-2 sm:p-4 md:p-6 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center shrink-0 border-t ${
+          !isKeyboardOpen
+            ? "fixed bottom-16 left-0 right-0 md:relative md:bottom-auto md:w-full"
+            : "fixed bottom-0 left-0 right-0 md:relative md:bottom-auto md:w-full"
         } ${
           theme === "dark" ? "border-white/5 bg-slate-950/95 backdrop-blur-xl" : "border-slate-200/50 bg-white/95 backdrop-blur-xl"
         }`}>
