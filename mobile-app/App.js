@@ -130,11 +130,7 @@ export default function App() {
     setIsStreaming(true);
 
     try {
-      const contentsArray = newMessages.map(m => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }]
-      }));
-
+      let aiText = "";
       const systemInstruction = `You are JOXIQ AI.
 IMPORTANT SYSTEM RULES:
 1. Your name is JOXIQ AI. When anyone asks you what your name is or who you are, you must answer that your name is JOXIQ AI.
@@ -148,16 +144,64 @@ IMPORTANT SYSTEM RULES:
 - Vision: Created JOXIQ AI as a helpful assistant supporting students, creators, developers, and anyone looking for reliable AI assistance.
 4. Maintain a professional, friendly, and helpful tone throughout.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: contentsArray,
-        config: {
-          systemInstruction,
-          temperature: typeof temperature === "number" ? temperature : 0.7,
-        }
-      });
+      try {
+        // Try backend server API first
+        const res = await fetch("https://ais-dev-jq6htk6kvftxilqaqwcphy-7331611588.europe-west2.run.app/api/chat/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: newMessages,
+            model: "gemini-2.5-flash",
+            systemInstruction,
+            temperature: typeof temperature === "number" ? temperature : 0.7,
+            useSearch: searchEnabled
+          })
+        });
 
-      const aiText = response.text || "JOXIQ AI is here to assist you!";
+        if (res.ok) {
+          const textData = await res.text();
+          // Parse potential SSE or JSON response
+          if (textData.startsWith("data:") || textData.includes("\ndata:")) {
+            const lines = textData.split("\n");
+            let fullText = "";
+            for (const line of lines) {
+              if (line.startsWith("data:")) {
+                try {
+                  const json = JSON.parse(line.replace("data:", "").trim());
+                  if (json.text) fullText += json.text;
+                } catch (e) {}
+              }
+            }
+            aiText = fullText || textData;
+          } else {
+            try {
+              const json = JSON.parse(textData);
+              aiText = json.text || json.content || textData;
+            } catch (e) {
+              aiText = textData;
+            }
+          }
+        } else {
+          throw new Error("Backend response error status " + res.status);
+        }
+      } catch (backendErr) {
+        console.warn("Backend fetch failed, falling back to direct SDK:", backendErr);
+        const contentsArray = newMessages.map(m => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }]
+        }));
+
+        const response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: contentsArray,
+          config: {
+            systemInstruction,
+            temperature: typeof temperature === "number" ? temperature : 0.7,
+          }
+        });
+        aiText = response.text || "JOXIQ AI is here to assist you!";
+      }
+
       const updatedMessages = [...newMessages, { role: "assistant", content: aiText }];
       setMessages(updatedMessages);
 
@@ -170,7 +214,7 @@ IMPORTANT SYSTEM RULES:
       }
     } catch (err) {
       console.error("Gemini AI API Error:", err);
-      const errorMsg = `Error connecting to Gemini AI: ${err.message || "Please check your network."}`;
+      const errorMsg = `Error connecting to JOXIQ AI: ${err.message || "Please check your network connection."}`;
       setMessages([...newMessages, { role: "assistant", content: errorMsg }]);
     } finally {
       setIsStreaming(false);
