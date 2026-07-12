@@ -31,8 +31,8 @@ import {
   where
 } from "./src/firebase";
 
-// Initialize Google Gen AI client with the same secure API key
-const ai = new GoogleGenAI({ apiKey: "AIzaSyD6JiZYZQE3tP3Opskq5Gshg34B-UAPbiA" });
+// Initialize Google Gen AI client safely using environment variable
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export default function App() {
   const [user, setUser] = useState(null);
