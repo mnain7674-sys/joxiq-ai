@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
@@ -9,6 +10,34 @@ dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
+// Persistent Admin Settings file
+const SETTINGS_FILE = path.join(process.cwd(), "admin_settings.json");
+
+let adminGlobalSearch = false;
+let adminDefaultTheme = "dark";
+
+try {
+  if (fs.existsSync(SETTINGS_FILE)) {
+    const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf-8"));
+    if (typeof data.adminGlobalSearch === "boolean") {
+      adminGlobalSearch = data.adminGlobalSearch;
+    }
+    if (typeof data.adminDefaultTheme === "string") {
+      adminDefaultTheme = data.adminDefaultTheme;
+    }
+  }
+} catch (e) {
+  console.error("Error loading admin settings:", e);
+}
+
+function saveAdminSettings() {
+  try {
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ adminGlobalSearch, adminDefaultTheme }, null, 2));
+  } catch (e) {
+    console.error("Error saving admin settings:", e);
+  }
+}
 
 // Increase body limit for base64 image uploads
 app.use(express.json({ limit: "20mb" }));
@@ -138,8 +167,9 @@ app.post("/api/chat/stream", async (req, res) => {
 
     const modelName = model || "gemini-2.5-flash";
 
-    // Build tools config if search grounding is enabled
-    const tools = useSearch ? [{ googleSearch: {} }] : undefined;
+    // Build tools config if search grounding is enabled (admin global or user request)
+    const effectiveSearch = Boolean(adminGlobalSearch || useSearch);
+    const tools = effectiveSearch ? [{ googleSearch: {} }] : undefined;
 
     const baseInstruction = `You are JOXIQ AI.
 IMPORTANT SYSTEM RULES:
@@ -416,7 +446,6 @@ let chatThemes = [
   { id: "amber", name: "Sunset Amber", desc: "Warm amber & cozy gold tones", accent: "amber" },
   { id: "rose", name: "Rose Velvet", desc: "Luxurious wine and rose velvet theme", accent: "rose" },
 ];
-let adminDefaultTheme = "dark";
 const userThemePreferences: Record<string, string> = {}; // email -> themeId
 
 app.get("/api/themes", (req, res) => {
@@ -450,6 +479,7 @@ app.post("/api/admin/default-theme", (req, res) => {
       return res.status(400).json({ error: "Theme ID is required." });
     }
     adminDefaultTheme = themeId;
+    saveAdminSettings();
     res.json({ success: true, defaultTheme: adminDefaultTheme });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -479,8 +509,6 @@ app.post("/api/user/theme", (req, res) => {
   }
 });
 
-let adminGlobalSearch = false;
-
 app.get("/api/admin/web-search", (req, res) => {
   res.json({ useSearch: adminGlobalSearch });
 });
@@ -489,6 +517,7 @@ app.post("/api/admin/web-search", (req, res) => {
   try {
     const { useSearch } = req.body;
     adminGlobalSearch = Boolean(useSearch);
+    saveAdminSettings();
     res.json({ success: true, useSearch: adminGlobalSearch });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
