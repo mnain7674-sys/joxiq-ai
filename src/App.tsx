@@ -374,6 +374,7 @@ export default function App() {
     if (saved) {
       try {
         const parsed: Conversation[] = JSON.parse(saved);
+        const validParsed = parsed.filter(c => c.messages && c.messages.length > 0);
         const defaultPersona = SYSTEM_PERSONAS[0];
         const initialNewChat: Conversation = {
           id: Math.random().toString(36).substring(2, 11),
@@ -385,7 +386,7 @@ export default function App() {
           useSearch,
           timestamp: Date.now(),
         };
-        setConversations([initialNewChat, ...parsed]);
+        setConversations([initialNewChat, ...validParsed]);
         setActiveId(initialNewChat.id);
       } catch (e) {
         console.error("Failed to restore history", e);
@@ -468,8 +469,9 @@ export default function App() {
 
   // Sync state changes to localStorage
   useEffect(() => {
-    if (conversations.length > 0) {
-      localStorage.setItem("gemini_conversations", JSON.stringify(conversations));
+    const validConvs = conversations.filter(c => c.messages && c.messages.length > 0);
+    if (validConvs.length > 0) {
+      localStorage.setItem("gemini_conversations", JSON.stringify(validConvs));
     } else {
       localStorage.removeItem("gemini_conversations");
     }
@@ -1473,7 +1475,7 @@ export default function App() {
             <MessageSquare size={16} className="text-violet-500" />
             <span className="flex-1 text-left">Chat History</span>
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">
-              {conversations.length}
+              {conversations.filter(c => c.messages && c.messages.length > 0).length}
             </span>
           </button>
 
@@ -1925,7 +1927,7 @@ export default function App() {
               onThemeChange={setTheme}
               userProfile={userProfile} 
               onBackToChat={() => setActiveView("chat")} 
-              conversations={conversations}
+              conversations={conversations.filter(c => c.messages && c.messages.length > 0)}
               onClearAllChats={clearAllChats}
               onDeleteChat={deleteChat}
               useSearch={useSearch}
@@ -3352,7 +3354,7 @@ export default function App() {
       <ChatHistoryModal
         isOpen={showChatHistoryModal}
         onClose={() => setShowChatHistoryModal(false)}
-        conversations={conversations}
+        conversations={conversations.filter(c => c.messages && c.messages.length > 0)}
         activeId={activeId}
         onSelectConversation={(id) => {
           setActiveId(id);
