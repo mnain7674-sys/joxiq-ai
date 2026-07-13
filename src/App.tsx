@@ -344,14 +344,25 @@ export default function App() {
 
   // Load initial settings, history, and theme from localStorage
   useEffect(() => {
-    fetch("/api/admin/web-search")
-      .then(res => res.json())
-      .then(data => {
-        if (typeof data.useSearch === "boolean") {
-          setUseSearch(data.useSearch);
-        }
-      })
-      .catch(err => console.error("Failed to load admin web search", err));
+    const checkAdminSearch = () => {
+      fetch("/api/admin/web-search")
+        .then(res => res.json())
+        .then(data => {
+          if (typeof data.useSearch === "boolean") {
+            if (data.useSearch) {
+              setUseSearch(true);
+              localStorage.setItem("gemini_use_search", "true");
+            } else {
+              const savedSearch = localStorage.getItem("gemini_use_search");
+              if (savedSearch) setUseSearch(savedSearch === "true");
+            }
+          }
+        })
+        .catch(err => console.error("Failed to load admin web search", err));
+    };
+
+    checkAdminSearch();
+    const interval = setInterval(checkAdminSearch, 5000);
 
     const saved = localStorage.getItem("gemini_conversations");
     const active = localStorage.getItem("gemini_active_conv_id");
