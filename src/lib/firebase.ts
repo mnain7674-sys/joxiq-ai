@@ -18,6 +18,7 @@ setPersistence(auth, browserLocalPersistence).catch((error) => {
   console.error("Auth persistence error:", error);
 });
 export const db = getFirestore(app);
+export { doc, getDoc, setDoc, updateDoc, collection, getDocs };
 export const googleProvider = new GoogleAuthProvider();
 
 export async function syncUserToFirestore(user: { uid: string; email: string | null; displayName: string | null; isPro?: boolean }) {

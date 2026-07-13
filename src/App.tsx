@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { syncUserToFirestore, auth, googleProvider } from "./lib/firebase";
+import { syncUserToFirestore, auth, googleProvider, db, doc, getDoc } from "./lib/firebase";
 import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "firebase/auth";
 import {
   Plus,
@@ -405,6 +405,22 @@ export default function App() {
         const profile = { name: displayName, email };
         setUserProfile(profile);
         setShowAuthModal(false);
+
+        // Check Firestore for cross-platform Pro subscription sync (e.g. purchased from mobile app)
+        try {
+          const userRef = doc(db, "users", firebaseUser.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.subscriptionStatus === "Pro" || data.isPro) {
+              setIsProUser(true);
+              localStorage.setItem("julkar_is_pro", "true");
+            }
+          }
+        } catch (e) {
+          console.error("Error fetching user profile from Firestore:", e);
+        }
+
         await syncUserToFirestore({
           uid: firebaseUser.uid,
           email,
