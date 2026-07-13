@@ -417,21 +417,54 @@ app.post("/api/education/generate", async (req, res) => {
  */
 app.post("/api/create-checkout-session", async (req, res) => {
   try {
-    const { plan } = req.body;
-    // If Stripe key is configured, integrate Stripe here. Otherwise, return success for simulated checkout.
-    const stripeKey = process.env.STRIPE_SECRET_KEY;
-    if (stripeKey) {
-      // Stripe integration hook placeholder
-      // const stripe = new Stripe(stripeKey);
-      // const session = await stripe.checkout.sessions.create(...);
-      // return res.json({ url: session.url });
+    const { plan, email } = req.body;
+    if (email) {
+      const user = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (user) {
+        user.subscriptionStatus = plan === "ultra" ? "JOXIQ Ultra" : "Pro";
+        const currentTokens = parseInt(user.tokensUsed || "0", 10);
+        const addedTokens = plan === "ultra" ? 200000 : plan === "yearly" ? 150000 : 50000;
+        user.tokensUsed = String(currentTokens + addedTokens);
+      }
     }
     
     // Return simulated success response for QAR / USD payment
-    res.json({ success: true, message: "Checkout session created successfully", plan: plan || "monthly" });
+    res.json({ success: true, message: "Checkout session created successfully and tokens credited", plan: plan || "monthly" });
   } catch (error: any) {
     console.error("Checkout session error:", error);
     res.status(500).json({ error: error.message || "Failed to create checkout session." });
+  }
+});
+
+/**
+ * Record Real Token Usage API Endpoint
+ */
+app.post("/api/user/record-tokens", (req, res) => {
+  try {
+    const { email, tokens } = req.body;
+    if (!email || typeof tokens !== "number") {
+      return res.status(400).json({ error: "Email and token count are required." });
+    }
+    const user = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (user) {
+      const current = parseInt(user.tokensUsed || "0", 10);
+      user.tokensUsed = String(current + tokens);
+    } else {
+      registeredUsers.push({
+        id: `u-${Date.now()}`,
+        name: email.split('@')[0],
+        email,
+        role: email.toLowerCase() === "mnain7674@gmail.com" ? "Owner Admin" : "Standard User",
+        status: "Active",
+        createdAt: new Date().toISOString().split('T')[0],
+        lastLogin: "Just now",
+        subscriptionStatus: "Free",
+        tokensUsed: String(tokens)
+      });
+    }
+    res.json({ success: true, users: registeredUsers });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 

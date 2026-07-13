@@ -1107,6 +1107,15 @@ export default function App() {
           c.id === chat!.id ? { ...c, messages: [...updatedMessages, assistantMessage] } : c
         )
       );
+
+      const tokenCount = Math.max(10, Math.round((textToSend.length + finalResponseText.length) / 4));
+      if (userProfile?.email) {
+        fetch("/api/user/record-tokens", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userProfile.email, tokens: tokenCount }),
+        }).catch((e) => console.error("Failed to record tokens", e));
+      }
     } catch (err: any) {
       console.error(err);
       setStreamError(cleanErrorMessage(err));
@@ -3359,6 +3368,7 @@ export default function App() {
         isDark={theme === "dark"}
         freeMessagesLeft={freeMessagesLeft}
         isProUser={isProUser}
+        userEmail={userProfile?.email}
       />
 
       {/* Complete Chat History Modal */}

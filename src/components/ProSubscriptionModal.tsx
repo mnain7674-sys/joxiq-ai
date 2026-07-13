@@ -8,6 +8,7 @@ interface ProSubscriptionModalProps {
   isDark: boolean;
   freeMessagesLeft: number;
   isProUser: boolean;
+  userEmail?: string;
 }
 
 export function ProSubscriptionModal({
@@ -17,6 +18,7 @@ export function ProSubscriptionModal({
   isDark,
   freeMessagesLeft,
   isProUser,
+  userEmail,
 }: ProSubscriptionModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly" | "ultra">("monthly");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"visa" | "mastercard" | "amex" | "apple_pay" | "google_pay" | "paypal">("visa");
@@ -58,7 +60,7 @@ export function ProSubscriptionModal({
       const res = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: selectedPlan, paymentMethod: selectedPaymentMethod, cardNumber: cardNumber.slice(-4) }),
+        body: JSON.stringify({ plan: selectedPlan, paymentMethod: selectedPaymentMethod, cardNumber: cardNumber.slice(-4), email: userEmail }),
       });
       const data = await res.json();
       

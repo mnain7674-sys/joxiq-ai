@@ -548,6 +548,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <tr className={`border-b text-xs font-semibold uppercase tracking-wider ${isDark ? "border-slate-800 text-slate-400 bg-slate-950/50" : "border-slate-200 text-slate-500 bg-slate-50"}`}>
                     <th className="py-3.5 px-6">User / Email</th>
                     <th className="py-3.5 px-6">Subscription</th>
+                    <th className="py-3.5 px-6">Tokens Used</th>
                     <th className="py-3.5 px-6">Created Date</th>
                     <th className="py-3.5 px-6">Last Login</th>
                     <th className="py-3.5 px-6">Status</th>
@@ -576,6 +577,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           }`}>
                             {user.subscriptionStatus || "Free"}
                           </span>
+                        </td>
+                        <td className="py-4 px-6 font-mono text-cyan-400 font-semibold">
+                          {parseInt(user.tokensUsed || '0', 10).toLocaleString()}
                         </td>
                         <td className="py-4 px-6 font-mono text-slate-300">{user.createdAt || "2026-01-01"}</td>
                         <td className="py-4 px-6 text-slate-400">{user.lastLogin || "Just now"}</td>
@@ -888,13 +892,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
                 <div className="space-y-3 pt-2">
                   <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-slate-400">Daily Token Pool</span>
-                      <span className="font-mono font-bold">165,400 / 1,000,000</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-                      <div className="w-[16%] h-full bg-indigo-500 rounded-full" />
-                    </div>
+                    {(() => {
+                      const totalTokens = usersList.reduce((sum, u) => sum + parseInt(u.tokensUsed || '0', 10), 0);
+                      const limit = 1000000;
+                      const pct = Math.min(100, Math.max(1, Math.round((totalTokens / limit) * 100)));
+                      return (
+                        <>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-slate-400">Daily Token Pool</span>
+                            <span className="font-mono font-bold text-cyan-400">{totalTokens.toLocaleString()} / {limit.toLocaleString()} ({pct}%)</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                            <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                   <p className="text-[11px] text-slate-500 italic">
                     Token pooling is automatically balanced across nodes with zero rate-limit exceptions.
