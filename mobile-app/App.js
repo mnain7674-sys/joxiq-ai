@@ -31,9 +31,29 @@ import {
   query,
   where
 } from "./src/firebase";
+import { ACADEMIES, ALL_COURSES, getSectionsForLesson } from "./src/academiesData";
 
 // Initialize Google Gen AI client safely using environment variable
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+
+function renderFormattedText(text, textStyle, isDark) {
+  if (!text) return null;
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <Text style={textStyle}>
+      {parts.map((part, idx) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <Text key={idx} style={{ fontWeight: "bold", color: isDark ? "#a5b4fc" : "#4f46e5" }}>
+              {part.slice(2, -2)}
+            </Text>
+          );
+        }
+        return part;
+      })}
+    </Text>
+  );
+}
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -42,6 +62,7 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
 
   // App state
   const [theme, setTheme] = useState("dark");
@@ -128,6 +149,22 @@ export default function App() {
   const [coachChat, setCoachChat] = useState([]);
   const [coachLoading, setCoachLoading] = useState(false);
   const [selectedSubPlan, setSelectedSubPlan] = useState("monthly"); // monthly (36 QR), yearly (300 QR), ultra (99 QR)
+
+  // AI Learning Platform mobile states
+  const [selectedAcademy, setSelectedAcademy] = useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [sectionQuizAnswer, setSectionQuizAnswer] = useState(null);
+  const [sectionQuizSubmitted, setSectionQuizSubmitted] = useState(false);
+  const [sectionQuizPassed, setSectionQuizPassed] = useState(false);
+  const [showFinalQuiz, setShowFinalQuiz] = useState(false);
+  const [selectedQuizAnswer, setSelectedQuizAnswer] = useState(null);
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [completedLessons, setCompletedLessons] = useState([]);
+  const [lessonMessages, setLessonMessages] = useState({});
+  const [lessonChatInput, setLessonChatInput] = useState("");
+  const [lessonAiLoading, setLessonAiLoading] = useState(false);
 
   // Settings state
   const [temperature, setTemperature] = useState(0.7);
@@ -376,6 +413,71 @@ IMPORTANT SYSTEM RULES:
     }
   };
 
+  // Socratic AI Teacher Send Message Handler (identical logic and prompt parity with Web)
+  const handleSendLessonChat = async () => {
+    if (!lessonChatInput.trim() || lessonAiLoading || !selectedLesson) return;
+    const userMsg = lessonChatInput.trim();
+    setLessonChatInput("");
+
+    const prevHistory = lessonMessages[selectedLesson.id] || [
+      { role: "assistant", content: `Hello! I am your Universal AI Teacher and Mentor for **${selectedLesson.title}**. I am here to guide you step by step, explain real-world use cases, and answer any questions. What would you like to explore?` }
+    ];
+    const newHistory = [...prevHistory, { role: "user", content: userMsg }];
+    setLessonMessages(prev => ({ ...prev, [selectedLesson.id]: newHistory }));
+    setLessonAiLoading(true);
+
+    try {
+      const activeSections = getSectionsForLesson(selectedLesson.id, selectedLesson.title, selectedLesson.content);
+      const activeSection = activeSections[currentSectionIndex] || activeSections[0];
+
+      const systemInstruction = `You are a world-class, professional Universal AI Teacher and Mentor.
+Your goal is to guide students step-by-step through their active curriculum in a Socratic, encouraging, and deeply engaging way.
+
+CURRENT LESSON CONTEXT:
+- Academy Course: ${selectedCourse?.name || "General Curriculum"}
+- Active Lesson: ${selectedLesson.title}
+- Active Section ${currentSectionIndex + 1}: ${activeSection.title}
+- Section Core Material: "${activeSection.content}"
+- Professional Pro-Tip: "${activeSection.proTip}"
+- Real-world Application Scenario: "${activeSection.realWorldScenario}"
+
+TEACHING MANDATES & RULES:
+1. NEVER reveal the entire lesson or upcoming sections at once. Focus completely on the current section content: "${activeSection.title}".
+2. You must behave like an elite private mentor. Explain concepts from the absolute beginner level assuming the student has zero prior knowledge.
+3. Keep the discussion highly interactive. Encourage questions, explain how this is used in the industry, and present realistic problems.
+4. If the student asks about other topics, politely redirect them back to the active section topic: "${activeSection.title}".
+5. Never behave like a normal chatbot. Write comprehensive, thoughtful responses that break down complex ideas with clarity.`;
+
+      const contentsArray = newHistory.map(m => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }]
+      }));
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: contentsArray,
+        config: {
+          systemInstruction,
+          temperature: 0.7,
+        }
+      });
+
+      const aiText = response.text || "I am ready to help you master this section!";
+      setLessonMessages(prev => ({
+        ...prev,
+        [selectedLesson.id]: [...newHistory, { role: "assistant", content: aiText }]
+      }));
+    } catch (err) {
+      console.error("AI Teacher Error:", err);
+      setLessonMessages(prev => ({
+        ...prev,
+        [selectedLesson.id]: [...newHistory, { role: "assistant", content: `My apologies. I encountered a minor signal delay: ${err.message}. Please try again!` }]
+      }));
+    } finally {
+      setLessonAiLoading(false);
+    }
+  };
+
   if (initializing) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: "#0b1329" }]}>
@@ -473,6 +575,9 @@ IMPORTANT SYSTEM RULES:
           </TouchableOpacity>
           <TouchableOpacity style={[styles.navIconBtn, cardStyle]} onPress={() => setCurrentView("chat")}>
             <Text style={{ fontSize: 16 }}>💬</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.navIconBtn, cardStyle, currentView === "learningPlatform" && { borderColor: "#6366f1", borderWidth: 2 }]} onPress={() => setCurrentView("learningPlatform")} title="AI Learning Platform">
+            <Text style={{ fontSize: 16 }}>🚀</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.navIconBtn, cardStyle]} onPress={() => setCurrentView("education")}>
             <Text style={{ fontSize: 16 }}>🎓</Text>
@@ -737,6 +842,444 @@ IMPORTANT SYSTEM RULES:
               <Text style={styles.sendButtonText}>Send</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      )}
+
+      {/* AI Learning Platform View */}
+      {currentView === "learningPlatform" && (
+        <View style={{ flex: 1 }}>
+          {/* Top Back/Navigation Bar if inside any course or academy */}
+          {(selectedAcademy || selectedCourse || selectedLesson) && (
+            <View style={{ flexDirection: "row", alignItems: "center", padding: 12, borderBottomWidth: 1, borderBottomColor: isDark ? "#1e293b" : "#e2e8f0", gap: 10 }}>
+              <TouchableOpacity
+                style={[styles.navIconBtn, cardStyle]}
+                onPress={() => {
+                  if (selectedLesson) {
+                    setSelectedLesson(null);
+                    setCurrentSectionIndex(0);
+                    setSectionQuizAnswer(null);
+                    setSectionQuizSubmitted(false);
+                    setSectionQuizPassed(false);
+                    setShowFinalQuiz(false);
+                    setSelectedQuizAnswer(null);
+                    setQuizSubmitted(false);
+                  } else if (selectedCourse) {
+                    setSelectedCourse(null);
+                  } else if (selectedAcademy) {
+                    setSelectedAcademy(null);
+                  }
+                }}
+              >
+                <Text style={{ fontSize: 14, color: isDark ? "#fff" : "#000" }}>⬅️</Text>
+              </TouchableOpacity>
+              <Text style={[textStyle, { fontSize: 16, fontWeight: "bold", flex: 1 }]} numberOfLines={1}>
+                {selectedLesson ? selectedLesson.title : selectedCourse ? selectedCourse.name : selectedAcademy ? selectedAcademy.title : "AI Learning Platform"}
+              </Text>
+            </View>
+          )}
+
+          {/* 1. Main Academy Dashboard */}
+          {!selectedAcademy && (
+            <ScrollView style={{ flex: 1, padding: 16 }}>
+              {/* Hero Header */}
+              <View style={[styles.subCard, cardStyle, { padding: 20, borderLeftWidth: 4, borderLeftColor: "#6366f1" }]}>
+                <Text style={[styles.sectionTitle, textStyle, { fontSize: 24, marginBottom: 4 }]}>🏫 JOXIQ Academies</Text>
+                <Text style={{ color: "#94a3b8", fontSize: 14, lineHeight: 20, marginBottom: 12 }}>
+                  Welcome to the future of learning. Our Universal AI Mentor guides you step-by-step through professional courses with interactive checkpoints and sandbox challenges.
+                </Text>
+                <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
+                  <View style={{ backgroundColor: "rgba(99, 102, 241, 0.15)", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
+                    <Text style={{ color: "#818cf8", fontSize: 12, fontWeight: "bold" }}>🏆 {completedLessons.length} Lessons Finished</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => Alert.alert("Official Certification", "Complete all advanced lessons in any Academy course to instantly unlock and download your certified Diploma!")}>
+                    <Text style={{ color: "#6366f1", fontSize: 12, fontWeight: "bold", textDecorationLine: "underline" }}>View Diplomas</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <Text style={[textStyle, { fontSize: 18, fontWeight: "bold", marginBottom: 12 }]}>Explore Academies</Text>
+              {ACADEMIES.map((acad) => (
+                <TouchableOpacity
+                  key={acad.id}
+                  style={[cardStyle, { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 16 }]}
+                  onPress={() => setSelectedAcademy(acad)}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                    <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: acad.color + "20", alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ fontSize: 22 }}>{acad.icon}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[textStyle, { fontSize: 18, fontWeight: "bold" }]}>{acad.title}</Text>
+                      <Text style={{ color: "#94a3b8", fontSize: 12 }}>{acad.coursesCount} Active Masterclasses</Text>
+                    </View>
+                    <View style={{ backgroundColor: "rgba(99, 102, 241, 0.1)", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                      <Text style={{ color: "#818cf8", fontSize: 10, fontWeight: "bold" }}>{acad.badge}</Text>
+                    </View>
+                  </View>
+                  <Text style={{ color: isDark ? "#cbd5e1" : "#475569", fontSize: 13, lineHeight: 18 }}>{acad.description}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* 2. Academy Courses List */}
+          {selectedAcademy && !selectedCourse && (
+            <ScrollView style={{ flex: 1, padding: 16 }}>
+              <View style={{ marginBottom: 16 }}>
+                <Text style={[styles.sectionTitle, textStyle]}>🚀 {selectedAcademy.title}</Text>
+                <Text style={{ color: "#94a3b8", fontSize: 14 }}>Select a specialized masterclass to begin your learning track.</Text>
+              </View>
+
+              {ALL_COURSES.filter(c => c.academyId === selectedAcademy.id).map((course) => (
+                <TouchableOpacity
+                  key={course.id}
+                  style={[cardStyle, { padding: 16, borderRadius: 16, borderWidth: 1, marginBottom: 16 }]}
+                  onPress={() => setSelectedCourse(course)}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                    <Text style={{ fontSize: 24 }}>{course.icon}</Text>
+                    <View>
+                      <Text style={[textStyle, { fontSize: 16, fontWeight: "bold" }]}>{course.name}</Text>
+                      <Text style={{ color: "#6366f1", fontSize: 11, fontWeight: "bold" }}>{course.category}</Text>
+                    </View>
+                  </View>
+                  <Text style={{ color: isDark ? "#cbd5e1" : "#475569", fontSize: 13, lineHeight: 18, marginBottom: 12 }}>{course.description}</Text>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ color: "#94a3b8", fontSize: 11 }}>14 comprehensive Socratic steps</Text>
+                    <Text style={{ color: "#6366f1", fontSize: 12, fontWeight: "bold" }}>Enter Class →</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* 3. Course Level / Lessons View */}
+          {selectedCourse && !selectedLesson && (
+            <ScrollView style={{ flex: 1, padding: 16 }}>
+              <View style={[styles.subCard, cardStyle, { padding: 16, marginBottom: 20, alignItems: "center" }]}>
+                <Text style={{ fontSize: 40, marginBottom: 8 }}>{selectedCourse.icon}</Text>
+                <Text style={[textStyle, { fontSize: 22, fontWeight: "bold", textAlign: "center" }]}>{selectedCourse.name}</Text>
+                <Text style={{ color: "#94a3b8", fontSize: 12, textAlign: "center", marginTop: 4 }}>Curriculum curated by expert JOXIQ AI mentors</Text>
+              </View>
+
+              {/* Render Level Sections */}
+              {[
+                { title: "🟢 Beginner Level (Lessons 1-6)", lessons: selectedCourse.beginnerLessons, requiredPro: false },
+                { title: "🟡 Intermediate Level (Required Pro)", lessons: selectedCourse.intermediateLessons, requiredPro: true },
+                { title: "🔴 Advanced Level (Required Pro)", lessons: selectedCourse.advancedLessons, requiredPro: true }
+              ].map((level, lvlIdx) => (
+                <View key={lvlIdx} style={{ marginBottom: 24 }}>
+                  <Text style={[textStyle, { fontSize: 15, fontWeight: "bold", color: "#6366f1", marginBottom: 10 }]}>{level.title}</Text>
+                  {level.lessons.map((lesson) => {
+                    const isCompleted = completedLessons.includes(lesson.id);
+                    const isLocked = level.requiredPro && !(userProfile?.isPro || userProfile?.subscriptionStatus === "Pro");
+
+                    return (
+                      <TouchableOpacity
+                        key={lesson.id}
+                        style={[
+                          cardStyle,
+                          { padding: 16, borderRadius: 12, borderWidth: 1, marginBottom: 12 },
+                          isCompleted && { borderLeftWidth: 4, borderLeftColor: "#10b981" }
+                        ]}
+                        onPress={() => {
+                          if (isLocked) {
+                            Alert.alert(
+                              "Upgrade to Pro 💎",
+                              "To unlock intermediate and advanced modules, coding sandboxes, and receive an accredited diploma, upgrade to JOXIQ Pro.",
+                              [
+                                { text: "Upgrade Now", onPress: () => setCurrentView("subscription") },
+                                { text: "Cancel", style: "cancel" }
+                              ]
+                            );
+                          } else {
+                            setSelectedLesson(lesson);
+                            setCurrentSectionIndex(0);
+                            setSectionQuizAnswer(null);
+                            setSectionQuizSubmitted(false);
+                            setSectionQuizPassed(false);
+                            setShowFinalQuiz(false);
+                            setSelectedQuizAnswer(null);
+                            setQuizSubmitted(false);
+                          }
+                        }}
+                      >
+                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                          <View style={{ flex: 1, marginRight: 10 }}>
+                            <Text style={[textStyle, { fontSize: 14, fontWeight: "bold" }]}>{lesson.title}</Text>
+                            <Text style={{ color: "#94a3b8", fontSize: 11, marginTop: 4 }} numberOfLines={1}>{lesson.content}</Text>
+                          </View>
+                          {isCompleted ? (
+                            <View style={{ backgroundColor: "rgba(16, 185, 129, 0.15)", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                              <Text style={{ color: "#10b981", fontSize: 10, fontWeight: "bold" }}>✓ Passed</Text>
+                            </View>
+                          ) : isLocked ? (
+                            <Text style={{ fontSize: 16 }}>🔒</Text>
+                          ) : (
+                            <View style={{ backgroundColor: "rgba(99, 102, 241, 0.1)", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                              <Text style={{ color: "#818cf8", fontSize: 10, fontWeight: "bold" }}>▶ Start</Text>
+                            </View>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* 4. Lesson Stepper & AI Teacher Workspace */}
+          {selectedLesson && (() => {
+            const sections = getSectionsForLesson(selectedLesson.id, selectedLesson.title, selectedLesson.content);
+            const totalSteps = sections.length;
+            const currentSection = sections[currentSectionIndex] || sections[0];
+
+            return (
+              <View style={{ flex: 1 }}>
+                {/* Horizontal progress indicators */}
+                <View style={{ flexDirection: "row", paddingHorizontal: 16, paddingTop: 10, paddingBottom: 6, gap: 4 }}>
+                  {sections.map((_, idx) => (
+                    <View
+                      key={idx}
+                      style={{
+                        flex: 1,
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: idx < currentSectionIndex ? "#10b981" : idx === currentSectionIndex && !showFinalQuiz ? "#6366f1" : (isDark ? "#334155" : "#cbd5e1")
+                      }}
+                    />
+                  ))}
+                  <View
+                    style={{
+                      flex: 1,
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: showFinalQuiz ? "#f59e0b" : (isDark ? "#334155" : "#cbd5e1")
+                    }}
+                  />
+                </View>
+
+                {/* Main View Area - Split between Lesson text and AI Teacher */}
+                <ScrollView style={{ flex: 1, padding: 16 }}>
+                  {/* Final Quiz screen */}
+                  {showFinalQuiz ? (
+                    <View style={[styles.subCard, cardStyle, { padding: 20 }]}>
+                      <Text style={{ fontSize: 32, textAlign: "center", marginBottom: 8 }}>🎓</Text>
+                      <Text style={[textStyle, { fontSize: 20, fontWeight: "bold", textAlign: "center", marginBottom: 4 }]}>Final Academy Exam</Text>
+                      <Text style={{ color: "#94a3b8", fontSize: 12, textAlign: "center", marginBottom: 20 }}>Answer the comprehensive course question to earn your credit.</Text>
+
+                      <Text style={[textStyle, { fontSize: 15, fontWeight: "bold", marginBottom: 12 }]}>{selectedLesson.quiz.question}</Text>
+                      {selectedLesson.quiz.options.map((opt, oIdx) => (
+                        <TouchableOpacity
+                          key={oIdx}
+                          style={[
+                            cardStyle,
+                            { padding: 14, borderRadius: 10, borderWidth: 1, marginBottom: 10 },
+                            selectedQuizAnswer === oIdx && { borderColor: "#6366f1", backgroundColor: "rgba(99, 102, 241, 0.08)" }
+                          ]}
+                          disabled={quizSubmitted}
+                          onPress={() => setSelectedQuizAnswer(oIdx)}
+                        >
+                          <Text style={[textStyle, { fontSize: 13 }]}>{opt}</Text>
+                        </TouchableOpacity>
+                      ))}
+
+                      {!quizSubmitted ? (
+                        <TouchableOpacity
+                          style={[styles.primaryButton, { marginTop: 12 }]}
+                          disabled={selectedQuizAnswer === null}
+                          onPress={() => {
+                            setQuizSubmitted(true);
+                            if (selectedQuizAnswer === selectedLesson.quiz.answer) {
+                              if (!completedLessons.includes(selectedLesson.id)) {
+                                setCompletedLessons([...completedLessons, selectedLesson.id]);
+                              }
+                            }
+                          }}
+                        >
+                          <Text style={styles.primaryButtonText}>Verify Final Answer</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={{ marginTop: 12 }}>
+                          {selectedQuizAnswer === selectedLesson.quiz.answer ? (
+                            <View style={{ alignItems: "center" }}>
+                              <Text style={{ color: "#10b981", fontWeight: "bold", fontSize: 16, marginBottom: 8 }}>🎉 Course Completed Successfully!</Text>
+                              <Text style={{ color: "#94a3b8", fontSize: 12, textAlign: "center", marginBottom: 16 }}>You have fully mastered the concepts and passed all interactive checkpoints. Your achievement has been saved.</Text>
+                              <TouchableOpacity
+                                style={[styles.primaryButton, { backgroundColor: "#10b981", width: "100%" }]}
+                                onPress={() => {
+                                  setSelectedLesson(null);
+                                  setSelectedCourse(null);
+                                }}
+                              >
+                                <Text style={styles.primaryButtonText}>Claim Certificate & Exit</Text>
+                              </TouchableOpacity>
+                            </View>
+                          ) : (
+                            <View style={{ alignItems: "center" }}>
+                              <Text style={{ color: "#f43f5e", fontWeight: "bold", fontSize: 15, marginBottom: 8 }}>❌ That is not correct.</Text>
+                              <Text style={{ color: "#94a3b8", fontSize: 12, textAlign: "center", marginBottom: 12 }}>Don't worry! Ask your Socratic AI Teacher below for help, review the lesson content, and try again.</Text>
+                              <TouchableOpacity
+                                style={[styles.primaryButton, { backgroundColor: "#334155", width: "100%" }]}
+                                onPress={() => {
+                                  setQuizSubmitted(false);
+                                  setSelectedQuizAnswer(null);
+                                }}
+                              >
+                                <Text style={styles.primaryButtonText}>Retry Exam</Text>
+                              </TouchableOpacity>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                    </View>
+                  ) : (
+                    /* Active Section Content */
+                    <View>
+                      <View style={[styles.subCard, cardStyle, { padding: 16, marginBottom: 16 }]}>
+                        <Text style={{ color: "#6366f1", fontSize: 11, fontWeight: "900", textTransform: "uppercase", marginBottom: 4 }}>Section {currentSectionIndex + 1} of {totalSteps}</Text>
+                        <Text style={[textStyle, { fontSize: 18, fontWeight: "bold", marginBottom: 8 }]}>{currentSection.title}</Text>
+                        <Text style={{ color: isDark ? "#cbd5e1" : "#334155", fontSize: 14, lineHeight: 22 }}>{currentSection.content}</Text>
+                      </View>
+
+                      {/* Pro-tip block */}
+                      <View style={{ backgroundColor: isDark ? "rgba(245, 158, 11, 0.08)" : "rgba(245, 158, 11, 0.05)", borderColor: "#f59e0b", borderLeftWidth: 3, padding: 12, borderRadius: 8, marginBottom: 12 }}>
+                        <Text style={{ color: "#f59e0b", fontWeight: "bold", fontSize: 13, marginBottom: 4 }}>💡 Elite Pro-Tip</Text>
+                        <Text style={[textStyle, { fontSize: 12, lineHeight: 18 }]}>{currentSection.proTip}</Text>
+                      </View>
+
+                      {/* Real-world Scenario block */}
+                      <View style={{ backgroundColor: isDark ? "rgba(99, 102, 241, 0.08)" : "rgba(99, 102, 241, 0.05)", borderColor: "#6366f1", borderLeftWidth: 3, padding: 12, borderRadius: 8, marginBottom: 20 }}>
+                        <Text style={{ color: "#818cf8", fontWeight: "bold", fontSize: 13, marginBottom: 4 }}>🌐 Real-World Industry Application</Text>
+                        <Text style={[textStyle, { fontSize: 12, lineHeight: 18 }]}>{currentSection.realWorldScenario}</Text>
+                      </View>
+
+                      {/* Interactive Section Quiz Checkpoint */}
+                      <View style={[styles.subCard, cardStyle, { padding: 16, marginBottom: 24 }]}>
+                        <Text style={[textStyle, { fontSize: 14, fontWeight: "bold", marginBottom: 12 }]}>❓ Section Checkpoint: Verify Your Understanding</Text>
+                        <Text style={[textStyle, { fontSize: 13, marginBottom: 10 }]}>{currentSection.sectionQuiz.question}</Text>
+
+                        {currentSection.sectionQuiz.options.map((opt, oIdx) => (
+                          <TouchableOpacity
+                            key={oIdx}
+                            style={[
+                              cardStyle,
+                              { padding: 12, borderRadius: 8, borderWidth: 1, marginBottom: 8 },
+                              sectionQuizAnswer === oIdx && { borderColor: "#6366f1", backgroundColor: "rgba(99, 102, 241, 0.08)" }
+                            ]}
+                            disabled={sectionQuizSubmitted}
+                            onPress={() => setSectionQuizAnswer(oIdx)}
+                          >
+                            <Text style={[textStyle, { fontSize: 12 }]}>{opt}</Text>
+                          </TouchableOpacity>
+                        ))}
+
+                        {!sectionQuizSubmitted ? (
+                          <TouchableOpacity
+                            style={[styles.primaryButton, { marginTop: 8, padding: 12 }]}
+                            disabled={sectionQuizAnswer === null}
+                            onPress={() => {
+                              setSectionQuizSubmitted(true);
+                              const passed = sectionQuizAnswer === currentSection.sectionQuiz.answer;
+                              setSectionQuizPassed(passed);
+                            }}
+                          >
+                            <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 13 }}>Submit Checkpoint</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={{ marginTop: 10 }}>
+                            {sectionQuizPassed ? (
+                              <View>
+                                <Text style={{ color: "#10b981", fontWeight: "bold", fontSize: 13, marginBottom: 4 }}>🎉 Excellent! Correct Answer.</Text>
+                                <Text style={{ color: "#94a3b8", fontSize: 11, lineHeight: 16, marginBottom: 12 }}>{currentSection.sectionQuiz.explanation}</Text>
+                                <TouchableOpacity
+                                  style={[styles.primaryButton, { backgroundColor: "#10b981", padding: 12 }]}
+                                  onPress={() => {
+                                    setSectionQuizAnswer(null);
+                                    setSectionQuizSubmitted(false);
+                                    setSectionQuizPassed(false);
+                                    if (currentSectionIndex + 1 < totalSteps) {
+                                      setCurrentSectionIndex(currentSectionIndex + 1);
+                                    } else {
+                                      setShowFinalQuiz(true);
+                                    }
+                                  }}
+                                >
+                                  <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 13 }}>
+                                    {currentSectionIndex + 1 < totalSteps ? `Next Step: Section ${currentSectionIndex + 2} ➔` : "Unlock Course Final Exam ➔"}
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
+                            ) : (
+                              <View>
+                                <Text style={{ color: "#f43f5e", fontWeight: "bold", fontSize: 13, marginBottom: 4 }}>❌ Let's rethink that!</Text>
+                                <Text style={{ color: "#94a3b8", fontSize: 11, marginBottom: 12 }}>Review the material above or send a message to your AI Teacher below to discuss this topic in detail!</Text>
+                                <TouchableOpacity
+                                  style={[styles.primaryButton, { backgroundColor: "#334155", padding: 12 }]}
+                                  onPress={() => {
+                                    setSectionQuizAnswer(null);
+                                    setSectionQuizSubmitted(false);
+                                  }}
+                                >
+                                  <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 13 }}>Try Again</Text>
+                                </TouchableOpacity>
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Socratic Mentor Chat Area */}
+                  <View style={{ borderTopWidth: 1, borderTopColor: isDark ? "#1e293b" : "#e2e8f0", paddingTop: 16, marginBottom: 40 }}>
+                    <Text style={[textStyle, { fontSize: 16, fontWeight: "bold", marginBottom: 6 }]}>💬 Active Socratic AI Teacher</Text>
+                    <Text style={{ color: "#94a3b8", fontSize: 11, marginBottom: 14 }}>Engage with your personal AI mentor to clarify concepts, ask for details, or request code helpers.</Text>
+
+                    {/* Chat log */}
+                    <View style={{ minHeight: 120, marginBottom: 12 }}>
+                      {((lessonMessages[selectedLesson.id]) || [
+                        { role: "assistant", content: `Hello! I am your personal Universal AI Teacher for **${selectedLesson.title}**. Ask me any Socratic questions or request code breakdowns to clarify this section!` }
+                      ]).map((m, idx) => (
+                        <View
+                          key={idx}
+                          style={[
+                            styles.messageBubble,
+                            m.role === "user" ? styles.userBubble : styles.aiBubble,
+                            !isDark && m.role === "assistant" && { backgroundColor: "#f1f5f9" },
+                            { padding: 10, borderRadius: 10, marginBottom: 10, maxWidth: "90%" }
+                          ]}
+                        >
+                          {renderFormattedText(m.content, [styles.messageText, m.role === "user" ? { color: "#fff" } : textStyle, { fontSize: 13, lineHeight: 18 }], isDark)}
+                        </View>
+                      ))}
+
+                      {lessonAiLoading && (
+                        <View style={[styles.aiBubble, cardStyle, { padding: 10, alignSelf: "flex-start", borderRadius: 10 }]}>
+                          <ActivityIndicator size="small" color="#6366f1" />
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Chat entry bar */}
+                    <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+                      <TextInput
+                        style={[styles.chatInput, cardStyle, textStyle, { flex: 1, fontSize: 13, paddingVertical: 8, paddingHorizontal: 12 }]}
+                        placeholder="Discuss this concept with AI Teacher..."
+                        placeholderTextColor="#64748b"
+                        value={lessonChatInput}
+                        onChangeText={setLessonChatInput}
+                      />
+                      <TouchableOpacity style={[styles.sendButton, { paddingHorizontal: 14, paddingVertical: 10 }]} onPress={handleSendLessonChat}>
+                        <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 13 }}>Send</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </ScrollView>
+              </View>
+            );
+          })()}
         </View>
       )}
 

@@ -14,6 +14,7 @@ import {
   X,
   Sparkles,
   Code,
+  Code2,
   PenTool,
   GraduationCap,
   Languages,
@@ -78,6 +79,7 @@ import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { LanguageCoach } from "./components/LanguageCoach";
+import { AiLearningPlatform } from "./components/AiLearningPlatform";
 import joxiqLogo from "./assets/images/joxiq_logo_icon_1783612642404.jpg";
 
 function cleanErrorMessage(err: any): string {
@@ -111,7 +113,7 @@ function cleanErrorMessage(err: any): string {
 
 export default function App() {
   // --- Active main layout view ---
-  const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools" | "admin" | "language-coach">("chat");
+  const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools" | "admin" | "language-coach" | "ai-learning">("chat");
 
   // --- Conversations and active state ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -178,6 +180,7 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
+  const [paymentToast, setPaymentToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   const toggleSaveMessage = (msgId: string) => {
     setSavedMessageIds((prev) => {
@@ -446,6 +449,54 @@ export default function App() {
     });
     return () => unsubscribe();
   }, [isProUser]);
+
+  // Handle Stripe payment success/cancel redirect callback
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get("payment_success");
+    const cancel = params.get("payment_cancel");
+    const plan = params.get("plan");
+    
+    if (success === "true") {
+      setIsProUser(true);
+      localStorage.setItem("julkar_is_pro", "true");
+      
+      setPaymentToast({
+        message: `🎉 Subscribed successfully! Welcome to JOXIQ AI ${plan === "ultra" ? "Ultra" : "Pro"}.`,
+        type: "success"
+      });
+      
+      // If user is authenticated, sync subscription status to Firestore
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = doc(db, "users", user.uid);
+        updateDoc(userRef, {
+          subscriptionStatus: plan === "ultra" ? "JOXIQ Ultra" : "Pro",
+          isPro: true
+        }).catch(err => console.error("Error updating subscription status in Firestore:", err));
+      }
+
+      // Clean the search params from the address bar
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (cancel === "true") {
+      setPaymentToast({
+        message: "❌ Payment was cancelled. Please try again when you are ready.",
+        type: "error"
+      });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // Auto-dismiss payment status toast banner after 6 seconds
+  useEffect(() => {
+    if (paymentToast) {
+      const timer = setTimeout(() => {
+        setPaymentToast(null);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [paymentToast]);
 
   // Sync theme changes & auto-sync across users/sessions
   useEffect(() => {
@@ -1554,16 +1605,16 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setActiveView("education")}
+            onClick={() => setActiveView("ai-learning")}
             className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              activeView === "education"
+              activeView === "ai-learning"
                 ? (theme === "dark" ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold")
                 : "border-transparent text-slate-500 hover:text-slate-400 dark:hover:text-slate-200"
             }`}
           >
-            <GraduationCap size={14} className="text-emerald-500" />
-            <span className="flex-1 text-left">AI Classroom Suite</span>
-            <span className="text-[9px] uppercase font-extrabold tracking-widest bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded-md">Advanced</span>
+            <Code2 size={14} className="text-violet-500" />
+            <span className="flex-1 text-left">AI Learning Platform</span>
+            <span className="text-[9px] uppercase font-extrabold tracking-widest bg-violet-500/10 text-violet-500 px-1.5 py-0.5 rounded-md">New</span>
           </button>
 
           <button
@@ -1952,6 +2003,15 @@ export default function App() {
               onDeleteChat={deleteChat}
               useSearch={useSearch}
               onUseSearchChange={setUseSearch}
+            />
+          </div>
+        ) : activeView === "ai-learning" ? (
+          <div className="flex-1 overflow-y-auto">
+            <AiLearningPlatform 
+              theme={theme}
+              userProfile={userProfile}
+              isProUser={isProUser}
+              onOpenProModal={() => setProModalOpen(true)}
             />
           </div>
         ) : activeView === "education" ? (
@@ -3386,6 +3446,26 @@ export default function App() {
         onClearAll={clearAllChats}
         theme={theme === "light" ? "light" : "dark"}
       />
+
+      {/* Payment Status Floating Toast Banner */}
+      {paymentToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 max-w-md w-[90%] animate-slideUp">
+          <div className={`p-4 rounded-2xl shadow-2xl border flex items-center justify-between gap-3 text-sm font-semibold ${
+            paymentToast.type === "success"
+              ? "bg-emerald-950/90 border-emerald-500/30 text-emerald-300"
+              : "bg-rose-950/90 border-rose-500/30 text-rose-300"
+          } backdrop-blur-md`}>
+            <span>{paymentToast.message}</span>
+            <button
+              onClick={() => setPaymentToast(null)}
+              className="p-1.5 rounded-lg hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <Analytics />
     </div>
   );

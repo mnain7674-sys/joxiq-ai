@@ -4,9 +4,26 @@ import fs from "fs";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
+import Stripe from "stripe";
 
 // Load environment variables
 dotenv.config();
+
+// Lazily initialize Stripe client to prevent crashes if key is missing
+let stripeInstance: Stripe | null = null;
+function getStripeInstance(): Stripe | null {
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeKey || stripeKey.trim() === "") {
+    return null;
+  }
+  if (!stripeInstance) {
+    stripeInstance = new Stripe(stripeKey, {
+      apiVersion: "2025-01-27.acacia" as any, // use the latest stable or let it resolve
+    });
+  }
+  return stripeInstance;
+}
+
 
 const app = express();
 const PORT = 3000;
@@ -418,6 +435,59 @@ app.post("/api/education/generate", async (req, res) => {
 app.post("/api/create-checkout-session", async (req, res) => {
   try {
     const { plan, email } = req.body;
+
+    // Check if Stripe is configured
+    const stripe = getStripeInstance();
+    if (stripe) {
+      // Plan pricing mapping (in QAR)
+      // monthly -> 36 QR (~$9.99 USD)
+      // yearly -> 300 QR (~$82 USD)
+      // ultra -> 99 QR (~$27 USD)
+      let amount = 3600; // default 36 QAR in cents
+      let interval: "month" | "year" = "month";
+      let planName = "JOXIQ Pro Monthly";
+
+      if (plan === "yearly") {
+        amount = 30000; // 300 QAR
+        interval = "year";
+        planName = "JOXIQ Pro Yearly";
+      } else if (plan === "ultra") {
+        amount = 9900; // 99 QAR
+        interval = "month";
+        planName = "JOXIQ Ultra Monthly";
+      }
+
+      const origin = req.headers.origin || "http://localhost:3000";
+      
+      // Create Stripe checkout session
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        customer_email: email || undefined,
+        line_items: [
+          {
+            price_data: {
+              currency: "qar",
+              product_data: {
+                name: planName,
+                description: `Unlock unlimited messages, advanced Gemini models, and premium features on JOXIQ AI.`,
+              },
+              unit_amount: amount,
+              recurring: {
+                interval: interval,
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        mode: "subscription",
+        success_url: `${origin}/?payment_success=true&plan=${plan || "monthly"}&email=${encodeURIComponent(email || "")}`,
+        cancel_url: `${origin}/?payment_cancel=true`,
+      });
+
+      return res.json({ success: true, url: session.url });
+    }
+
+    // Fallback simulated success response for QAR / USD payment
     if (email) {
       const user = registeredUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
       if (user) {
@@ -428,8 +498,7 @@ app.post("/api/create-checkout-session", async (req, res) => {
       }
     }
     
-    // Return simulated success response for QAR / USD payment
-    res.json({ success: true, message: "Checkout session created successfully and tokens credited", plan: plan || "monthly" });
+    res.json({ success: true, message: "Checkout session created successfully and tokens credited (Simulated)", plan: plan || "monthly" });
   } catch (error: any) {
     console.error("Checkout session error:", error);
     res.status(500).json({ error: error.message || "Failed to create checkout session." });
