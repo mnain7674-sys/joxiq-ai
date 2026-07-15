@@ -10,6 +10,7 @@ import {
   Lock,
   Sparkles,
   ChevronRight,
+  ChevronLeft,
   ArrowLeft,
   Play,
   RotateCcw,
@@ -57,36 +58,105 @@ export const ACADEMIES = [
     coursesCount: 25
   },
   {
+    id: "language",
+    title: "Language Coach",
+    description: "Master professional spoken English, Spanish, French, German, and Japanese with our dedicated AI Language Mentor.",
+    icon: GraduationCap,
+    color: "from-blue-600 to-cyan-600",
+    badge: "Interactive Speech",
+    coursesCount: 5
+  },
+  {
     id: "ai",
-    title: "AI & Neural Net Academy",
-    description: "Deep dive into model architectures, weights, fine-tuning techniques, and intelligent agent structures.",
+    title: "AI Academy",
+    description: "Deep dive into model architectures, neural networks, weights, fine-tuning, and intelligent agent loops.",
     icon: Sparkles,
     color: "from-purple-600 to-pink-600",
     badge: "Future Ready",
-    coursesCount: 8,
-    isLocked: true
+    coursesCount: 4
   },
   {
     id: "business",
-    title: "Business & Startup Academy",
-    description: "Master startup metrics, pricing matrices, term sheets, unit economics, and executive pitch formats.",
+    title: "Business Academy",
+    description: "Master startup metrics, pricing matrices, VC term sheets, unit economics, and executive pitch formats.",
     icon: Briefcase,
     color: "from-emerald-600 to-teal-600",
     badge: "SaaS & VC Track",
-    coursesCount: 12,
-    isLocked: true
+    coursesCount: 4
   },
   {
     id: "design",
-    title: "UI/UX Design Academy",
-    description: "Craft pixel-perfect user interfaces, Figma systems, interactive micro-animations, and typographic structures.",
+    title: "Design Academy",
+    description: "Craft pixel-perfect user interfaces, Figma design systems, visual contrast, typography, and motion paths.",
     icon: Palette,
     color: "from-amber-600 to-orange-600",
     badge: "Visual Craft",
-    coursesCount: 10,
-    isLocked: true
+    coursesCount: 3
+  },
+  {
+    id: "marketing",
+    title: "Marketing Academy",
+    description: "Orchestrate high-conversion SEO keywords, digital marketing campaigns, and social media viral hooks.",
+    icon: TrendingUp,
+    color: "from-red-600 to-rose-600",
+    badge: "High Conversion",
+    coursesCount: 2
+  },
+  {
+    id: "finance",
+    title: "Finance Academy",
+    description: "Analyze financial statement models, construct compound interest engines, and evaluate cap tables.",
+    icon: Shield,
+    color: "from-yellow-600 to-amber-600",
+    badge: "Wealth Management",
+    coursesCount: 2
   }
 ];
+
+export const academyHeroInfo: Record<string, { badge: string; title: string; desc: string; coursesLabel: string }> = {
+  coding: {
+    badge: "Become a Professional Programmer with Your Personal AI Mentor",
+    title: "Double Your Developer Speed & Pass Senior Interviews",
+    desc: "Master the structural syntax of 25 languages. Solve interactive checkpoints, get line-by-line code reviews from our Socratic mentor, and compile programs inside your dashboard.",
+    coursesLabel: "Browse 25 Syllabus Paths"
+  },
+  language: {
+    badge: "Master Languages with Your Personal AI Language Coach",
+    title: "Achieve Flawless Conversational Fluency & Pronunciation",
+    desc: "Study English, Spanish, French, German, or Japanese. Master greetings, grammar, and real-life roleplays with adaptive check questions and immediate feedback.",
+    coursesLabel: "Browse 5 Language Paths"
+  },
+  ai: {
+    badge: "Master Neural Networks and Agentic AI Architecture",
+    title: "Design Next-Gen Artificial Intelligence & LLMs",
+    desc: "Build neural networks from scratch, study deep learning models, prompt engineering, and agent systems guided by real-world enterprise architectures.",
+    coursesLabel: "Browse 4 AI Tracks"
+  },
+  business: {
+    badge: "Build and Scale High-Growth Venture Startups",
+    title: "Master Startup Economics, Monetization, and Pricing",
+    desc: "Deconstruct Venture Capital terms, seed formulas, pricing metrics, SaaS funnels, and executive pitch templates under the guidance of top startup mentors.",
+    coursesLabel: "Browse 4 Business Paths"
+  },
+  design: {
+    badge: "Craft Stunning Modern Interfaces and Visual Brand Systems",
+    title: "Master UI/UX Principles, Design Tokens, & Figma",
+    desc: "Create pixel-perfect grids, typography scales, auto-layout wrappers, and dynamic spring motion micro-interactions with line-by-line design reviews.",
+    coursesLabel: "Browse 3 Design Tracks"
+  },
+  marketing: {
+    badge: "Drive Global Product Traffic & High Growth Funnels",
+    title: "Master SEO, Content Strategy, & Viral Hooks",
+    desc: "Design marketing funnels, optimize digital spend, write highly converting sales copy, and scale search relevance via standard industry pipelines.",
+    coursesLabel: "Browse 2 Marketing Paths"
+  },
+  finance: {
+    badge: "Manage Wealth & Financial Assets Like a Professional",
+    title: "Master Wealth Management, Investing, & Financial Modeling",
+    desc: "Build personal budgets, study stock market compounding interest formulas, and create multi-statement Excel and Google Sheets financial models.",
+    coursesLabel: "Browse 2 Finance Tracks"
+  }
+};
 
 export const AiLearningPlatform: React.FC<AiLearningPlatformProps> = ({
   theme,
@@ -207,6 +277,22 @@ YOUR GOALS:
   const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<number | null>(null);
   const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
 
+  // New 16-step lesson flow states
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
+  const [lessonQuizAnswer, setLessonQuizAnswer] = useState<number | null>(null);
+  const [lessonQuizSubmitted, setLessonQuizSubmitted] = useState<boolean>(false);
+  const [lessonQuizPassed, setLessonQuizPassed] = useState<boolean>(false);
+  const [homeworkSubmission, setHomeworkSubmission] = useState<string>("");
+  const [homeworkSubmitted, setHomeworkSubmitted] = useState<boolean>(false);
+  const [xp, setXp] = useState<number>(() => {
+    const saved = localStorage.getItem("joxiq_xp");
+    return saved ? parseInt(saved, 10) : 500;
+  });
+  const [completedHomeworks, setCompletedHomeworks] = useState<string[]>(() => {
+    const saved = localStorage.getItem("joxiq_completed_homeworks");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   // Lesson Completion Screen States
   const [showLessonCompletedScreen, setShowLessonCompletedScreen] = useState<boolean>(false);
   const [completedLessonSummary, setCompletedLessonSummary] = useState<string>("");
@@ -261,6 +347,15 @@ YOUR GOALS:
   useEffect(() => {
     localStorage.setItem("joxiq_completed_projects", JSON.stringify(completedProjects));
   }, [completedProjects]);
+
+  // Sync XP and homeworks to local storage
+  useEffect(() => {
+    localStorage.setItem("joxiq_xp", xp.toString());
+  }, [xp]);
+
+  useEffect(() => {
+    localStorage.setItem("joxiq_completed_homeworks", JSON.stringify(completedHomeworks));
+  }, [completedHomeworks]);
 
   // Generate dynamic custom section-by-section breakdown of a lesson to simulate 3 detailed stages + final quiz
   const getLessonSections = (lesson: Lesson) => {
@@ -319,6 +414,280 @@ YOUR GOALS:
     ];
   };
 
+  const getLessonStepsData = (course: Course, level: string, lesson: Lesson) => {
+    const topic = lesson.title.replace(/Lesson \d+ - /, "");
+    const codeName = course.name;
+
+    return [
+      {
+        id: "welcome",
+        name: "1. Welcome",
+        title: `👋 Welcome to your AI Coach Session!`,
+        content: `### Hello, Learner! Welcome to ${course.name}!
+        
+I am your personal AI Teacher, Mentor, and Learning Companion. Today, we are embarking on a crucial journey to master **${topic}**.
+
+As your guide, my goal is **not** to rush through topics or answer questions quickly. Our primary objective is to ensure you **truly, deeply understand** this concept and feel 100% confident applying it to build real products in real life.
+
+#### 🌟 Our Classroom Principles:
+1. **Never Rush**: We will go step-by-step, taking our time to grasp the mechanics under the hood.
+2. **Interactive Checkpoints**: We will test our understanding with practical exercises, quizzes, and homework.
+3. **Embrace Mistakes**: Making errors is the absolute best way to learn! I am here to support you at every single step.
+
+*Click the **Next Step** button below to begin!*`
+      },
+      {
+        id: "overview",
+        name: "2. Overview",
+        title: `📋 Lesson Overview: ${topic}`,
+        content: `### What is this lesson about?
+        
+In this masterclass, we are focusing on **${topic}**—one of the key pillars of **${course.name}**. 
+
+We have designed a rigorous 16-step structured path to guide you from zero to expert mastery. Here is a quick look at our roadmap for today:
+* 🔍 **Theoretical Foundations**: Learn the What, Why, and Where of ${topic}.
+* 🛠️ **Under-the-Hood Mechanics**: Deep dive into how it works and where it is applied by industry leaders.
+* ✍️ **Guided & Hands-On Practice**: Write and compile code in our live interactive sandbox.
+* 🤖 **AI-Powered Socratic Reviews**: Get line-by-line feedback on your work from your AI Coach.
+* 📝 **Evaluation & Homework**: Complete a concept quiz and tackle a practical assignment to solidify your skills.
+
+**Estimated Time**: ~15 minutes of focused learning.`
+      },
+      {
+        id: "objectives",
+        name: "3. Objectives",
+        title: `🎯 Learning Objectives`,
+        content: `### What you will master today:
+        
+By the end of this lesson, you will be able to:
+* 🎓 **Core Understanding**: Define and explain the fundamental concepts of **${topic}** in simple terms.
+* 🎓 **Mechanics & Logic**: Articulate exactly *why* this concept was created, *how* it functions under the hood, and *where* to deploy it.
+* 🎓 **Practical Implementation**: Implement **${topic}** securely and efficiently inside standard development pipelines.
+* 🎓 **Troubleshooting**: Identify and resolve common syntax/logic mistakes related to this topic.
+* 🎓 **Real-World Application**: Apply these principles to solve production-grade problems in your software portfolio.`
+      },
+      {
+        id: "concept",
+        name: "4. Explain Concept",
+        title: `💡 Explaining the Concept`,
+        content: `### Defining ${topic}
+        
+Let's introduce **${topic}** starting from the absolute basics, assuming zero prior knowledge.
+
+In standard ${course.name} environments, **${topic}** refers to the mechanism of organizing, tracking, or managing states, data flows, or behaviors. 
+
+#### 📦 A Helpful Analogy:
+Imagine you are organizing a large, busy warehouse. Instead of throwing items randomly on the floor where they get lost or damaged, you use structured boxes, labels, and shelves. 
+
+Similarly, **${topic}** acts as the structured shelf system for your application logic. It ensures that every instruction has a designated, safe place, making your software incredibly predictable, readable, and lightning-fast to run.`
+      },
+      {
+        id: "why",
+        name: "5. Why It Exists",
+        title: `❓ Why It Exists`,
+        content: `### The Problem: Life Before ${topic}
+        
+To truly understand any concept, we must understand the frustration that led to its creation. 
+
+Before **${topic}** became an industry standard, developers and teams struggled with massive pain points:
+* ❌ **Spaghetti Logic**: Codebases became tangled, unreadable messes where making one minor change broke ten other unrelated features.
+* ❌ **Memory & Speed Chokes**: Systems ran slowly, consumed too much memory, or crashed under high traffic because data wasn't handled properly.
+* ❌ **Security Leaks**: Critical keys and user information were left exposed to exploits.
+
+#### 🚀 The Solution:
+**${topic}** was introduced as a robust contract to enforce order. It acts as an automated safety guard, managing operations systematically so that developers can focus on building features rather than hunting down complex system bugs.`
+      },
+      {
+        id: "where",
+        name: "6. Where It Is Used",
+        title: `🌍 Where It Is Used`,
+        content: `### Industry Adoption & Real-World Context
+        
+**${topic}** is not just an academic theory—it is a critical technology used daily by the world's leading engineering teams.
+
+Here are a few prominent places where this concept is actively deployed:
+* 🌐 **High-Scale SaaS Products**: Companies like **Netflix** and **Spotify** use these patterns in their asset delivery layers to process millions of streaming requests without buffering.
+* 💳 **FinTech & Secure Banking**: Financial networks rely on this logic to ensure transactions are processed atomically—either they succeed completely, or they roll back safely.
+* 🤖 **AI & Neural Networks**: Processing massive dataset arrays, token weights, and prompt variables requires the optimized structures of ${topic}.
+* 📱 **Mobile App Ecosystems**: Smooth, high-frame-rate scrolling on iOS and Android is powered under the hood by these memory-efficient paradigms.`
+      },
+      {
+        id: "how",
+        name: "7. How It Works",
+        title: `⚙️ How It Works Under the Hood`,
+        content: `### The Mechanics of ${topic}
+        
+Let's break down the execution cycle of **${topic}** step-by-step.
+
+When a program processes this logic, the underlying execution environment performs the following sequence:
+
+1. **Allocation & Initialization**: The system sets aside a dedicated block of computer memory (RAM) or runtime resource slots.
+2. **Enforcement of Scope**: The bounds and visibility permissions are locked down. This ensures that variables are accessible only where they should be, preventing unexpected modifications.
+3. **Execution & Transformation**: Instructions are processed line-by-line, utilizing standard operators and compilers.
+4. **Clean-Up & Reclamation**: Once execution exits, the system safely releases active buffers and handles garbage collection, maintaining optimal speed.
+
+This systematic flow is what makes your applications robust, secure, and ready to scale.`
+      },
+      {
+        id: "applications",
+        name: "8. Real-Life Applications",
+        title: `📈 Real-Life Practical Scenarios`,
+        content: `### Applying ${topic} in Production
+        
+Let's look at concrete scenarios where you will actively write and use this concept in your professional career:
+
+#### Scenario A: Designing a User Session manager
+When users log into your platform, you must track their authentication token, subscription plan, and active preferences. You deploy **${topic}** to store and validate these data scopes securely without exposing them to browser client manipulation.
+
+#### Scenario B: Building a High-Performance Shopping Cart
+To calculate item totals, taxes, and shipping fees dynamically, you write clean, non-destructive loops and variables representing **${topic}**. This guarantees that the final checkout price is 100% accurate every time, maximizing customer trust and revenue.`
+      },
+      {
+        id: "guided",
+        name: "9. Guided Practice",
+        title: `📖 Guided Practice & Code Analysis`,
+        content: `### Step-by-Step Walkthrough
+        
+Let's analyze a production-ready implementation of **${topic}**. Review this code block carefully and read the line-by-line breakdown below:
+
+\`\`\`javascript
+// Production-grade implementation of ${topic}
+function processSystemPayload(userData) {
+  // 1. Guard check to validate incoming parameter bounds
+  if (!userData || typeof userData !== 'object') {
+    throw new Error("Invalid payload format detected.");
+  }
+  
+  // 2. Initializing scope and local state values
+  const systemStreakMultiplier = 1.25;
+  let calculatedXP = userData.completedLessonsCount * 100;
+  
+  // 3. Applying logic conditions
+  if (userData.hasActiveStreak) {
+    calculatedXP = Math.round(calculatedXP * systemStreakMultiplier);
+  }
+  
+  return calculatedXP;
+}
+\`\`\`
+
+#### 🔬 Line-by-Line Breakdown:
+* **Line 2-5**: The \`processSystemPayload\` function takes a \`userData\` object. We immediately run a **Guard Clause** to trap invalid inputs. This is a crucial professional habit!
+* **Line 8**: We declare a constant multiplier. Because this value shouldn't change, we use \`const\` to lock it in RAM.
+* **Line 9-14**: We calculate baseline XP and apply a conditional check. If \`hasActiveStreak\` is true, we apply the multiplier to reward the user.`
+      },
+      {
+        id: "practice",
+        name: "10. Learner Practice",
+        title: `🛠️ Learner Hands-On Practice`,
+        content: `### Now it's your turn!
+        
+To build real developer confidence, you must actively write code. We have loaded a practice challenge for **${topic}** in the interactive playground below.
+
+#### Your Challenge:
+1. Scroll down to the **Socratic Playground** textarea below.
+2. Modify the code template to create a custom module or logic block representing **${topic}**.
+3. For example, write a function that calculates learning rewards or validates standard inputs.
+4. Click the green **Compile & Run** button to check your terminal outputs and ensure there are no syntax errors.
+
+Once your code runs successfully in the sandbox, click **Next Step** to submit your work for AI Socratic evaluation!`
+      },
+      {
+        id: "feedback",
+        name: "11. AI Feedback",
+        title: `🤖 Socratic AI Evaluation`,
+        content: `### Get Instant Feedback from Your Socratic Mentor
+        
+Let's review your playground practice work! 
+
+Your AI Coach will evaluate your solution not by simply giving away the answer, but by asking guiding questions to deepen your cognitive understanding.
+
+#### How to request review:
+1. Ensure your latest practice code is entered in the playground below.
+2. Click the **"Ask Socratic Mentor to Evaluate My Practice"** button below.
+3. Your AI tutor will write a comprehensive, friendly, and highly detailed review in the Socratic chat panel on the right side of the screen.
+
+*Ask questions, refine your logic, and master this concept thoroughly!*`
+      },
+      {
+        id: "quiz",
+        name: "12. Concept Quiz",
+        title: `📝 Interactive Concept Checkpoint`,
+        content: `### Test Your Comprehension
+        
+Before we finalize today's module, let's run a quick, high-impact quiz to ensure you have fully grasped the core mechanics of **${topic}**.
+
+#### Interactive Question:
+*Read the multiple-choice question below and select your answer. You must submit the correct response to successfully unlock the final steps of this lesson!*`
+      },
+      {
+        id: "homework",
+        name: "13. Homework",
+        title: `🏠 Practical Homework Assignment`,
+        content: `### Today's Take-Home Challenge
+        
+To reinforce your learning outside of today's active session, here is your practical homework assignment for **${topic}**:
+
+#### 📘 Assignment:
+> **Build a Mini-System Validation Ruleset:**
+> Write a lightweight validation block that accepts a user database profile. It must check if their email matches valid patterns, verifies that their account age is a positive number, and logs an error if security bounds are breached.
+
+#### 📥 Submit Your Homework:
+Type your homework code or explanatory response in the input text area below, and click **Submit Homework** to persist your assignment status. Your Socratic AI Mentor will log this submission inside your progress dashboard!`
+      },
+      {
+        id: "summary",
+        name: "14. Summary",
+        title: `📖 Lesson Key Takeaways`,
+        content: `### Outstanding job today!
+        
+Let's recap the critical points we covered in this lesson on **${topic}**:
+
+* 🔑 **The Core Idea**: **${topic}** is a powerful visual or programming pattern in **${course.name}** that creates highly structured, reliable, and predictable workflows.
+* 🔑 **Why It Matters**: Without it, applications suffer from spaghetti logic, memory leaks, and severe security exposures.
+* 🔑 **How It Works**: By following structured allocation, enforcing scope bounds, executing instructions line-by-line, and cleaning up buffers safely.
+* 🔑 **Professional Standards**: Always use guard clauses, choose clean naming rules, and never hardcode private API keys or secrets inside your repository.
+
+*You have built a robust foundation today. Let's head over to the next screen to celebrate your progress and unlock your rewards!*`
+      },
+      {
+        id: "completed",
+        name: "15. Completed Screen",
+        title: `🎉 Celebration & Progress Logged!`,
+        content: `### Module Completed Successfully!
+        
+Congratulations, Learner! You have demonstrated exceptional dedication and focus by mastering **${topic}**.
+
+#### 🏆 Your Updated Metrics:
+* **XP Earned**: **+100 XP** successfully logged in your profile!
+* **Learning Streak**: Updated and saved to your persistent browser dashboard.
+* **Course Progress**: Updated in your portfolio.
+* **Certificate Status**: Milestone recorded!
+
+#### 🎓 Professional Certification:
+Once you complete all 90 lessons of this course (Beginner, Intermediate, and Advanced stages), your Socratic AI Mentor will issue your official **JOXIQ Software Engineering Credential** which you can share directly on LinkedIn or your CV!
+
+*Click the button below to lock in these metrics and save your progress!*`
+      },
+      {
+        id: "preview",
+        name: "16. Next Lesson Preview",
+        title: `🔮 Previewing Your Next Horizon`,
+        content: `### Up Next in Your Syllabus:
+        
+You have mastered **${topic}**! But our learning journey is just beginning. Let's look at what is coming up next in your roadmap:
+
+#### 🌟 Sneak Peek of the Next Lesson:
+* **Syllabus Focus**: Deepen your technical skill, build on today's concepts, and explore advanced integration workflows.
+* **Why it matters**: You will learn to connect multiple modular blocks together, building complete end-to-end full-stack architectures.
+
+> *"You've taken the first step. Imagine what you'll be able to do after completing this course."*
+
+*Click the button below to advance to your next masterclass!*`
+      }
+    ];
+  };
+
   const handleSelectCourse = (course: Course) => {
     setSelectedCourse(course);
     setSelectedLesson(null);
@@ -337,6 +706,14 @@ YOUR GOALS:
     setShowFinalQuiz(false);
     setSelectedQuizAnswer(null);
     setQuizSubmitted(false);
+
+    // Reset 16-step flow states
+    setCurrentStepIndex(0);
+    setLessonQuizAnswer(null);
+    setLessonQuizSubmitted(false);
+    setLessonQuizPassed(false);
+    setHomeworkSubmission("");
+    setHomeworkSubmitted(false);
 
     // Track for Resume Learning feature
     const resumeInfo = { courseId, lessonId: lesson.id, title: lesson.title };
@@ -449,6 +826,63 @@ Use English terms in brackets for programming jargon (e.g., ভেরিয়�
     setPlaygroundOutput("Sandbox code reset successfully.");
   };
 
+  const handleRequestPracticeFeedback = async () => {
+    if (!selectedLesson) return;
+    const lessonId = selectedLesson.lesson.id;
+    const topic = selectedLesson.lesson.title.replace(/Lesson \d+ - /, "");
+    const practiceCode = playgroundCode;
+
+    const activeChats = lessonChats[lessonId] || [];
+    const userMsg = `Coach, here is my practice implementation for "${topic}". Please review it and provide Socratic feedback!
+
+\`\`\`${playgroundLang}
+${practiceCode}
+\`\`\``;
+
+    const updated = [...activeChats, { role: "user" as const, content: `I've submitted my practice code for review!` }];
+    setLessonChats(prev => ({ ...prev, [lessonId]: updated }));
+    setIsAiLoading(true);
+
+    try {
+      const prompt = `You are an elite, highly experienced software engineering teacher, computer science mentor, and coding coach (not a chatbot).
+Current Course: "${selectedCourse?.name || "Software Engineering"}"
+Current Lesson: "${selectedLesson.lesson.title}"
+
+The user has submitted their practice code for Socratic review:
+\`\`\`${playgroundLang}
+${practiceCode}
+\`\`\`
+
+YOUR TASK:
+1. Provide extremely warm, detailed, and highly encouraging Socratic feedback.
+2. Review their code logic and execution step-by-step.
+3. NEVER say "You are wrong." Instead, say "Good attempt!", "I understand why you structured it this way", or "Here is a small challenge to optimize this".
+4. Ask a thoughtful, guiding question at the end to prompt them to refine their understanding or think about edge cases. Do not give away the solution directly.
+5. Keep your response conversational and formatted in clean markdown. Speak strictly in English unless requested otherwise.`;
+
+      const res = await fetch("/api/education/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, jsonMode: false })
+      });
+      const data = await res.json();
+      const aiReply = data.result || "Excellent attempt! Tell me, what do you think would happen if your inputs were empty or null?";
+
+      setLessonChats(prev => ({
+        ...prev,
+        [lessonId]: [...updated, { role: "assistant" as const, content: aiReply }]
+      }));
+    } catch (err) {
+      console.error(err);
+      setLessonChats(prev => ({
+        ...prev,
+        [lessonId]: [...updated, { role: "assistant" as const, content: "I encountered a processing anomaly. Please verify your connection or ask again!" }]
+      }));
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
   // Dedicated AI Lesson Socratic Tutor Chat System
   const handleSendLessonChat = async () => {
     if (!chatInput.trim() || !selectedLesson) return;
@@ -459,9 +893,9 @@ Use English terms in brackets for programming jargon (e.g., ভেরিয়�
     const activeChats = lessonChats[lessonId] || [
       {
         role: "assistant",
-        content: `Greetings! I am your Socratic AI Programming Instructor for **${selectedLesson.lesson.title}**.
-        
-I am here to help you master this concept. I explain topics step-by-step, dissect syntax line-by-line, walk through code structures, and review challenges. Ask me any question, or ask for a practice problem to solve!`
+        content: lessonId.endsWith("-b1")
+          ? `👋 **Welcome to the wonderful world of coding!** \n\nI am your personal AI programming instructor. Today you are about to start your very first and most important coding lesson! We will not memorize complex formulas or boring rules today. Instead, we'll unlock the secrets of coding using simple real-world stories and fun analogies.\n\n### 🎯 What You'll Achieve by Completing This Course:\n1. **Become a Creator**: You will be able to build your own custom apps, games, or websites from scratch.\n2. **Unlock New Horizons (Career Opportunities)**: Unlimited options will open up for high-paying remote roles, freelance work, and tech careers.\n3. **Think Logically**: You will learn to break down any complex, messy problem in life and solve it step-by-step.\n\n### 🌟 Our Simple Classroom Guidelines:\n* We will never rush. We will go slowly and master one concept at a time.\n* After every single concept, I will ask you a quick, fun question to make sure you've grasped it fully.\n* Making mistakes is a brilliant thing—it's how we grow! No need to feel afraid at all.\n\nAre you ready to begin your very first coding adventure? Simply type **"I am ready"** or **"Ready"** below to let me know!`
+          : `Greetings! I am your Socratic AI Programming Instructor for **${selectedLesson.lesson.title}**.\n\nI am here to help you master this concept. I explain topics step-by-step, dissect syntax line-by-line, walk through code structures, and review challenges. Ask me any question, or ask for a practice problem to solve!`
       }
     ];
 
@@ -477,40 +911,75 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
         : "";
 
       // Instruct Gemini to behave as an elite socratic coding teacher following strict pedagogical rules
-      const prompt = `You are an elite, highly experienced software engineering teacher and computer science mentor.
+      const prompt = `You are an elite, highly experienced software engineering teacher, computer science mentor, and coding coach (not a chatbot).
 Current Course: "${selectedCourse?.name || "Software Engineering"}"
 Current Lesson: "${selectedLesson.lesson.title}"
 ${sectionContext}
 
 The user's query/message: "${userMsg}"
 
-CRITICAL PEDAGOGICAL TEACHING RULES:
-1. Never start a lesson or introduce a new topic with examples.
-2. Always begin by explaining the core concept first in simple, beginner-friendly language.
-3. Before giving any example, make sure the learner fully understands:
-   - What the topic is.
-   - Why it exists.
-   - Why it is important.
-   - Where it is used.
-   - When it is used.
-   - How it works.
-4. Explain everything using simple, beginner-friendly language. Never assume the learner already knows anything.
-5. After the learner understands the concept, gradually introduce examples.
-6. Start with exactly one very simple example. Explain that example step by step and line by line with absolute clarity.
-7. Only after the learner understands the first example, introduce more examples with increasing difficulty. Never overload the learner with many examples at once.
-8. Always focus on understanding before memorization.
-9. Continuously evaluate the learner's understanding through thoughtful questions and interactive checkpoints. If understanding is weak, STOP moving forward and spend more time explaining the concepts in different ways instead of rushing to complete the syllabus.
-10. Never give information just to finish a lesson. Teach until the learner genuinely and deeply understands. The learner's success is far more important than completing the syllabus.
-11. If the learner seems confused or makes a mistake, stop introducing new content. Instead:
-    - Explain the concept again in different words.
-    - Use a clear analogy or a real-life situation.
-    - Ask if the learner understands before continuing.
-12. This must feel like a real interactive classroom taught by an excellent, patient teacher. Never rush to finish lessons. The goal is to ensure the learner truly understands the topic.
-13. Only after the learner demonstrates understanding or successfully solves a challenge should you proceed to the next section or topic.
-14. Ask guided questions or give coding exercises, and invite them to write code in the interactive playground below.
-15. If they write code, review their answers carefully and explain WHY mistakes happen. Keep formatting professional with clear markdown headers, bold keywords, and clean bullet lists.`;
+CRITICAL SYSTEM DIRECTIVES & LANGUAGE POLICY:
+1. By default, you MUST explain, speak, and instruct strictly in English to keep it professional and accessible.
+2. EXCEPTION: If the user explicitly asks you to translate, explain, or switch to another language (e.g., "Bangla e bujhie dao", "explain in Bangla/Hindi/Spanish/etc."), you MUST immediately and gracefully switch to that language to explain concepts, while keeping target programming terms in brackets or standard format.
+
+PRIMARY PEDAGOGICAL GOAL:
+- Your primary goal is NOT to rush or finish lessons quickly. Deep, confident understanding is far more important than speed.
+- The learner must never feel like they are reading a textbook. Make it feel like an interactive, warm conversation with one of the best software mentors in the world.
+
+THE ULTIMATE 14-STEP LESSON STRUCTURE (You MUST guide the learner through this exact sequence step-by-step. Do NOT skip steps or overload the learner with too much information at once. Wait for their inputs/answers at checkpoints):
+- **Step 1: Introduction** — Welcome the learner warmly, introduce the lesson.
+- **Step 2: Learning Objectives** — Clear, exciting points of what they will learn.
+- **Step 3: Concept Explanation** — Introduce the topic's core concept without examples or code snippets first.
+- **Step 4: Real Life Importance** — Explain WHY this lesson matters, what they will achieve, and how it improves their career, products, or confidence.
+- **Step 5: Simple Explanation** — Break down the core logic in extremely simple terms using storytelling or real-world analogies (like storing items in boxes or baking cakes).
+- **Step 6: Detailed Explanation** — Expand on the details, language syntax, patterns, and nuances.
+- **Step 7: Very Easy Example** — Introduce exactly one super easy code snippet or concept example.
+- **Step 8: Practice Together** — Walk through how industry professionals use this code/concept.
+- **Step 9: Learner Practice** — Present a simple practical exercise or code drill in the interactive playground below and ask the learner to practice.
+- **Step 10: AI Feedback** — Provide warm, detailed feedback. Never say "You are wrong." Instead, say "Good attempt!", "I understand why you thought that", and gently redirect.
+- **Step 11: Quiz** — Present highly focused, engaging questions measuring actual understanding. If they fail or show confusion, explain the concept again using a different story/analogy and test them with a fresh question.
+- **Step 12: Lesson Summary** — Show a beautifully formatted summary of what was learned.
+- **Step 13: Lesson Completed** — Congratulate the learner on completing the lesson. Remind them of their progress, time spent, XP earned, and celebrate their growth!
+- **Step 14: Next Lesson Preview** — Briefly preview the next lesson to spark intense curiosity and anticipation. End with exactly or a translation of: "You've taken the first step. Imagine what you'll be able to do after completing this course."
+
+CONCEPT BEFORE EXAMPLES:
+- Never start with examples or code. Always explain the What, Why, Where, When, and How first. Only after they grasp the core logic should you introduce any code snippets.
+
+GRADUAL EXAMPLES:
+- Introduce examples gradually: Easy ➔ Medium ➔ Real World ➔ Professional.
+
+CHECK UNDERSTANDING:
+- After every explanation or concept, ask a small question. If they understand, continue. If not, explain again using different words, analogies, or practical scenarios. Never proceed while the learner is confused or struggling.
+
+MOTIVATION:
+- Celebrate every small victory and progress. Keep them highly motivated! Use terms like: "Excellent", "You're improving", "That's exactly right", "You're thinking like a programmer", "You've made real progress today."
+
+OPTIONAL HOMEWORK:
+- End the lesson with optional homework to reinforce what they have learned.`;
 
       let finalPrompt = prompt;
+      if (lessonId.endsWith("-b1")) {
+        finalPrompt += `
+
+CRITICAL FIRST LESSON DIRECTIVES:
+- This is the VERY FIRST LESSON of the entire course. It is the most critical lesson for creating a strong first impression.
+- By default, you MUST speak and instruct strictly in English to keep it professional and accessible.
+- EXCEPTION: If the user explicitly asks you to explain in another language (e.g., "Bangla e bujhie dao" or "explain in Bangla/Hindi/Spanish/etc."), you MUST immediately switch to that language for explanations while keeping target programming terms in brackets or standard format.
+- Act as one of the best teachers in the world: extremely warm, patient, inspiring, and full of curiosity.
+- Never be boring or robotic. Do not sound like a textbook.
+- Introduce concepts slowly, step-by-step, explaining only ONE concept at a time.
+- Use stories, analogies, and real-life situations (like baking a cake, storing items in a box) that the learner can easily imagine.
+- After explaining each concept, ask a simple check question. Do not move to the next concept until the user understands.
+- If they make a mistake, encourage them warmly, celebrate their effort, and explain the concept again using different words/analogies.
+- Break the lesson into small sections, summarizing each section briefly before proceeding.
+- Celebrate every small achievement. Make the learner feel proud and confident.
+- At the end of the lesson:
+  1. Show a beautiful lesson summary.
+  2. Remind them how much they have improved and how proud they should feel.
+  3. Preview Lesson 2 ("Environment Setup & Configuration") to spark curiosity.
+  4. Say exactly or a translation of: "You've taken the first step. Imagine what you'll be able to do after completing this course."
+- The learner must finish feeling excited and confident, naturally wanting to explore more or upgrade to premium.`;
+      }
       if (completedLessons.includes(lessonId)) {
         finalPrompt += `\n\nCRITICAL FOLLOW-UP DIRECTIVE: The user has successfully completed this lesson ("${selectedLesson.lesson.title}"). They have selected the "Ask More Questions About This Lesson" option to continue exploring this topic. You MUST answer unlimited follow-up questions related ONLY to the scope of this lesson. Be extremely encouraging, professional, and patient. At the end of EVERY answer, you MUST politely ask exactly: "Do you have any other questions about this lesson, or would you like to continue to the next lesson?"`;
       }
@@ -633,100 +1102,10 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
         
         {/* VIEW 1: ACTIVE STEP-BY-STEP LESSON VIEW */}
         {selectedLesson ? (() => {
-          const activeSections = getLessonSections(selectedLesson.lesson);
-          const activeSec = activeSections[currentSectionIndex];
           const lessonId = selectedLesson.lesson.id;
-
-          if (showLessonCompletedScreen) {
-            const allCourseLessons = selectedCourse
-              ? [
-                  ...selectedCourse.beginnerLessons.map(l => ({ ...l, level: "beginner" as const })),
-                  ...selectedCourse.intermediateLessons.map(l => ({ ...l, level: "intermediate" as const })),
-                  ...selectedCourse.advancedLessons.map(l => ({ ...l, level: "advanced" as const }))
-                ]
-              : [];
-            const currentLessonIdx = allCourseLessons.findIndex(l => l.id === selectedLesson.lesson.id);
-            const nextLesson = currentLessonIdx !== -1 && currentLessonIdx < allCourseLessons.length - 1
-              ? allCourseLessons[currentLessonIdx + 1]
-              : null;
-
-            const completedInCourse = allCourseLessons.filter(l => completedLessons.includes(l.id)).length;
-            const totalInCourse = allCourseLessons.length;
-            const progressPercent = totalInCourse > 0 ? Math.round((completedInCourse / totalInCourse) * 100) : 0;
-
-            return (
-              <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-3xl shadow-2xl space-y-6 animate-fadeIn text-center mx-auto my-12">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="w-16 h-16 bg-emerald-500/15 border border-emerald-500/30 rounded-full flex items-center justify-center text-3xl animate-bounce">
-                    🎉
-                  </div>
-                  <div className="space-y-1">
-                    <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-white">Congratulations!</h2>
-                    <p className="text-xs md:text-sm font-semibold text-emerald-400">
-                      You have successfully completed Lesson {currentLessonIdx + 1}: {selectedLesson.lesson.title.replace(/Lesson \d+ - /, "")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-2xl border border-slate-800 bg-slate-950 text-left space-y-3">
-                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">What You Have Learned (লেসন সারসংক্ষেপ)</h3>
-                  {isGeneratingSummary ? (
-                    <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
-                      <span>Tutor is writing a bilingual concept summary...</span>
-                    </div>
-                  ) : (
-                    <div className="text-xs md:text-sm text-slate-300 leading-relaxed whitespace-pre-line prose prose-invert max-w-none font-medium animate-fadeIn">
-                      {completedLessonSummary || "অসাধারণ কাজ! আপনি এই লেসনের সকল কোডিং কনসেপ্ট ও অনুশীলন সফলভাবে শেষ করেছেন।"}
-                    </div>
-                  )}
-                </div>
-
-                {/* Progress Tracker */}
-                <div className="space-y-2 text-left">
-                  <div className="flex justify-between items-center text-xs text-slate-400">
-                    <span className="font-semibold">Overall Course Progress</span>
-                    <span className="font-extrabold text-white">{completedInCourse} / {totalInCourse} Lessons ({progressPercent}%)</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full overflow-hidden bg-slate-800">
-                    <div 
-                      className="bg-emerald-500 h-full transition-all duration-500"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <button
-                    onClick={() => {
-                      if (nextLesson) {
-                        const isLocked = nextLesson.level !== "beginner" && !isProUser;
-                        handleSelectLesson(selectedCourse.id, nextLesson.level, nextLesson, isLocked);
-                      } else {
-                        setSelectedLesson(null);
-                      }
-                      setShowLessonCompletedScreen(false);
-                    }}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs md:text-sm py-3.5 px-5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
-                  >
-                    <Play className="w-4 h-4 fill-current animate-pulse" />
-                    <span>{nextLesson ? `Continue to Lesson ${currentLessonIdx + 2}` : "Syllabus Completed!"}</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setShowLessonCompletedScreen(false);
-                    }}
-                    className="w-full font-bold text-xs md:text-sm py-3.5 px-5 rounded-xl transition-all border border-slate-700 bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
-                  >
-                    <HelpCircle className="w-4 h-4" />
-                    <span>Ask More Questions About This Lesson</span>
-                  </button>
-                </div>
-              </div>
-            );
-          }
+          const topic = selectedLesson.lesson.title.replace(/Lesson \d+ - /, "");
+          const stepsData = getLessonStepsData(selectedCourse, selectedLesson.level, selectedLesson.lesson);
+          const currentStep = stepsData[currentStepIndex] || stepsData[0];
 
           return (
             <div className="space-y-6">
@@ -739,51 +1118,37 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                   <ArrowLeft className="w-4 h-4" /> Back to Course Syllabus
                 </button>
                 
-                {/* Horizontal Stepper Progress */}
-                <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
-                  {activeSections.map((sec, idx) => {
-                    const isCompleted = idx < currentSectionIndex;
-                    const isActive = idx === currentSectionIndex;
+                {/* 16-Step Horizontal Stepper Timeline */}
+                <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1.5 md:pb-0 scrollbar-none">
+                  {stepsData.map((step, idx) => {
+                    const isCompleted = idx < currentStepIndex;
+                    const isActive = idx === currentStepIndex;
+                    const isStepLocked = idx > 11 && !lessonQuizPassed;
+                    const isHomeworkLocked = idx > 12 && !homeworkSubmitted;
+                    const isFinalLocked = isStepLocked || isHomeworkLocked;
+
                     return (
-                      <React.Fragment key={idx}>
-                        <button
-                          onClick={() => {
-                            setCurrentSectionIndex(idx);
-                            setSectionQuizAnswer(null);
-                            setSectionQuizSubmitted(false);
-                            setSectionQuizPassed(idx < currentSectionIndex);
-                            setShowFinalQuiz(false);
-                          }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold tracking-wider uppercase transition-all shrink-0 border ${
-                            isActive && !showFinalQuiz
-                              ? "bg-violet-600 text-white shadow-lg border-violet-500"
-                              : isCompleted
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                              : "bg-slate-950 text-slate-500 border-slate-800/80"
-                          }`}
-                        >
-                          {isCompleted ? <Check className="w-3.5 h-3.5" /> : null}
-                          <span>Section {idx + 1}</span>
-                        </button>
-                        {idx < activeSections.length - 1 && (
-                          <div className={`h-0.5 w-4 shrink-0 ${idx < currentSectionIndex ? "bg-emerald-500/50" : "bg-slate-800"}`} />
-                        )}
-                      </React.Fragment>
+                      <button
+                        key={step.id}
+                        disabled={isFinalLocked && !isActive}
+                        onClick={() => {
+                          setCurrentStepIndex(idx);
+                        }}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[9px] font-extrabold tracking-wider uppercase transition-all shrink-0 border ${
+                          isActive
+                            ? "bg-violet-600 text-white shadow-lg border-violet-500 shadow-violet-600/20"
+                            : isCompleted
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : isFinalLocked
+                            ? "bg-slate-950/40 text-slate-600 border-slate-900/60 cursor-not-allowed"
+                            : "bg-slate-950 text-slate-400 border-slate-800 hover:text-white"
+                        }`}
+                      >
+                        {isCompleted ? <Check className="w-3 h-3 text-emerald-400" /> : isFinalLocked ? <Lock className="w-3 h-3 text-slate-600" /> : null}
+                        <span>{step.name}</span>
+                      </button>
                     );
                   })}
-                  <div className="h-0.5 w-4 bg-slate-800 shrink-0" />
-                  <button
-                    disabled={currentSectionIndex < activeSections.length - 1 || (!sectionQuizPassed && currentSectionIndex === activeSections.length - 1)}
-                    onClick={() => setShowFinalQuiz(true)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold tracking-wider uppercase transition-all shrink-0 border ${
-                      showFinalQuiz
-                        ? "bg-violet-600 text-white shadow-lg border-violet-500"
-                        : "bg-slate-950 text-slate-500 border-slate-800/80 disabled:opacity-50"
-                    }`}
-                  >
-                    <Award className="w-3.5 h-3.5" />
-                    <span>Final Quiz</span>
-                  </button>
                 </div>
               </div>
 
@@ -793,68 +1158,78 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                 {/* Left Side: Course content reading and code playground */}
                 <div className="lg:col-span-7 space-y-6">
                   
-                  {!showFinalQuiz ? (
-                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-md bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                          Section {currentSectionIndex + 1} of {activeSections.length}
-                        </span>
-                        <span className="text-xs text-slate-400 flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-violet-400" /> 10 mins reading</span>
-                      </div>
+                  {/* Step Material Card */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-md bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                        Step {currentStepIndex + 1} of 16
+                      </span>
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-violet-400" /> Active Session
+                      </span>
+                    </div>
 
-                      <div className="space-y-4">
-                        <h2 className="text-xl md:text-2xl font-bold text-white">{activeSec.title}</h2>
-                        <div className="text-slate-300 text-sm md:text-base leading-relaxed whitespace-pre-line">
-                          {activeSec.content}
-                        </div>
+                    <div className="space-y-4">
+                      <h2 className="text-xl md:text-2xl font-bold text-white">{currentStep.title}</h2>
+                      <div className="text-slate-300 text-sm md:text-base leading-relaxed whitespace-pre-line prose prose-invert max-w-none">
+                        <Markdown>{currentStep.content}</Markdown>
                       </div>
+                    </div>
 
-                      {/* Professional Mentorship Pro-Tip */}
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-bold text-amber-300">
-                          <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-                          <span>Professional Mentorship Pro-Tip:</span>
+                    {/* Step-Specific Controls */}
+                    {currentStepIndex === 9 && (
+                      <div className="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-3">
+                        <div className="flex items-center gap-2 text-sm font-bold text-violet-400">
+                          <Terminal className="w-4 h-4" />
+                          <span>Active Practice Sandbox Attached:</span>
                         </div>
-                        <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                          {activeSec.proTip}
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          Your active practice playground template is initialized below. Write your code challenge solution, compile/run it, and then proceed to get immediate feedback!
                         </p>
                       </div>
+                    )}
 
-                      {/* Real-World Use Case Scenario */}
-                      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-5 space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-bold text-emerald-300">
-                          <Briefcase className="w-4 h-4 text-emerald-400" />
-                          <span>Real-World Scenario & Impact:</span>
+                    {currentStepIndex === 10 && (
+                      <div className="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-4 text-center">
+                        <div className="w-12 h-12 bg-violet-600/10 border border-violet-500/30 rounded-xl flex items-center justify-center text-violet-400 mx-auto">
+                          <GraduationCap className="w-6 h-6 animate-pulse" />
                         </div>
-                        <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                          {activeSec.realWorldScenario}
-                        </p>
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-bold text-white">Ask Socratic AI for Code Evaluation</h4>
+                          <p className="text-xs text-slate-400 max-w-md mx-auto">
+                            Submit your custom playground solution to your tutor. Your mentor will inspect your style and provide guidance.
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleRequestPracticeFeedback}
+                          className="w-full sm:w-auto bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg flex items-center justify-center gap-1.5 mx-auto"
+                        >
+                          <Send className="w-4 h-4" /> Evaluate My Practice Code
+                        </button>
                       </div>
+                    )}
 
-                      {/* Section Understanding Quiz */}
+                    {currentStepIndex === 11 && (
                       <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                           <h4 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
-                            <HelpCircle className="w-4.5 h-4.5 text-violet-400" /> Concept Checkpoint
+                            <HelpCircle className="w-4.5 h-4.5 text-violet-400" /> Socratic Concept Checkpoint
                           </h4>
-                          <span className="text-[10px] text-slate-500 font-mono">Q{currentSectionIndex + 1}</span>
                         </div>
-                        
                         <p className="text-sm text-slate-200 font-semibold leading-relaxed">
-                          {activeSec.sectionQuiz.question}
+                          {selectedLesson.lesson.quiz.question}
                         </p>
-
                         <div className="space-y-2.5 pt-2">
-                          {activeSec.sectionQuiz.options.map((opt, idx) => {
-                            const isSelected = sectionQuizAnswer === idx;
-                            const isCorrect = idx === activeSec.sectionQuiz.answer;
-                            const showResult = sectionQuizSubmitted || sectionQuizPassed;
+                          {selectedLesson.lesson.quiz.options.map((opt, idx) => {
+                            const isSelected = lessonQuizAnswer === idx;
+                            const isCorrect = idx === selectedLesson.lesson.quiz.answer;
+                            const showResult = lessonQuizSubmitted || lessonQuizPassed;
 
                             return (
                               <button
                                 key={idx}
-                                disabled={sectionQuizPassed}
-                                onClick={() => { setSectionQuizAnswer(idx); setSectionQuizSubmitted(false); }}
+                                disabled={lessonQuizPassed}
+                                onClick={() => { setLessonQuizAnswer(idx); setLessonQuizSubmitted(false); }}
                                 className={`w-full text-left px-4 py-3.5 rounded-xl text-xs font-semibold border transition-all flex items-center justify-between ${
                                   showResult
                                     ? isCorrect
@@ -873,56 +1248,44 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                             );
                           })}
                         </div>
-
-                        {!sectionQuizPassed && !sectionQuizSubmitted ? (
+                        
+                        {!lessonQuizPassed && !lessonQuizSubmitted ? (
                           <button
                             onClick={() => {
-                              setSectionQuizSubmitted(true);
-                              if (sectionQuizAnswer === activeSec.sectionQuiz.answer) {
-                                setSectionQuizPassed(true);
+                              setLessonQuizSubmitted(true);
+                              if (lessonQuizAnswer === selectedLesson.lesson.quiz.answer) {
+                                setLessonQuizPassed(true);
+                                setXp(prev => prev + 20);
                               }
                             }}
-                            disabled={sectionQuizAnswer === null}
+                            disabled={lessonQuizAnswer === null}
                             className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg shadow-violet-600/20 cursor-pointer"
                           >
-                            Verify Understanding
+                            Verify Quiz Answer
                           </button>
-                        ) : sectionQuizPassed ? (
+                        ) : lessonQuizPassed ? (
                           <div className="space-y-4 pt-2">
-                            <div className="text-xs font-semibold p-4 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-                              🎉 **Correct!** {activeSec.sectionQuiz.explanation}
+                            <div className="text-xs font-semibold p-4 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 animate-fadeIn">
+                              🎉 **Correct! You earned +20 XP!** Socratic check successfully cleared!
                             </div>
-                            
-                            {currentSectionIndex < activeSections.length - 1 ? (
-                              <button
-                                onClick={() => {
-                                  setCurrentSectionIndex(prev => prev + 1);
-                                  setSectionQuizAnswer(null);
-                                  setSectionQuizSubmitted(false);
-                                  setSectionQuizPassed(false);
-                                }}
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
-                              >
-                                Unlock & Proceed to Section {currentSectionIndex + 2} <ChevronRight className="w-4 h-4" />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => setShowFinalQuiz(true)}
-                                className="w-full bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg shadow-violet-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
-                              >
-                                Go to Final Mastery Evaluation <Award className="w-4 h-4 text-amber-400" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => {
+                                setCurrentStepIndex(12);
+                              }}
+                              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              Unlock & Proceed to Homework <ChevronRight className="w-4 h-4" />
+                            </button>
                           </div>
                         ) : (
                           <div className="space-y-3 pt-2">
                             <div className="text-xs font-semibold p-4 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/30">
-                              ❌ Not quite right. Review the sections above, check with your AI Socratic Tutor, and try again!
+                              ❌ That is not the correct response. Review the notes or chat with your AI Coach on the right for assistance!
                             </div>
                             <button
                               onClick={() => {
-                                setSectionQuizAnswer(null);
-                                setSectionQuizSubmitted(false);
+                                setLessonQuizAnswer(null);
+                                setLessonQuizSubmitted(false);
                               }}
                               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
                             >
@@ -931,98 +1294,223 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                           </div>
                         )}
                       </div>
-                    </div>
-                  ) : (
-                    /* THE FINAL EXAM/MASTERY CARD FOR LESSON COMPLETE */
-                    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
-                      <div className="text-center space-y-3 py-6">
-                        <div className="w-16 h-16 rounded-2xl bg-violet-600/15 border border-violet-500/30 flex items-center justify-center text-violet-300 mx-auto">
-                          <Award className="w-9 h-9 text-yellow-400 animate-bounce" />
+                    )}
+
+                    {currentStepIndex === 12 && (
+                      <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                          <h4 className="text-xs font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
+                            <Briefcase className="w-4.5 h-4.5 text-violet-400" /> Active Assignment Submission
+                          </h4>
                         </div>
-                        <h3 className="text-xl md:text-2xl font-extrabold text-white">Lesson Mastery Evaluation</h3>
-                        <p className="text-xs text-slate-400 max-w-md mx-auto">
-                          Verify your absolute understanding of **{selectedLesson.lesson.title.replace(/Lesson \d+ - /, "")}** to complete the module and log your developer points.
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          Enter your homework code or explanation below. Your AI Coach will analyze your work and provide feedback.
                         </p>
-                      </div>
-
-                      <div className="bg-slate-950 border border-slate-850 p-6 rounded-2xl space-y-4">
-                        <h4 className="text-xs font-extrabold text-violet-400 uppercase tracking-widest">Final Mastery Query</h4>
-                        <p className="text-sm font-semibold text-slate-200">{selectedLesson.lesson.quiz.question}</p>
-
-                        <div className="space-y-2 pt-2">
-                          {selectedLesson.lesson.quiz.options.map((opt, idx) => {
-                            const isSelected = selectedQuizAnswer === idx;
-                            const isCorrect = idx === selectedLesson.lesson.quiz.answer;
-                            const showResult = quizSubmitted;
-
-                            return (
-                              <button
-                                key={idx}
-                                onClick={() => { setSelectedQuizAnswer(idx); setQuizSubmitted(false); }}
-                                className={`w-full text-left px-4 py-3.5 rounded-xl text-xs font-semibold border transition-all flex items-center justify-between ${
-                                  showResult
-                                    ? isCorrect
-                                      ? "bg-emerald-500/10 border-emerald-500 text-emerald-300"
-                                      : isSelected
-                                      ? "bg-rose-500/10 border-rose-500 text-rose-300"
-                                      : "bg-slate-900 border-slate-850 text-slate-500"
-                                    : isSelected
-                                    ? "bg-violet-600/15 border-violet-500 text-white"
-                                    : "bg-slate-900 border-slate-800/80 text-slate-300 hover:bg-slate-850"
-                                }`}
-                              >
-                                <span>{opt}</span>
-                                {showResult && isCorrect && <Check className="w-4 h-4 text-emerald-400" />}
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {!quizSubmitted ? (
+                        <textarea
+                          value={homeworkSubmission}
+                          disabled={homeworkSubmitted}
+                          onChange={(e) => setHomeworkSubmission(e.target.value)}
+                          rows={5}
+                          className="w-full bg-slate-900 font-mono text-xs text-violet-200 p-3.5 rounded-xl border border-slate-800 focus:border-violet-500 outline-none resize-none"
+                          placeholder="function validateData() {\n  // Write your solution here...\n}"
+                        />
+                        
+                        {!homeworkSubmitted ? (
                           <button
-                            onClick={() => setQuizSubmitted(true)}
-                            disabled={selectedQuizAnswer === null}
-                            className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg cursor-pointer"
+                            onClick={async () => {
+                              if (!homeworkSubmission.trim()) return;
+                              setHomeworkSubmitted(true);
+                              setXp(prev => prev + 50);
+
+                              setCompletedHomeworks(prev => {
+                                const updated = prev.includes(lessonId) ? prev : [...prev, lessonId];
+                                localStorage.setItem("joxiq_completed_homeworks", JSON.stringify(updated));
+                                return updated;
+                              });
+
+                              const updatedChats = [
+                                ...(lessonChats[lessonId] || []),
+                                { role: "user" as const, content: `Coach, I've submitted my homework solution:\n\n\`\`\`javascript\n${homeworkSubmission}\n\`\`\`` }
+                              ];
+                              setLessonChats(prev => ({ ...prev, [lessonId]: updatedChats }));
+                              setIsAiLoading(true);
+
+                              try {
+                                const prompt = `You are an elite, highly experienced software engineering teacher, computer science mentor, and coding coach (not a chatbot).
+Current Course: "${selectedCourse?.name || "Software Engineering"}"
+Current Lesson: "${selectedLesson.lesson.title}"
+
+The user has submitted their homework code for Socratic evaluation:
+\`\`\`javascript
+${homeworkSubmission}
+\`\`\`
+
+YOUR TASK:
+1. Provide extremely warm, detailed, and highly encouraging Socratic feedback.
+2. Review their code logic and execution step-by-step.
+3. NEVER say "You are wrong." Instead, say "Good attempt!", "I understand why you structured it this way", or "Here is a small challenge to optimize this".
+4. Ask a thoughtful, guiding question at the end to prompt them to refine their understanding or think about edge cases. Do not give away the solution directly.
+5. Keep your response conversational and formatted in clean markdown. Speak strictly in English unless requested otherwise.`;
+
+                                const res = await fetch("/api/education/generate", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ prompt, jsonMode: false })
+                                });
+                                const data = await res.json();
+                                setLessonChats(prev => ({
+                                  ...prev,
+                                  [lessonId]: [...updatedChats, { role: "assistant" as const, content: data.result || "Outstanding homework completion! Socratic evaluation logged in the system." }]
+                                }));
+                              } catch (e) {
+                                console.error(e);
+                              } finally {
+                                setIsAiLoading(false);
+                              }
+                            }}
+                            disabled={!homeworkSubmission.trim()}
+                            className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg cursor-pointer flex items-center justify-center gap-1.5"
                           >
-                            Submit Final Answer
+                            <Send className="w-4 h-4" /> Submit Homework (+50 XP)
                           </button>
                         ) : (
                           <div className="space-y-4 pt-2">
-                            {selectedQuizAnswer === selectedLesson.lesson.quiz.answer ? (
-                              <div className="space-y-4">
-                                <div className="text-xs font-semibold p-4 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-                                  🎉 **Exceptional Work!** You have passed the Lesson Mastery Check successfully! This module is marked complete.
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    handleLessonFinalize(lessonId);
-                                  }}
-                                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
-                                >
-                                  <Check className="w-4 h-4" /> Finalize Lesson & Show Completion Progress
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="space-y-3">
-                                <div className="text-xs font-semibold p-4 rounded-xl bg-rose-500/10 text-rose-300 border border-rose-500/30">
-                                  ❌ That answer wasn't correct. Review your notes, seek clarification from your socratic tutor, and retry!
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    setSelectedQuizAnswer(null);
-                                    setQuizSubmitted(false);
-                                  }}
-                                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-slate-700 cursor-pointer"
-                                >
-                                  Retry Evaluation
-                                </button>
-                              </div>
-                            )}
+                            <div className="text-xs font-semibold p-4 rounded-xl bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 animate-fadeIn">
+                              🎉 **Homework Submitted! You earned +50 XP!** Your AI coach has posted Socratic feedback in the sidebar chat.
+                            </div>
+                            <button
+                              onClick={() => setCurrentStepIndex(13)}
+                              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              Go to Lesson Summary <ChevronRight className="w-4 h-4" />
+                            </button>
                           </div>
                         )}
                       </div>
+                    )}
+
+                    {currentStepIndex === 14 && (
+                      <div className="bg-slate-950 border border-slate-800 p-8 rounded-3xl text-center space-y-6 animate-fadeIn">
+                        <div className="w-20 h-20 bg-emerald-500/15 border-2 border-emerald-500/30 rounded-full flex items-center justify-center text-4xl animate-bounce mx-auto">
+                          🏆
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-2xl font-extrabold text-white">Lesson Completed!</h3>
+                          <p className="text-sm text-emerald-400 font-semibold">
+                            You have successfully mastered "{topic}"!
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto pt-2">
+                          <div className="bg-slate-900 border border-slate-850 p-4 rounded-2xl">
+                            <span className="block text-xl font-black text-violet-400">+100</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Lesson XP Earned</span>
+                          </div>
+                          <div className="bg-slate-900 border border-slate-850 p-4 rounded-2xl">
+                            <span className="block text-xl font-black text-emerald-400">Streak Safe</span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Learning Streak</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-4">
+                          <button
+                            onClick={() => {
+                              toggleLessonComplete(lessonId);
+                              setCurrentStepIndex(15);
+                            }}
+                            className="w-full max-w-xs bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs py-3.5 px-6 rounded-xl transition-all shadow-lg cursor-pointer"
+                          >
+                            Finalize & Save Progress
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {currentStepIndex === 15 && (
+                      <div className="bg-slate-950 border border-slate-800 p-8 rounded-3xl text-center space-y-6 animate-fadeIn">
+                        <div className="w-16 h-16 bg-violet-600/15 border border-violet-500/30 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+                          🔮
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-extrabold text-white">Up Next in Your Syllabus</h3>
+                          <p className="text-xs text-slate-400">
+                            Your learning journey does not stop here. Proceed to the next masterclass to build compounding engineering skills.
+                          </p>
+                        </div>
+
+                        {(() => {
+                          const allCourseLessons = [
+                            ...selectedCourse.beginnerLessons.map(l => ({ ...l, level: "beginner" as const })),
+                            ...selectedCourse.intermediateLessons.map(l => ({ ...l, level: "intermediate" as const })),
+                            ...selectedCourse.advancedLessons.map(l => ({ ...l, level: "advanced" as const }))
+                          ];
+                          const currentLessonIdx = allCourseLessons.findIndex(l => l.id === selectedLesson.lesson.id);
+                          const nextLesson = currentLessonIdx !== -1 && currentLessonIdx < allCourseLessons.length - 1
+                            ? allCourseLessons[currentLessonIdx + 1]
+                            : null;
+
+                          return (
+                            <div className="pt-4 space-y-4">
+                              {nextLesson ? (
+                                <button
+                                  onClick={() => {
+                                    const isLocked = nextLesson.level !== "beginner" && !isProUser;
+                                    handleSelectLesson(selectedCourse.id, nextLesson.level, nextLesson, isLocked);
+                                  }}
+                                  className="w-full max-w-sm bg-violet-600 hover:bg-violet-500 text-white font-extrabold text-xs py-3.5 px-6 rounded-xl transition-all shadow-lg cursor-pointer"
+                                >
+                                  Advance to: {nextLesson.title.replace(/Lesson \d+ - /, "")}
+                                </button>
+                              ) : (
+                                <div className="space-y-3">
+                                  <div className="text-xs font-semibold p-4 rounded-xl bg-violet-500/10 text-violet-300 border border-violet-500/30">
+                                    🎓 Outstanding! You have fully completed all 90 lessons in "${selectedCourse.name}"! You are officially ready to export your credentials.
+                                  </div>
+                                  <button
+                                    onClick={() => setSelectedLesson(null)}
+                                    className="w-full max-w-sm bg-violet-600 hover:bg-violet-500 text-white font-extrabold text-xs py-3 rounded-xl cursor-pointer"
+                                  >
+                                    Return to Course Syllabus
+                                  </button>
+                                </div>
+                              )}
+                              <p className="text-[11px] font-medium text-slate-500 italic mt-4">
+                                "You've taken the first step. Imagine what you'll be able to do after completing this course."
+                              </p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Timeline Controls (Footer) */}
+                    <div className="flex justify-between items-center pt-4 border-t border-slate-800">
+                      <button
+                        disabled={currentStepIndex === 0}
+                        onClick={() => setCurrentStepIndex(prev => prev - 1)}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border border-slate-700 bg-slate-800 text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+                      >
+                        <ChevronLeft className="w-4 h-4" /> Previous Step
+                      </button>
+                      
+                      {currentStepIndex < 15 ? (
+                        (() => {
+                          const isStepLocked = currentStepIndex >= 11 && !lessonQuizPassed;
+                          const isHomeworkLocked = currentStepIndex >= 12 && !homeworkSubmitted;
+                          const isNextDisabled = isStepLocked || isHomeworkLocked;
+                          return (
+                            <button
+                              disabled={isNextDisabled}
+                              onClick={() => setCurrentStepIndex(prev => prev + 1)}
+                              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-violet-600 text-white hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-violet-600/10 cursor-pointer"
+                            >
+                              Next Step <ChevronRight className="w-4 h-4" />
+                            </button>
+                          );
+                        })()
+                      ) : null}
                     </div>
-                  )}
+
+                  </div>
 
                   {/* INTEGRATED CODING PLAYGROUND */}
                   <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
@@ -1107,9 +1595,9 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                       {(lessonChats[lessonId] || [
                         {
                           role: "assistant",
-                          content: `Greetings! I am your Socratic AI Programming Instructor for **${selectedLesson.lesson.title}**.
-                          
-I am here to help you master this concept. I explain topics step-by-step, dissect syntax line-by-line, walk through code structures, and review challenges. Ask me any question, or ask for a practice problem to solve!`
+                          content: lessonId.endsWith("-b1")
+                            ? `👋 **Welcome to the wonderful world of coding!** \n\nI am your personal AI programming instructor. Today you are about to start your very first and most important coding lesson! We will not memorize complex formulas or boring rules today. Instead, we'll unlock the secrets of coding using simple real-world stories and fun analogies.\n\n### 🎯 What You'll Achieve by Completing This Course:\n1. **Become a Creator**: You will be able to build your own custom apps, games, or websites from scratch.\n2. **Unlock New Horizons (Career Opportunities)**: Unlimited options will open up for high-paying remote roles, freelance work, and tech careers.\n3. **Think Logically**: You will learn to break down any complex, messy problem in life and solve it step-by-step.\n\n### 🌟 Our Simple Classroom Guidelines:\n* We will never rush. We will go slowly and master one concept at a time.\n* After every single concept, I will ask you a quick, fun question to make sure you've grasped it fully.\n* Making mistakes is a brilliant thing—it's how we grow! No need to feel afraid at all.\n\nAre you ready to begin your very first coding adventure? Simply type **"I am ready"** or **"Ready"** below to let me know!`
+                            : `Greetings! I am your Socratic AI Programming Instructor for **${selectedLesson.lesson.title}**.\n\nI am here to help you master this concept. I explain topics step-by-step, dissect syntax line-by-line, walk through code structures, and review challenges. Ask me any question, or ask for a practice problem to solve!`
                         }
                       ]).map((msg, idx) => (
                         <div key={idx} className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -1213,7 +1701,10 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {selectedCourse.beginnerLessons.map((lesson, idx) => {
-                    const isLocked = idx >= 3 && !isProUser;
+                    const isAdmin = localStorage.getItem("joxiq_admin_skip_lessons") === "true" || userProfile?.email === "mnain7674@gmail.com";
+                    const isSeqLocked = idx > 0 && !completedLessons.includes(selectedCourse.beginnerLessons[idx - 1].id) && !isAdmin;
+                    const isProLocked = idx >= 3 && !isProUser && !isAdmin;
+                    const isLocked = isSeqLocked || isProLocked;
                     const isDone = completedLessons.includes(lesson.id);
                     return (
                       <div
@@ -1265,7 +1756,13 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {selectedCourse.intermediateLessons.map((lesson, idx) => {
-                    const isLocked = !isProUser;
+                    const isAdmin = localStorage.getItem("joxiq_admin_skip_lessons") === "true" || userProfile?.email === "mnain7674@gmail.com";
+                    const prevLessonId = idx === 0 
+                      ? selectedCourse.beginnerLessons[selectedCourse.beginnerLessons.length - 1].id 
+                      : selectedCourse.intermediateLessons[idx - 1].id;
+                    const isSeqLocked = !completedLessons.includes(prevLessonId) && !isAdmin;
+                    const isProLocked = !isProUser && !isAdmin;
+                    const isLocked = isSeqLocked || isProLocked;
                     const isDone = completedLessons.includes(lesson.id);
                     return (
                       <div
@@ -1279,7 +1776,7 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-extrabold ${isDone ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300"}`}>
-                            {isDone ? <Check className="w-4 h-4" /> : idx + 7}
+                            {isDone ? <Check className="w-4 h-4" /> : idx + 31}
                           </div>
                           <div>
                             <h4 className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">{lesson.title}</h4>
@@ -1317,7 +1814,13 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {selectedCourse.advancedLessons.map((lesson, idx) => {
-                    const isLocked = !isProUser;
+                    const isAdmin = localStorage.getItem("joxiq_admin_skip_lessons") === "true" || userProfile?.email === "mnain7674@gmail.com";
+                    const prevLessonId = idx === 0 
+                      ? selectedCourse.intermediateLessons[selectedCourse.intermediateLessons.length - 1].id 
+                      : selectedCourse.advancedLessons[idx - 1].id;
+                    const isSeqLocked = !completedLessons.includes(prevLessonId) && !isAdmin;
+                    const isProLocked = !isProUser && !isAdmin;
+                    const isLocked = isSeqLocked || isProLocked;
                     const isDone = completedLessons.includes(lesson.id);
                     return (
                       <div
@@ -1331,7 +1834,7 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-extrabold ${isDone ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300"}`}>
-                            {isDone ? <Check className="w-4 h-4" /> : idx + 11}
+                            {isDone ? <Check className="w-4 h-4" /> : idx + 61}
                           </div>
                           <div>
                             <h4 className="text-xs font-bold text-white group-hover:text-violet-300 transition-colors">{lesson.title}</h4>
@@ -1528,17 +2031,11 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
                     <div
                       key={ac.id}
                       onClick={() => {
-                        if (ac.isLocked) {
-                          alert(`AI ${ac.title} is being structured by generative teachers right now. Choose "Coding Academy" for the live interactive curriculum!`);
-                          return;
-                        }
                         setSelectedAcademyId(ac.id);
                       }}
                       className={`relative p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between h-40 shadow-lg ${
                         isSelected
                           ? "bg-gradient-to-br from-[#120f26] to-[#15123a] border-violet-500 shadow-violet-500/5 ring-1 ring-violet-500/30"
-                          : ac.isLocked
-                          ? "bg-slate-900/40 border-slate-900 opacity-60"
                           : "bg-slate-900 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/90"
                       }`}
                     >
@@ -1547,11 +2044,7 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
                           <div className={`w-9 h-9 rounded-xl bg-slate-950 flex items-center justify-center text-slate-200 border border-slate-850`}>
                             <IconComp className="w-4.5 h-4.5 text-violet-400" />
                           </div>
-                          {ac.isLocked ? (
-                            <span className="text-[8px] uppercase tracking-wider bg-slate-950 text-slate-500 px-2 py-0.5 rounded-full border border-slate-800">Soon</span>
-                          ) : (
-                            <span className="text-[8px] uppercase tracking-widest font-extrabold bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full border border-violet-500/30">{ac.badge}</span>
-                          )}
+                          <span className="text-[8px] uppercase tracking-widest font-extrabold bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full border border-violet-500/30">{ac.badge}</span>
                         </div>
                         <h4 className="text-xs font-extrabold text-white mt-3.5">{ac.title}</h4>
                         <p className="text-[10px] text-slate-400 line-clamp-2 mt-1 leading-normal">{ac.description}</p>
@@ -1559,7 +2052,7 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
                       
                       <div className="text-[10px] font-bold text-slate-400 flex items-center justify-between border-t border-slate-800/80 pt-2.5 mt-2">
                         <span>{ac.coursesCount} Courses</span>
-                        {!ac.isLocked && <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
                       </div>
                     </div>
                   );
@@ -1567,172 +2060,182 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
               </div>
             </div>
 
-            {/* CODING ACADEMY SPECIFIC SUB-DASHBOARD (The requested first academy) */}
-            {selectedAcademyId === "coding" && (
-              <div className="space-y-10 animate-fadeIn">
-                
-                {/* Visual Premium Coding Hero */}
-                <div className="relative bg-gradient-to-br from-[#100c2a] via-[#090b1e] to-slate-950 border border-violet-800/15 rounded-3xl p-6 md:p-10 shadow-2xl overflow-hidden">
-                  <div className="absolute top-0 right-0 w-80 h-80 bg-violet-600/10 rounded-full blur-3xl -z-10" />
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-                    <div className="space-y-4 max-w-xl">
-                      <span className="px-3 py-1 rounded-full text-[9px] font-extrabold tracking-widest uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        Become a Professional Programmer with Your Personal AI Mentor
-                      </span>
-                      <h2 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
-                        Double Your Developer Speed & Pass Senior Interviews
-                      </h2>
-                      <p className="text-xs text-slate-400 leading-relaxed">
-                        Master the structural syntax of 25 languages. Solve interactive checkpoints, get line-by-line code reviews from our Socratic mentor, and compile programs inside your dashboard.
-                      </p>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <button
-                          onClick={() => setActiveTab("catalog")}
-                          className="bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-violet-600/20 cursor-pointer"
-                        >
-                          Browse 25 Syllabus Paths
-                        </button>
-                        {resumeLessonInfo && (
+            {/* ACADEMY SPECIFIC SUB-DASHBOARD */}
+            {selectedAcademyId && (() => {
+              const activeAcademyCourses = ALL_COURSES.filter(c => c.academyId === selectedAcademyId);
+              const hero = academyHeroInfo[selectedAcademyId] || academyHeroInfo.coding;
+              return (
+                <div className="space-y-10 animate-fadeIn">
+                  
+                  {/* Visual Premium Coding Hero */}
+                  <div className="relative bg-gradient-to-br from-[#100c2a] via-[#090b1e] to-slate-950 border border-violet-800/15 rounded-3xl p-6 md:p-10 shadow-2xl overflow-hidden">
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-violet-600/10 rounded-full blur-3xl -z-10" />
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                      <div className="space-y-4 max-w-xl">
+                        <span className="px-3 py-1 rounded-full text-[9px] font-extrabold tracking-widest uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                          {hero.badge}
+                        </span>
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-white leading-tight">
+                          {hero.title}
+                        </h2>
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          {hero.desc}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-3">
                           <button
-                            onClick={() => {
-                              const crs = ALL_COURSES.find(c => c.id === resumeLessonInfo.courseId);
-                              if (crs) {
-                                const level = "beginner"; // resolve correctly
-                                const allLsn = [...crs.beginnerLessons, ...crs.intermediateLessons, ...crs.advancedLessons];
-                                const lsn = allLsn.find(l => l.id === resumeLessonInfo.lessonId);
-                                if (lsn) {
-                                  setSelectedCourse(crs);
-                                  setSelectedLesson({ courseId: crs.id, level: "beginner", lesson: lsn });
-                                }
-                              }
-                            }}
-                            className="bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                            onClick={() => setActiveTab("catalog")}
+                            className="bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-violet-600/20 cursor-pointer"
                           >
-                            <BookMarked className="w-3.5 h-3.5 text-violet-400" /> Resume: {resumeLessonInfo.title.replace(/Lesson \d+ - /, "")}
+                            {hero.coursesLabel}
                           </button>
-                        )}
+                          {resumeLessonInfo && (
+                            <button
+                              onClick={() => {
+                                const crs = ALL_COURSES.find(c => c.id === resumeLessonInfo.courseId);
+                                if (crs) {
+                                  const level = "beginner"; // resolve correctly
+                                  const allLsn = [...crs.beginnerLessons, ...crs.intermediateLessons, ...crs.advancedLessons];
+                                  const lsn = allLsn.find(l => l.id === resumeLessonInfo.lessonId);
+                                  if (lsn) {
+                                    setSelectedCourse(crs);
+                                    setSelectedLesson({ courseId: crs.id, level: "beginner", lesson: lsn });
+                                  }
+                                }
+                              }}
+                              className="bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 hover:border-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                            >
+                              <BookMarked className="w-3.5 h-3.5 text-violet-400" /> Resume: {resumeLessonInfo.title.replace(/Lesson \d+ - /, "")}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Simple dynamic stats block */}
-                    <div className="grid grid-cols-2 gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-850 max-w-sm w-full">
-                      <div className="text-center p-3 border-r border-b border-slate-800">
-                        <div className="text-xl font-black text-violet-400">{totalCompletedLessons}</div>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Lessons Done</p>
-                      </div>
-                      <div className="text-center p-3 border-b border-slate-800">
-                        <div className="text-xl font-black text-emerald-400">{streak} Days</div>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Learning Streak</p>
-                      </div>
-                      <div className="text-center p-3 border-r border-slate-800">
-                        <div className="text-xl font-black text-amber-400">{codingTime}m</div>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Coding Duration</p>
-                      </div>
-                      <div className="text-center p-3">
-                        <div className="text-xl font-black text-indigo-400">{completedProjects.length}</div>
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">SaaS Projects</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* CAREER CARDS GRID - What users can become after learning coding */}
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                      <Briefcase className="w-4.5 h-4.5 text-violet-400" /> 14 Custom Coding Career Paths
-                    </h3>
-                    <p className="text-xs text-slate-400">Discover what software engineering role you can achieve and the specific tools you need to master.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {CAREER_CARDS.map((career) => (
-                      <div
-                        key={career.title}
-                        id={`career-card-${career.title.toLowerCase().replace(/\s+/g, '-')}`}
-                        onClick={() => {
-                          setSelectedCareer(career);
-                          setSelectedCourse(null);
-                          setSelectedLesson(null);
-                        }}
-                        className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-violet-500/50 hover:bg-slate-900/90 hover:scale-[1.01] transition-all duration-300 shadow-md flex flex-col justify-between cursor-pointer group"
-                      >
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-2xl bg-slate-950 p-2.5 rounded-xl border border-slate-850 group-hover:scale-110 transition-transform">{career.icon}</span>
-                            <span className="text-[9px] uppercase tracking-widest font-extrabold bg-violet-500/10 text-violet-400 border border-violet-500/20 px-2 py-0.5 rounded-md">
-                              Salary: {career.salary}
-                            </span>
+                      {/* Simple dynamic stats block */}
+                      <div className="grid grid-cols-2 gap-4 bg-slate-900/60 p-5 rounded-2xl border border-slate-850 max-w-sm w-full">
+                        <div className="text-center p-3 border-r border-b border-slate-800">
+                          <div className="text-xl font-black text-violet-400">
+                            {completedLessons.filter(id => activeAcademyCourses.some(c => id.startsWith(c.id))).length}
                           </div>
-                          <h4 className="text-xs font-bold text-white mt-3.5 group-hover:text-violet-300 transition-colors">{career.title}</h4>
-                          <p className="text-[10px] text-slate-400 leading-relaxed mt-1">{career.description}</p>
-                          
-                          <div className="flex flex-wrap gap-1 mt-3">
-                            {career.technologies.map(t => (
-                              <span key={t} className="text-[8px] font-extrabold bg-slate-950 text-slate-300 border border-slate-850 px-2 py-0.5 rounded-md">
-                                {t}
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Lessons Done</p>
+                        </div>
+                        <div className="text-center p-3 border-b border-slate-800">
+                          <div className="text-xl font-black text-emerald-400">{streak} Days</div>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Learning Streak</p>
+                        </div>
+                        <div className="text-center p-3 border-r border-slate-800">
+                          <div className="text-xl font-black text-amber-400">{codingTime}m</div>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Study Duration</p>
+                        </div>
+                        <div className="text-center p-3">
+                          <div className="text-xl font-black text-indigo-400">
+                            {completedProjects.filter(title => title.includes(selectedAcademyId)).length}
+                          </div>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">SaaS Projects</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CAREER CARDS GRID - Only for coding */}
+                  {selectedAcademyId === "coding" && (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                          <Briefcase className="w-4.5 h-4.5 text-violet-400" /> 14 Custom Coding Career Paths
+                        </h3>
+                        <p className="text-xs text-slate-400">Discover what software engineering role you can achieve and the specific tools you need to master.</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {CAREER_CARDS.map((career) => (
+                          <div
+                            key={career.title}
+                            id={`career-card-${career.title.toLowerCase().replace(/\s+/g, '-')}`}
+                            onClick={() => {
+                              setSelectedCareer(career);
+                              setSelectedCourse(null);
+                              setSelectedLesson(null);
+                            }}
+                            className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 hover:border-violet-500/50 hover:bg-slate-900/90 hover:scale-[1.01] transition-all duration-300 shadow-md flex flex-col justify-between cursor-pointer group"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-2xl bg-slate-950 p-2.5 rounded-xl border border-slate-850 group-hover:scale-110 transition-transform">{career.icon}</span>
+                                <span className="text-[9px] uppercase tracking-widest font-extrabold bg-violet-500/10 text-violet-400 border border-violet-500/20 px-2 py-0.5 rounded-md">
+                                  Salary: {career.salary}
+                                </span>
+                              </div>
+                              <h4 className="text-xs font-bold text-white mt-3.5 group-hover:text-violet-300 transition-colors">{career.title}</h4>
+                              <p className="text-[10px] text-slate-400 leading-relaxed mt-1">{career.description}</p>
+                              
+                              <div className="flex flex-wrap gap-1 mt-3">
+                                {career.technologies.map(t => (
+                                  <span key={t} className="text-[8px] font-extrabold bg-slate-950 text-slate-300 border border-slate-850 px-2 py-0.5 rounded-md">
+                                    {t}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="border-t border-slate-800/80 pt-3 mt-4 flex items-center justify-between text-[9px] font-bold">
+                              <span className="text-slate-500 uppercase tracking-wider">Demand: <span className="text-emerald-400 font-extrabold">{career.demand}</span></span>
+                              <span className="text-violet-400 group-hover:text-violet-300 flex items-center gap-0.5 transition-colors">
+                                Enter Classes <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                               </span>
-                            ))}
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="border-t border-slate-800/80 pt-3 mt-4 flex items-center justify-between text-[9px] font-bold">
-                          <span className="text-slate-500 uppercase tracking-wider">Demand: <span className="text-emerald-400 font-extrabold">{career.demand}</span></span>
-                          <span className="text-violet-400 group-hover:text-violet-300 flex items-center gap-0.5 transition-colors">
-                            Enter Classes <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                          </span>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* POPULAR SYLLABUS SAMPLER */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-extrabold text-white">Popular Course Masterclasses</h3>
-                      <p className="text-xs text-slate-400">Begin with high-demand technologies, master functional paradigms, and build portfolios.</p>
                     </div>
-                    <button
-                      onClick={() => setActiveTab("catalog")}
-                      className="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors"
-                    >
-                      See All 25 Courses
-                    </button>
-                  </div>
+                  )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {ALL_COURSES.slice(0, 6).map((course) => (
-                      <div
-                        key={course.id}
-                        onClick={() => handleSelectCourse(course)}
-                        className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-violet-500/40 hover:bg-slate-900/80 transition-all cursor-pointer flex flex-col justify-between shadow-lg group"
+                  {/* POPULAR SYLLABUS SAMPLER */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-base font-extrabold text-white">Popular Course Masterclasses</h3>
+                        <p className="text-xs text-slate-400">Begin with high-demand technologies, master functional paradigms, and build portfolios.</p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab("catalog")}
+                        className="text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors"
                       >
-                        <div>
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="text-3xl bg-slate-950 p-2.5 rounded-xl border border-slate-850">{course.icon}</span>
-                            <span className="text-[9px] uppercase font-extrabold tracking-widest bg-violet-500/10 text-violet-400 px-2 py-0.5 rounded-md border border-violet-500/20">
-                              {course.category}
+                        See All {activeAcademyCourses.length} Courses
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {activeAcademyCourses.slice(0, 6).map((course) => (
+                        <div
+                          key={course.id}
+                          onClick={() => handleSelectCourse(course)}
+                          className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-violet-500/40 hover:bg-slate-900/80 transition-all cursor-pointer flex flex-col justify-between shadow-lg group"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-4">
+                              <span className="text-3xl bg-slate-950 p-2.5 rounded-xl border border-slate-850">{course.icon}</span>
+                              <span className="text-[9px] uppercase font-extrabold tracking-widest bg-violet-500/10 text-violet-400 px-2 py-0.5 rounded-md border border-violet-500/20">
+                                {course.category}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-bold text-white group-hover:text-violet-300 transition-colors">{course.name}</h4>
+                            <p className="text-[10px] text-slate-400 leading-normal mt-1 line-clamp-2">{course.description}</p>
+                          </div>
+                          
+                          <div className="border-t border-slate-800/80 pt-3 mt-5 flex items-center justify-between text-[10px] font-bold">
+                            <span className="text-slate-500">90 Full Syllabus Lessons</span>
+                            <span className="text-violet-400 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
+                              Open Path <ChevronRight className="w-3.5 h-3.5" />
                             </span>
                           </div>
-                          <h4 className="text-sm font-bold text-white group-hover:text-violet-300 transition-colors">{course.name}</h4>
-                          <p className="text-[10px] text-slate-400 leading-normal mt-1 line-clamp-2">{course.description}</p>
                         </div>
-                        
-                        <div className="border-t border-slate-800/80 pt-3 mt-5 flex items-center justify-between text-[10px] font-bold">
-                          <span className="text-slate-500">14 Full Syllabus Lessons</span>
-                          <span className="text-violet-400 flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                            Open Path <ChevronRight className="w-3.5 h-3.5" />
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
         ) : activeTab === "catalog" ? (
           /* VIEW 4: THE ALL 25 PROGRAMMING LANGUAGES CATALOG */

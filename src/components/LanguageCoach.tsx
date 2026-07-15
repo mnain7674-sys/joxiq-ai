@@ -86,55 +86,102 @@ interface LessonItem {
 }
 
 const BEGINNER_LESSONS: LessonItem[] = [
-  { id: "b1", title: "Introduction & Overview", desc: "Welcome to your language journey! Learn how to study effectively.", type: "lesson", estimatedMinutes: 5 },
-  { id: "b2", title: "Alphabet & Phonetics", desc: "Master the fundamental sounds and alphabet letters.", type: "lesson", estimatedMinutes: 10 },
-  { id: "b3", title: "Pronunciation Basics", desc: "Key accent and pronunciation rules for clear speech.", type: "lesson", estimatedMinutes: 10 },
-  { id: "b4", title: "Essential Greetings", desc: "Hello, goodbye, please, thank you, and polite expressions.", type: "lesson", estimatedMinutes: 10 },
-  { id: "b5", title: "Daily Words & Objects", desc: "Common everyday items around the house and street.", type: "lesson", estimatedMinutes: 15 },
-  { id: "b6", title: "Numbers (1-100)", desc: "Count confidently and tell prices and quantities.", type: "lesson", estimatedMinutes: 12 },
-  { id: "b7", title: "Colors & Shapes", desc: "Describe the visual world around you.", type: "lesson", estimatedMinutes: 10 },
-  { id: "b8", title: "Family & Relationships", desc: "Talk about mother, father, friends, and relatives.", type: "lesson", estimatedMinutes: 12 },
-  { id: "b9", title: "Days, Months & Time", desc: "Days of the week, months, seasons, and telling time.", type: "lesson", estimatedMinutes: 15 },
-  { id: "b10", title: "Basic Grammar & Verbs", desc: "Understand subject pronouns and present tense verbs.", type: "lesson", estimatedMinutes: 20 },
-  { id: "b11", title: "Simple Sentence Formation", desc: "Construct basic Subject-Verb-Object sentences.", type: "lesson", estimatedMinutes: 18 },
-  { id: "b12", title: "Daily Conversation", desc: "Short dialogues for shopping, ordering food, and travel.", type: "lesson", estimatedMinutes: 15 },
-  { id: "b13", title: "Beginner Listening Exercise", desc: "Train your ear with audio prompts and dictation practice.", type: "lesson", estimatedMinutes: 15 },
-  { id: "b14", title: "Beginner Reading Comprehension", desc: "Read short paragraphs and understand key facts.", type: "lesson", estimatedMinutes: 15 },
-  { id: "b15", title: "Writing Practice & Spelling", desc: "Practice writing correct sentences and spellings.", type: "lesson", estimatedMinutes: 15 },
-  { id: "b16", title: "Vocabulary Review", desc: "Comprehensive review of all beginner words learned.", type: "lesson", estimatedMinutes: 12 },
-  { id: "b17", title: "Beginner Mini Quiz", desc: "Test your knowledge with 10 adaptive questions.", type: "quiz", estimatedMinutes: 10 },
-  { id: "b18", title: "Unit Test: Foundations", desc: "Comprehensive evaluation of basic grammar and vocabulary.", type: "quiz", estimatedMinutes: 15 },
-  { id: "b19", title: "Beginner Final Exam", desc: "Pass this exam with 80%+ to unlock Intermediate level!", type: "exam", estimatedMinutes: 20 },
+  { id: "b1", title: "Introduction & Warm Welcome", desc: "Start your language journey! Meet your AI coach and discover your personal motivation.", type: "lesson", estimatedMinutes: 5 },
+  { id: "b2", title: "Phonetics & Pure Sounds", desc: "Master the fundamental sounds, accents, and mouth mechanics.", type: "lesson", estimatedMinutes: 10 },
+  { id: "b3", title: "Interactive Greeting Routines", desc: "Polite expressions: saying hello, thank you, and goodbye.", type: "lesson", estimatedMinutes: 10 },
+  { id: "b4", title: "The Power of Pronouns", desc: "Understanding how to refer to yourself, friends, and family.", type: "lesson", estimatedMinutes: 10 },
+  { id: "b5", title: "Everyday Objects Around Us", desc: "Identify key tools and household items in your visual field.", type: "lesson", estimatedMinutes: 12 },
+  { id: "b6", title: "Counting & Quantities (1-100)", desc: "Count with confidence, talk about prices, and purchase items.", type: "lesson", estimatedMinutes: 12 },
+  { id: "b7", title: "Colors, Textures & Shapes", desc: "Learn how to describe objects visually with rich adjective layers.", type: "lesson", estimatedMinutes: 10 },
+  { id: "b8", title: "The Family Circle", desc: "Discuss family tree members, close friendships, and households.", type: "lesson", estimatedMinutes: 12 },
+  { id: "b9", title: "Chronos: Telling Time", desc: "Master hour intervals, minutes, and scheduling direct events.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b10", title: "Days, Months & Seasons", desc: "Learn calendar milestones, annual holidays, and climate words.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b11", title: "Action Verbs: Present Tense", desc: "Formulate simple actions like eating, walking, and thinking.", type: "lesson", estimatedMinutes: 18 },
+  { id: "b12", title: "Subject-Verb-Object Setup", desc: "Build complete, structurally correct simple declarations.", type: "lesson", estimatedMinutes: 18 },
+  { id: "b13", title: "Asking Simple Questions", desc: "Formulate open/closed queries using Who, What, and Where.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b14", title: "Negation: Saying 'No'", desc: "Learn how to decline requests and negate actions correctly.", type: "lesson", estimatedMinutes: 12 },
+  { id: "b15", title: "Food, Dining & Menus", desc: "Identify standard foods, order in a café, and settle tabs.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b16", title: "Clothing & Fashion Habits", desc: "Describe apparel items, sizes, and seasonal wardrobes.", type: "lesson", estimatedMinutes: 12 },
+  { id: "b17", title: "Home Architecture", desc: "Navigate household rooms: kitchen, bedroom, and garden.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b18", title: "Location Prepositions", desc: "Describe where things are: in, on, under, behind, or next to.", type: "lesson", estimatedMinutes: 12 },
+  { id: "b19", title: "Urban Navigation", desc: "Ask for directions to train stations, banks, and libraries.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b20", title: "My Daily Routine", desc: "Narrate your morning rituals and standard daily schedule.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b21", title: "Beginner Comprehension Check", desc: "Test your auditory understanding with spoken prompt cards.", type: "quiz", estimatedMinutes: 10 },
+  { id: "b22", title: "Feelings & Basic Emotions", desc: "Communicate happy, sad, tired, excited, or confused states.", type: "lesson", estimatedMinutes: 12 },
+  { id: "b23", title: "Body Parts & Wellness", desc: "Describe physical features and basic health concerns.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b24", title: "Weather & Climates", desc: "Describe sunny, rainy, cold, windy, or snowy days.", type: "lesson", estimatedMinutes: 12 },
+  { id: "b25", title: "Animals & Nature Scenes", desc: "Discuss standard animals, landscapes, forests, and beaches.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b26", title: "Hobbies & Pastime Play", desc: "Discuss soccer, books, cinema, painting, and music tracks.", type: "lesson", estimatedMinutes: 15 },
+  { id: "b27", title: "Travel Essentials", desc: "Check-in at hotels, show tickets, and navigate customs.", type: "lesson", estimatedMinutes: 18 },
+  { id: "b28", title: "Foundation Review Block", desc: "A comprehensive review of beginner words and grammar.", type: "lesson", estimatedMinutes: 20 },
+  { id: "b29", title: "Grammar & Structure Quiz", desc: "A 15-question checkpoint evaluating SVO sentence structures.", type: "quiz", estimatedMinutes: 15 },
+  { id: "b30", title: "Beginner Graduation Exam", desc: "Pass this comprehensive challenge to unlock Intermediate level!", type: "exam", estimatedMinutes: 20 }
 ];
 
 const INTERMEDIATE_LESSONS: LessonItem[] = [
-  { id: "i1", title: "Intermediate Grammar & Tenses", desc: "Master past and future tenses, modal verbs, and conditionals.", type: "lesson", estimatedMinutes: 20 },
-  { id: "i2", title: "Complex Sentence Structures", desc: "Connect clauses using conjunctions and relative pronouns.", type: "lesson", estimatedMinutes: 18 },
-  { id: "i3", title: "Intermediate Reading Articles", desc: "Read news excerpts, stories, and cultural essays.", type: "lesson", estimatedMinutes: 20 },
-  { id: "i4", title: "Listening Practice & Dictation", desc: "Follow natural speed conversations and dialogues.", type: "lesson", estimatedMinutes: 15 },
-  { id: "i5", title: "Writing Paragraphs & Essays", desc: "Express opinions and construct multi-paragraph texts.", type: "lesson", estimatedMinutes: 25 },
-  { id: "i6", title: "Conversation Practice & Fluency", desc: "Discuss hobbies, work, news, and personal experiences.", type: "lesson", estimatedMinutes: 20 },
-  { id: "i7", title: "Story Reading & Analysis", desc: "Explore narrative literature and contextual meanings.", type: "lesson", estimatedMinutes: 20 },
-  { id: "i8", title: "Vocabulary Expansion", desc: "Learn 300+ intermediate synonyms and useful phrases.", type: "lesson", estimatedMinutes: 18 },
-  { id: "i9", title: "Idioms & Common Expressions", desc: "Sound natural with everyday native idioms and sayings.", type: "lesson", estimatedMinutes: 15 },
-  { id: "i10", title: "Weekly Progress Test", desc: "Intermediate milestone evaluation test.", type: "quiz", estimatedMinutes: 15 },
-  { id: "i11", title: "Intermediate Final Exam", desc: "Pass this exam to unlock Advanced level mastery!", type: "exam", estimatedMinutes: 25 },
+  { id: "i1", title: "Intermediate Past Narrative", desc: "Master narrating historical actions, past habits, and story settings.", type: "lesson", estimatedMinutes: 20 },
+  { id: "i2", title: "The Future & Intentions", desc: "Learn to declare future hopes, schedules, and probability levels.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i3", title: "Relative Pronouns & Conjunctions", desc: "Connect multiple clauses using who, which, because, and although.", type: "lesson", estimatedMinutes: 20 },
+  { id: "i4", title: "The Conditional Mindset", desc: "Express hypotheticals: 'If I had time, I would learn more.'", type: "lesson", estimatedMinutes: 20 },
+  { id: "i5", title: "Modal Verbs of Obligation", desc: "Express must, should, have to, and permitted action limits.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i6", title: "Comparatives & Superlatives", desc: "Compare cities, services, and habits: better, worst, or same.", type: "lesson", estimatedMinutes: 15 },
+  { id: "i7", title: "Passive Voice Declarations", desc: "Shift conversation focus from agent to action structures.", type: "lesson", estimatedMinutes: 20 },
+  { id: "i8", title: "Expressing Personal Opinions", desc: "Politely agree, disagree, and argue logical perspectives.", type: "lesson", estimatedMinutes: 20 },
+  { id: "i9", title: "Workplace Roles & Duties", desc: "Describe professional careers, office items, and resumes.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i10", title: "Business Networking Basics", desc: "Introduce yourself, share card details, and pitch simple ideas.", type: "lesson", estimatedMinutes: 20 },
+  { id: "i11", title: "Intermediate Quiz: Grammar", desc: "Test tense transitions and relative connections under time.", type: "quiz", estimatedMinutes: 15 },
+  { id: "i12", title: "Cultural Heritage & Traditions", desc: "Describe local festivals, historic foods, and global art.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i13", title: "Shopping Bargains & Logistics", desc: "Discuss refunds, sizing issues, retail discounts, and shipping.", type: "lesson", estimatedMinutes: 15 },
+  { id: "i14", title: "Technology & Digital Lives", desc: "Describe software, social feeds, emails, and device features.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i15", title: "Environmental Discussion", desc: "Discuss ecosystems, recycling, weather shifts, and oceans.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i16", title: "Health, Fitness & Nutrition", desc: "Discuss active workouts, diet recipes, and wellness regimes.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i17", title: "Arts, Movies & Literature", desc: "Summarize a film plot, analyze music, and review books.", type: "lesson", estimatedMinutes: 20 },
+  { id: "i18", title: "Narrating Life Milestones", desc: "Describe graduation, marriages, relocations, and jobs.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i19", title: "Polite Request Sequences", desc: "Ask for favors, borrow items, and request complex services.", type: "lesson", estimatedMinutes: 15 },
+  { id: "i20", title: "Handling Minor Emergencies", desc: "Describe lost passports, flat tires, or minor medical needs.", type: "lesson", estimatedMinutes: 20 },
+  { id: "i21", title: "Intermediate Listening Drills", desc: "Decipher fast-paced dialogues and compile precise notes.", type: "quiz", estimatedMinutes: 15 },
+  { id: "i22", title: "Social Plans & Hosting", desc: "Invite friends, organize dinners, and arrange meeting spots.", type: "lesson", estimatedMinutes: 15 },
+  { id: "i23", title: "Current Events & News", desc: "Read, translate, and debate current headlines naturally.", type: "lesson", estimatedMinutes: 20 },
+  { id: "i24", title: "Hobbies: Mastery level", desc: "Describe advanced skills: cooking techniques, instruments.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i25", title: "Speculating & Hypothesizing", desc: "Discuss what might have happened in past historical events.", type: "lesson", estimatedMinutes: 20 },
+  { id: "i26", title: "Describing Personal Traits", desc: "Describe personalities: introverts, leaders, values.", type: "lesson", estimatedMinutes: 18 },
+  { id: "i27", title: "Idiomatic Phrasebook 101", desc: "Master the top 50 everyday phrases used by native speakers.", type: "lesson", estimatedMinutes: 15 },
+  { id: "i28", title: "Intermediate Review Block", desc: "Consolidate your intermediate grammar and idioms.", type: "lesson", estimatedMinutes: 22 },
+  { id: "i29", title: "Synthesis & Idioms Quiz", desc: "Challenge your comprehension of figurative language structures.", type: "quiz", estimatedMinutes: 15 },
+  { id: "i30", title: "Intermediate Final Challenge", desc: "A rigorous 30-step examination to unlock Advanced mastery!", type: "exam", estimatedMinutes: 25 }
 ];
 
 const ADVANCED_LESSONS: LessonItem[] = [
-  { id: "a1", title: "Fluent Conversation Mastery", desc: "Master effortless flow, impromptu speech, and subtle nuances.", type: "lesson", estimatedMinutes: 25 },
-  { id: "a2", title: "Native Idioms & Slang Expressions", desc: "Understand regional dialects, slang, and cultural humor.", type: "lesson", estimatedMinutes: 20 },
-  { id: "a3", title: "Business Language & Terminology", desc: "Corporate vocabulary, meetings, negotiations, and presentations.", type: "lesson", estimatedMinutes: 25 },
-  { id: "a4", title: "Academic Language & Formal Writing", desc: "Formal discourse, essays, research papers, and rhetoric.", type: "lesson", estimatedMinutes: 30 },
-  { id: "a5", title: "Professional Writing & Emails", desc: "Draft high-level business correspondence and reports.", type: "lesson", estimatedMinutes: 20 },
-  { id: "a6", title: "Formal & Informal Communication", desc: "Adapt your register effortlessly to any social situation.", type: "lesson", estimatedMinutes: 20 },
-  { id: "a7", title: "Presentation Skills & Public Speaking", desc: "Deliver compelling talks and structured arguments.", type: "lesson", estimatedMinutes: 25 },
-  { id: "a8", title: "Debate Practice & Argumentation", desc: "Defend viewpoints and articulate complex thoughts.", type: "lesson", estimatedMinutes: 25 },
-  { id: "a9", title: "Real-life Scenarios & Roleplay", desc: "Handle high-pressure diplomatic, medical, and legal situations.", type: "lesson", estimatedMinutes: 25 },
-  { id: "a10", title: "Job Interview Practice", desc: "Master professional interview questions and answers.", type: "lesson", estimatedMinutes: 20 },
-  { id: "a11", title: "Advanced Vocabulary & Phrasal Verbs", desc: "Master precise adjectives, verbs, and literary devices.", type: "lesson", estimatedMinutes: 20 },
-  { id: "a12", title: "Advanced Syntax & Stylistics", desc: "Analyze rhetorical devices and sophisticated sentence flow.", type: "lesson", estimatedMinutes: 25 },
-  { id: "a13", title: "Final Master Test", desc: "Demonstrate elite C1-C2 mastery to earn your Language Diploma.", type: "exam", estimatedMinutes: 30 },
+  { id: "a1", title: "Mastering Natural Conversational Flow", desc: "Ditch textbook speak. Perfect your sentence flow, tone, and pacing.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a2", title: "Advanced Idioms, Jokes & Irony", desc: "Decode native humor, sarcasm, double entendres, and wordplay.", type: "lesson", estimatedMinutes: 20 },
+  { id: "a3", title: "Corporate Negotiations & Contracts", desc: "Learn to handle agreements, draft terms, and negotiate prices.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a4", title: "Academic Research & Rhetoric", desc: "Analyze research themes, argue theories, and structure theses.", type: "lesson", estimatedMinutes: 30 },
+  { id: "a5", title: "High-Level Executive Writing", desc: "Draft high-impact board reports, proposals, and press releases.", type: "lesson", estimatedMinutes: 22 },
+  { id: "a6", title: "Diplomatic Communication Registry", desc: "Adapt registers from intimiate settings to high diplomatic protocols.", type: "lesson", estimatedMinutes: 20 },
+  { id: "a7", title: "The Art of Public Speaking", desc: "Deliver keynote addresses, inspire crowds, and speak on stage.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a8", title: "Debate, Argumentation & Rebuttal", desc: "Dismantle counterarguments with elegant rhetoric and poise.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a9", title: "High-Pressure Roleplays", desc: "Navigate complex legal, medical, or corporate crisis scenarios.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a10", title: "Perfecting Spontaneous Speech", desc: "Think and respond on your feet during rapid group discussions.", type: "lesson", estimatedMinutes: 20 },
+  { id: "a11", title: "Phrasal Verbs & Nuance Mastery", desc: "Differentiate between subtle synonyms and master phrasal verbs.", type: "lesson", estimatedMinutes: 20 },
+  { id: "a12", title: "Advanced Literary Syntaxes", desc: "Deconstruct prose, classical books, poetry, and rhetoric.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a13", title: "Persuasion Tactics & Marketing Copy", desc: "Write copy, pitch startups, and convince client pipelines.", type: "lesson", estimatedMinutes: 22 },
+  { id: "a14", title: "Advanced Level Evaluation Quiz", desc: "Tackle a comprehensive review of sophisticated syntax models.", type: "quiz", estimatedMinutes: 20 },
+  { id: "a15", title: "Financial Reporting & Valuations", desc: "Present balance sheets, pitch valuations, and discuss cap tables.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a16", title: "Political & Philosophical Discourse", desc: "Debate political theories, systemic concepts, and ancient ethics.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a17", title: "Medical Consultation Etiquette", desc: "Describe intricate symptoms, diagnoses, and medical histories.", type: "lesson", estimatedMinutes: 22 },
+  { id: "a18", title: "Legal Defenses & Courtroom Speech", desc: "Present legal statements, analyze briefs, and debate regulations.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a19", title: "Advanced Slang & Dialects", desc: "Navigate regional pronunciations, slang words, and street terms.", type: "lesson", estimatedMinutes: 20 },
+  { id: "a20", title: "Scientific Discoveries & Technology", desc: "Deconstruct clean energy, tech architectures, and LLM structures.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a21", title: "Advanced Speech Shadowing Block", desc: "Mirror expert speakers, master tone dips, rising accents, and pauses.", type: "lesson", estimatedMinutes: 20 },
+  { id: "a22", title: "Critical Cultural Analysis", desc: "Explore sociology, historical contexts, and deep cultural roots.", type: "lesson", estimatedMinutes: 22 },
+  { id: "a23", title: "Constructive Criticism & Feedback", desc: "Deliver performance reviews and guide subordinates with tact.", type: "lesson", estimatedMinutes: 20 },
+  { id: "a24", title: "Writing a Feature-Length Article", desc: "Write long-form editorial essays with rich sentence flow.", type: "lesson", estimatedMinutes: 28 },
+  { id: "a25", title: "Advanced Listening Dictation Mastery", desc: "Transcribe overlapping audio tracks and fast-moving dialogues.", type: "quiz", estimatedMinutes: 20 },
+  { id: "a26", title: "Navigating Conflict Resolution", desc: "De-escalate high-pressure arguments, resolve corporate disputes.", type: "lesson", estimatedMinutes: 22 },
+  { id: "a27", title: "Elite Mock Job Interview", desc: "Tackle tough executive interviews with immediate evaluation.", type: "lesson", estimatedMinutes: 25 },
+  { id: "a28", title: "Curriculum Integration & Synthesis", desc: "Perfect all concepts studied from Beginner to Advanced levels.", type: "lesson", estimatedMinutes: 30 },
+  { id: "a29", title: "Grand Master Theory Check", desc: "Final theoretical validation challenge of advanced syntax rules.", type: "quiz", estimatedMinutes: 20 },
+  { id: "a30", title: "The Sovereign Language Diploma", desc: "Pass this final master challenge to earn your C1-C2 Language Diploma!", type: "exam", estimatedMinutes: 30 }
 ];
 
 interface ChatMessage {
@@ -250,9 +297,15 @@ export const LanguageCoach: React.FC<LanguageCoachProps> = ({
           setLessonMessages(JSON.parse(savedChat));
         } else {
           // Initialize with comprehensive professional classroom lesson
+          let initialContent = `👋 **Welcome to your premium ${selectedLang} Classroom Session!**\n\nI am your dedicated professional Language Teacher. Today we are diving deep into **${activeLessonChat.title}** (${activeLessonChat.desc}).\n\n### 🗣️ Teaching Setup\n* **Your Native Language**: ${nativeLang}\n* **Target Language**: ${selectedLang} (${selectedLevel})\n* **Instruction Style**: All grammar rules, explanations, and corrections will be explained in **${nativeLang}**, while vocabulary and examples will be in **${selectedLang}** with phonetic guides.\n\n### 🎓 Today's Complete Learning Flow\n1. **In-Depth Explanation**: Simple, step-by-step concepts assuming zero prior knowledge.\n2. **Real-Life Examples & Usage**: Exactly where, when, and how native speakers use these terms.\n3. **Common Mistakes & Why They Happen**: Pitfalls beginners make and how to avoid them.\n4. **Interactive Practice & Quiz**: Engaging exercises with feedback and final quiz evaluation to unlock your next lesson.\n\nLet's begin! Please read through this introduction, and whenever you are ready, reply with **"Ready to start step 1"** or ask any question you have.`;
+
+          if (activeLessonChat.id === "b1") {
+            initialContent = `👋 **Welcome to your first ${selectedLang} Classroom Session!** \n\nI am your dedicated and trusted Language Teacher. Today we aren't starting with dry memorization or complicated rules—instead, we'll start with a wonderful story! \n\n### 🎯 What You'll Achieve in This Course:\n1. **Confident Conversation**: You will feel comfortable speaking naturally with native speakers.\n2. **New Horizons (Career & Personal Growth)**: Your confidence will skyrocket, unlocking incredible travel, higher education, and global job opportunities.\n3. **Connecting Cultures**: You will understand the stories and rich culture behind the language, not just words.\n\n### 🌟 Our Classroom Rules:\n* We will never rush. We will go slowly and master one concept at a time.\n* After every concept, I will ask you a short, fun question to check your understanding. When you answer, we'll move on to the next concept.\n* Mistakes are celebrated! They are the best way to learn, so never feel afraid.\n\nAre you ready to embark on this beautiful learning journey? Simply reply with **"I am ready"** or **"Ready"** below to let me know!`;
+          }
+
           const initialWelcome: ChatMessage = {
             role: "assistant",
-            content: `👋 **Welcome to your premium ${selectedLang} Classroom Session!**\n\nI am your dedicated professional Language Teacher. Today we are diving deep into **${activeLessonChat.title}** (${activeLessonChat.desc}).\n\n### 🗣️ Teaching Setup\n* **Your Native Language**: ${nativeLang}\n* **Target Language**: ${selectedLang} (${selectedLevel})\n* **Instruction Style**: All grammar rules, explanations, and corrections will be explained in **${nativeLang}**, while vocabulary and examples will be in **${selectedLang}** with phonetic guides.\n\n### 🎓 Today's Complete Learning Flow\n1. **In-Depth Explanation**: Simple, step-by-step concepts assuming zero prior knowledge.\n2. **Real-Life Examples & Usage**: Exactly where, when, and how native speakers use these terms.\n3. **Common Mistakes & Why They Happen**: Pitfalls beginners make and how to avoid them.\n4. **Interactive Practice & Quiz**: Engaging exercises with feedback and final quiz evaluation to unlock your next lesson.\n\nLet's begin! Please read through this introduction, and whenever you are ready, reply with **"Ready to start step 1"** or ask any question you have.`
+            content: initialContent
           };
           setLessonMessages([initialWelcome]);
           localStorage.setItem(storageKey, JSON.stringify([initialWelcome]));
@@ -324,43 +377,76 @@ export const LanguageCoach: React.FC<LanguageCoachProps> = ({
     const storageKey = `joxiq_lesson_chat_${selectedLang}_${activeLessonChat.id}`;
     localStorage.setItem(storageKey, JSON.stringify(updatedMessages));
 
-    const systemPrompt = `You are a world-class, experienced, professional AI Language Teacher (not a chatbot).
-The user's native language is **${nativeLang}**.
+    const systemPrompt = `You are a world-class, experienced, professional AI Language Teacher, Mentor, and Coach (not a chatbot).
 The target language they want to learn is **${selectedLang}** at a **${selectedLevel}** level.
 The current lesson is: "${activeLessonChat.title}" - ${activeLessonChat.desc}.
 
-CRITICAL PEDAGOGICAL TEACHING RULES:
-1. Never start a lesson or introduce a new topic with examples.
-2. Always begin by explaining the core concept first in simple, beginner-friendly language.
-3. Before giving any example, make sure the learner fully understands (written in their native language **${nativeLang}**):
-   - What the topic is.
-   - Why it exists.
-   - Why it is important.
-   - Where it is used.
-   - When it is used.
-   - How it works.
-4. You MUST explain all explanations, grammar rules, concepts, contexts, mistake corrections, and lesson summaries in the user's native language (**${nativeLang}**). Teach vocabulary, phrases, and examples in **${selectedLang}**, accompanied by clear translations and phonetic breakdowns in **${nativeLang}**.
-5. Explain everything using simple, beginner-friendly language. Never assume the learner already knows anything.
-6. After (and only after) the learner understands the concept, gradually introduce examples.
-7. Start with exactly one very simple example. Explain that example step-by-step or line-by-line with absolute clarity.
-8. Only after the learner understands the first example, introduce more examples with increasing difficulty. Never overload the learner with many examples at once.
-9. Always focus on understanding before memorization.
-10. Continuously evaluate the learner's understanding through thoughtful questions and interactive checkpoints. If understanding is weak, STOP moving forward and spend more time explaining the concepts in different ways instead of rushing to complete the syllabus.
-11. Never give information just to finish a lesson. Teach until the learner genuinely and deeply understands. The learner's success is far more important than completing the syllabus.
-12. If the learner seems confused or makes a mistake, stop introducing new content. Instead:
-    - Explain the concept again in different words.
-    - Use a clear analogy or a real-life situation.
-    - Ask if the learner understands before continuing.
-13. Every session must feel like a real interactive classroom taught by an excellent, patient teacher. Never rush to finish lessons; the goal is deep mastery, not speed.
-14. Give practice activities, quizzes, or interactive questions after every important topic. Only after the learner demonstrates understanding or successfully answers should you continue to the next section or topic.
-15. If the learner gives a wrong answer, NEVER simply provide the correct answer. Explain the mistake clearly in **${nativeLang}**, show why it is incorrect, and then teach the correct answer with additional examples.
-16. At the end of every lesson, provide a complete, clear lesson summary in **${nativeLang}** and a 3-question quiz.`;
+CRITICAL SYSTEM DIRECTIVES & LANGUAGE POLICY:
+1. By default, you MUST explain, speak, and instruct strictly in English to maintain a high-quality, professional, and globally accessible learning environment.
+2. EXCEPTION: If the user explicitly asks you to translate, explain, or switch to another language (e.g. "Bangla e bujhie dao", "explain in Bangla", "Hindi me samjhao", "explain in Spanish", etc.), you MUST immediately and gracefully switch to that language to explain concepts, while keeping the target language terms in standard format with brackets.
+
+PRIMARY PEDAGOGICAL GOAL:
+- Your primary goal is NOT to rush or finish lessons quickly. Deep, confident understanding is far more important than speed.
+- The learner must never feel like they are reading a textbook. Make it feel like an interactive, warm conversation with one of the best teachers in the world.
+
+THE ULTIMATE 14-STEP LESSON STRUCTURE (You MUST guide the learner through this exact sequence step-by-step. Do NOT skip steps or overload the learner with too much information at once. Wait for their inputs/answers at checkpoints):
+- **Step 1: Introduction** — Welcome the learner warmly, introduce the lesson.
+- **Step 2: Learning Objectives** — Clear, exciting points of what they will learn.
+- **Step 3: Concept Explanation** — Introduce the topic's core concept without examples first.
+- **Step 4: Real Life Importance** — Explain WHY this lesson matters, what they will achieve, and how it improves their career, travel, or confidence.
+- **Step 5: Simple Explanation** — Break down the core mechanism in extremely simple terms using storytelling or analogies.
+- **Step 6: Detailed Explanation** — Expand on the details, patterns, and nuances.
+- **Step 7: Very Easy Example** — Introduce exactly one super easy example.
+- **Step 8: Practice Together** — Walk through how a professional or native speaker uses it.
+- **Step 9: Learner Practice** — Present a simple practical exercise or a custom scenario and ask the learner to practice.
+- **Step 10: AI Feedback** — Provide warm, detailed feedback. Never say "You are wrong." Instead, say "Good attempt!", "I understand why you thought that", and gently redirect.
+- **Step 11: Quiz** — Present highly focused, engaging questions measuring actual understanding. If they fail or show confusion, explain the concept again using a different story/analogy and test them with a fresh question.
+- **Step 12: Lesson Summary** — Show a beautifully formatted summary of what was learned.
+- **Step 13: Lesson Completed** — Congratulate the learner on completing the lesson. Remind them of their progress, time spent, XP earned, and celebrate their growth!
+- **Step 14: Next Lesson Preview** — Briefly preview the next lesson to spark intense curiosity and anticipation. End with exactly or a translation of: "You've taken the first step. Imagine what you'll be able to do after completing this course."
+
+CONCEPT BEFORE EXAMPLES:
+- Never start with examples. Always explain the What, Why, Where, When, and How first. Only after they grasp the core logic should you introduce any examples.
+
+GRADUAL EXAMPLES:
+- Introduce examples gradually: Easy ➔ Medium ➔ Real World ➔ Professional.
+
+CHECK UNDERSTANDING:
+- After every explanation or concept, ask a small question. If they understand, continue. If not, explain again using different words, analogies, or practical scenarios. Never proceed while the learner is confused or struggling.
+
+MOTIVATION:
+- Celebrate every small victory and progress. Keep them highly motivated! Use terms like: "Excellent", "You're improving", "That's exactly right", "You've made real progress today."
+
+OPTIONAL HOMEWORK:
+- End the lesson with optional homework to reinforce what they have learned.`;
 
     try {
       // Build history for API
       const apiMessages = updatedMessages.map(m => ({ role: m.role, content: m.content }));
       
       let finalSystemInstruction = systemPrompt;
+      if (activeLessonChat.id === "b1") {
+        finalSystemInstruction += `
+
+CRITICAL FIRST LESSON DIRECTIVES:
+- This is the VERY FIRST LESSON of the entire course. It is the most critical lesson for creating a strong first impression.
+- By default, you MUST speak and instruct strictly in English to keep it professional and accessible.
+- EXCEPTION: If the user explicitly asks you to explain in another language (e.g., "Bangla e bujhie dao" or "explain in Bangla/Hindi/Spanish/etc."), you MUST immediately switch to that language for explanations while keeping target terms in brackets or standard format.
+- Act as one of the best teachers in the world: extremely warm, patient, inspiring, and full of curiosity.
+- Never be boring or robotic. Do not sound like a textbook.
+- Introduce concepts slowly, step-by-step, explaining only ONE concept at a time.
+- Use stories, analogies, and real-life situations that the learner can easily imagine.
+- After explaining each concept, ask a simple check question. Do not move to the next concept until the user understands.
+- If they make a mistake, encourage them warmly, celebrate their effort, and explain the concept again using different words/analogies.
+- Break the lesson into small sections, summarizing each section briefly before proceeding.
+- Celebrate every small achievement. Make the learner feel proud and confident.
+- At the end of the lesson:
+  1. Show a beautiful lesson summary.
+  2. Remind them how much they have improved and how proud they should feel.
+  3. Preview Lesson 2 ("Alphabet & Phonetics") to spark curiosity.
+  4. Say exactly or a translation of: "You've taken the first step. Imagine what you'll be able to do after completing this course."
+- The learner must finish feeling excited and confident, naturally wanting to explore more or upgrade to premium.`;
+      }
       if (completedLessons.includes(activeLessonChat.id)) {
         finalSystemInstruction += `\n\nCRITICAL FOLLOW-UP DIRECTIVE: The user has successfully completed this lesson ("${activeLessonChat.title}"). They have selected the "Ask More Questions About This Lesson" option to continue exploring this topic. You MUST answer unlimited follow-up questions related ONLY to the scope of this lesson. Be extremely encouraging, professional, and patient. At the end of EVERY answer, you MUST politely ask exactly: "Do you have any other questions about this lesson, or would you like to continue to the next lesson?"`;
       }
