@@ -181,6 +181,163 @@ const languages = [
   { name: "Data Structures & Algorithms", icon: "🌲", category: "Computer Science", desc: "Crack the coding interview. Master binary trees, sorting algorithms, dynamic paths, arrays, hash maps, and stacks." }
 ];
 
+const BEGINNER_TOPICS = [
+  "Introduction & Overview",
+  "Environment Setup & Configuration",
+  "Your First 'Hello World' Code",
+  "Variables, Constants, and Scope",
+  "Understanding RAM & Computer Memory",
+  "Primitive Data Types: Numbers and Floats",
+  "Char Sequences and String Manipulation",
+  "Boolean Logic & Truth Tables",
+  "Basic Arithmetic Operators",
+  "Relational and Comparison Operators",
+  "Connecting Multi-Conditions with Logic Operators",
+  "Single Alternative Decisions (if Statement)",
+  "Dual Alternative Decisions (if-else Statement)",
+  "Nested Decisions & Multi-way Branching",
+  "Switched Execution & Pattern Matching",
+  "The Concept of Loops & Iteration",
+  "Pre-test Iteration (While Loops)",
+  "Count-Controlled Iteration (For Loops)",
+  "Post-test Iteration (do-while Loops)",
+  "Loop Controls: break & continue",
+  "Nested Loops & Multidimensional Iteration",
+  "Introduction to Functions & Modular Blocks",
+  "Function Parameters & Input Arguments",
+  "Return Values & Exiting Functions",
+  "Local vs. Global Variable Scope",
+  "Standard Output Formatting & Escape Characters",
+  "Basic User Inputs & Interactive Interfaces",
+  "Code Comments & Documentation Standards",
+  "Syntax Errors vs. Logic Errors",
+  "Beginner Milestone: Building a CLI Application"
+];
+
+const INTERMEDIATE_TOPICS = [
+  "Object-Oriented Principles (OOP): Overview",
+  "Creating Classes & Instantiating Objects",
+  "Encapsulation: Access Modifiers & Private States",
+  "Inheritance: Sharing Reusable Class Logic",
+  "Polymorphism: Method Overloading & Overriding",
+  "Abstract Classes & Interfaces",
+  "Custom Modular Architecture & Directories",
+  "Importing and Exporting Modular Components",
+  "Operating Systems I/O and File Streams",
+  "File Handling: Reading and Parsing Raw Files",
+  "File Handling: Writing and Appending Log Records",
+  "Safe Buffer Flushing & Context Managers",
+  "Robust Exception Handling (try-catch)",
+  "Catching Specific Exceptions vs. Generic Errors",
+  "Throwing Custom Exceptions & Guard Assertions",
+  "Resources Cleanup using finally Blocks",
+  "Linear Data Structures: Custom Arrays",
+  "Key-Value Mapping: Hash Maps & Dictionaries",
+  "Structured Lists: Linked Lists under the hood",
+  "LIFO Structures: Custom Stacks & Execution Stack",
+  "FIFO Structures: Queues & Event Handlers",
+  "Simple Sorting Algorithms: Bubble Sort",
+  "Searching Algorithms: Linear Search vs. Binary Search",
+  "Introduction to Recursion & Base Cases",
+  "Parsing Structured JSON String Payloads",
+  "Manipulating Dates, Timestamps, and Timezones",
+  "Regular Expressions (Regex) for Text Parsing",
+  "Code Debugging: Breakpoints & Call Stacks",
+  "Code Refactoring: DRY and SOLID Principles",
+  "Intermediate Milestone: Structuring a Multimodal Library DB"
+];
+
+const ADVANCED_TOPICS = [
+  "Functional Paradigms & Lambda Expressions",
+  "Higher-Order Functions: map, filter, reduce",
+  "Function Decorators & Metadata Wrapper Engines",
+  "Lazy Evaluation & Generator Functions",
+  "Deep vs. Shallow Copying & Memory References",
+  "Advanced Garbage Collection & Memory Management",
+  "Threading vs. Multiprocessing Concepts",
+  "Asynchronous Programming Model & Event Loops",
+  "Working with Promises, Futures, and Callbacks",
+  "Modern async-await Execution Flows",
+  "Concurrent Queue Processing & Semaphore Locks",
+  "Network Protocols: TCP/IP vs. HTTP/HTTPS",
+  "Building Robust REST API Endpoints",
+  "Designing Secure API Routes with Middlewares",
+  "Request Validation & Status Codes Best Practices",
+  "Data Serialization and Compression",
+  "Relational Queries vs. Non-Relational Data Storage",
+  "Understanding WebSockets & Bidirectional Streams",
+  "Working with Third-Party APIs & OAuth Access",
+  "Microservices Architecture & System Isolation",
+  "Building Secure Cryptographic Hashes & Auth Salt",
+  "Securing Apps against SQL Injection & XSS Attacks",
+  "Advanced Caching Strategies: Memory Cache vs. CDN",
+  "Containerization Concepts: Docker & Kubernetes",
+  "CI/CD Pipelines: Automated Lint, Test & Deploy",
+  "System Scalability & High-Availability Load Balancers",
+  "Senior Code Optimization & Performance Profiling",
+  "Whiteboarding: Complex Tree & Graph Traversals",
+  "Advanced System Design: Scalable Message Queues",
+  "Senior Capstone Project: High-Performance Concurrent API"
+];
+
+function generateLessons(
+  langName: string,
+  code: string,
+  level: "beginner" | "intermediate" | "advanced"
+): Lesson[] {
+  const topics = level === "beginner" 
+    ? BEGINNER_TOPICS 
+    : level === "intermediate" 
+      ? INTERMEDIATE_TOPICS 
+      : ADVANCED_TOPICS;
+  
+  const prefix = level === "beginner" ? "b" : level === "intermediate" ? "i" : "a";
+  const startNum = level === "beginner" ? 1 : level === "intermediate" ? 31 : 61;
+  
+  return topics.map((topic, index) => {
+    const lessonNum = startNum + index;
+    const ansIdx = (index % 3);
+    
+    let options = [];
+    if (ansIdx === 0) {
+      options = [
+        `It enables developers to manage system state, reduce complexity, and write scalable ${langName} code.`,
+        `It disables all performance safety features in ${langName} to run raw binaries.`,
+        `It forces the local computer to reboot and update its BIOS settings immediately.`,
+        `It is an outdated technique that has been completely deprecated in modern versions.`
+      ];
+    } else if (ansIdx === 1) {
+      options = [
+        `It requires connecting to secure external database servers for every simple execution.`,
+        `It promotes modularity, testability, and efficient resource handling within ${langName}.`,
+        `It converts all source files into encrypted, unreadable binary files.`,
+        `It makes compilation scripts take significantly longer with no developer benefit.`
+      ];
+    } else {
+      options = [
+        `It is only usable on special server hardware and cannot be tested locally.`,
+        `It requires paid licensing terms to compile and run any simple code blocks.`,
+        `It is a fundamental ${level}-level concept in ${langName} that enhances performance and structure.`,
+        `It automatically translates all standard coding logic into other machine languages.`
+      ];
+    }
+
+    const content = `${langName} ecosystem leverages ${topic} as a critical architectural element. In professional software engineering, mastering this concept represents a major step toward standard developer certification. Under the hood, this system parses and executes tasks efficiently, adapting to both simple scripts and massive distributed enterprise environments. By understanding ${topic}, developers can write clean, high-performance, and scalable software applications. In this lesson, we cover the exact syntax, common implementation mistakes, and real-world production usage patterns of ${topic} in ${langName}. Make sure to experiment with this code in your interactive sandbox playground!`;
+
+    return {
+      id: `${code}-${prefix}${index + 1}`,
+      title: `Lesson ${lessonNum} - ${topic}`,
+      content,
+      quiz: {
+        question: `Why is mastering '${topic}' considered crucial in ${langName} development?`,
+        options,
+        answer: ansIdx,
+        explanation: `Mastering '${topic}' in ${langName} allows software engineers to build structured, efficient, and robust applications by aligning with standard programming best practices.`
+      }
+    };
+  });
+}
+
 export const ALL_COURSES: Course[] = languages.map((lang) => {
   const code = lang.name.toLowerCase().replace(/[^a-z0-9]/g, "");
   
@@ -192,218 +349,9 @@ export const ALL_COURSES: Course[] = languages.map((lang) => {
     category: lang.category,
     description: lang.desc,
     
-    beginnerLessons: [
-      {
-        id: `${code}-b1`,
-        title: `Lesson 1 - Introduction to ${lang.name}`,
-        content: `${lang.name} is a highly requested technology in modern software engineering. Used worldwide across global teams, mastering its core syntax and execution flow represents your first step toward professional developer certification. Under the hood, this system parses and executes tasks efficiently, adapting to both simple scripts and massive distributed environments.`,
-        quiz: {
-          question: `What represents a primary benefit of using ${lang.name}?`,
-          options: [
-            "It automatically writes all application logic for you with zero manual input",
-            "It is highly supported, has rich developer ecosystems, and solves real-world engineering issues",
-            "It runs on special hardware only and cannot be installed on standard laptops",
-            "It was invented strictly as a minor text editing tool with no logic capabilities"
-          ],
-          answer: 1,
-          explanation: `${lang.name} is standard because of its active community, robust documentation, and practical problem-solving capabilities in commercial engineering.`
-        }
-      },
-      {
-        id: `${code}-b2`,
-        title: `Lesson 2 - Installing & Setting Up ${lang.name}`,
-        content: `Before writing professional statements, you must establish an isolated environment. Install the runtime or framework tools, verify your current active shell versions via your system command terminal with '${lang.name.toLowerCase()} --version', and prepare your primary directory workspace. Running a standard 'Hello, World!' demonstrates full environment viability.`,
-        quiz: {
-          question: "Why do we verify the installation version using terminal commands?",
-          options: [
-            "To prove to our ISP that we have internet routing access",
-            "To confirm the environment is correctly path-mapped and active for compiling code",
-            "To increase the processing power of our core computer hardware",
-            "To register our software directly with Microsoft or Google corporate servers"
-          ],
-          answer: 1,
-          explanation: "Running version queries in shell terminals confirms the path environmental parameters are correct and ready for compiler execution."
-        }
-      },
-      {
-        id: `${code}-b3`,
-        title: "Lesson 3 - Basic Variables and Memory",
-        content: "Variables are named storage locations in your computer's RAM. They allow programmers to capture values, perform mathematical operations, and retain system states throughout application execution. Depending on whether your system uses strict static types or dynamic interpreter structures, your declarations will adapt to secure and structured memory slots.",
-        quiz: {
-          question: "What is the primary role of a variable in software logic?",
-          options: [
-            "To display colorful graphic styles on external visual monitors",
-            "To reserve a secure memory cell in RAM for storing and manipulating data elements",
-            "To encrypt the entire source code file before exporting to public folders",
-            "To run server-side requests across network protocol environments"
-          ],
-          answer: 1,
-          explanation: "Variables act as labeled containers that reference memory blocks in active RAM, holding data for fast computational usage."
-        }
-      },
-      {
-        id: `${code}-b4`,
-        title: "Lesson 4 - Advanced Primitive Data Types",
-        content: "Data types tell the compiler or runtime environment how to interpret binary data stored in memory. Main categories include numeric data (such as floating-point decimals and standard signed integers), character sequences (commonly referred to as strings), and simple boolean values representing true or false logical states.",
-        quiz: {
-          question: "Which of these represents a basic Boolean logic value?",
-          options: ["A numeric integer like 42", "A true or false state", "An array or list of key-values", "A multi-paragraph text block"],
-          answer: 1,
-          explanation: "Booleans represent pure binary decisions: positive/negative, yes/no, or true/false."
-        }
-      },
-      {
-        id: `${code}-b5`,
-        title: "Lesson 5 - Standard Operators and Expressions",
-        content: "Operators are special mathematical symbols that manipulate variables and values. Arithmetical operators handle basic calculations (+, -, *, /), comparison operators determine numeric differences (>, <, ==, !=), and logical operators connect multi-conditional paths (and, or, not) to form complex expressions.",
-        quiz: {
-          question: "What is the result of a comparison operator like (5 > 3)?",
-          options: ["The number 8", "A boolean value of true", "A syntax error", "The string '5 is bigger'"],
-          answer: 1,
-          explanation: "Comparison expressions evaluate to boolean values (true or false) indicating the result of the comparison."
-        }
-      },
-      {
-        id: `${code}-b6`,
-        title: "Lesson 6 - Conditional Decision Flow",
-        content: "Control flow defines the order in which statements are executed. Conditional structures evaluate a boolean expression, directing the execution path into separate branching channels. By utilizing cascading logic, software applications handle user scenarios dynamically rather than executing in a straight vertical line.",
-        quiz: {
-          question: "How does conditional branching enhance software capabilities?",
-          options: [
-            "It speeds up compilation by skipping comments",
-            "It allows applications to execute different blocks of code depending on variable values",
-            "It stores infinite user records in relational database servers",
-            "It turns desktop monitors into highly responsive screen layouts"
-          ],
-          answer: 1,
-          explanation: "Conditionals enable the system to make decisions dynamically based on changing user inputs or active data states."
-        }
-      }
-    ],
-    
-    intermediateLessons: [
-      {
-        id: `${code}-i1`,
-        title: "Lesson 7 - Object-Oriented Principles (OOP)",
-        content: "Object-Oriented Programming (OOP) is an engineering paradigm that models software components as real-world objects. Classes act as blueprints, while Objects are real instances. Encapsulation hides private variables, Inheritance shares reusable logic, and Polymorphism lets components adapt to different contexts.",
-        quiz: {
-          question: "Which OOP concept is responsible for hiding internal variables from outside modification?",
-          options: ["Inheritance", "Polymorphism", "Encapsulation", "Compilation"],
-          answer: 2,
-          explanation: "Encapsulation bundles data and methods together, exposing only what is safe and hiding raw state details."
-        }
-      },
-      {
-        id: `${code}-i2`,
-        title: "Lesson 8 - Custom Modular Architecture",
-        content: "Monolithic, single-file scripts are impossible to maintain at scale. Modular design breaks your software into small, highly cohesive files that communicate across import and export declarations. This allows global engineering teams to divide labor, write unit tests, and maintain clean directory separations.",
-        quiz: {
-          question: "What is the primary motivation for adopting modular file architectures?",
-          options: [
-            "To increase file sizes and make compile scripts run longer",
-            "To promote reusability, testing, and team-based parallel development",
-            "To enforce strict licensing rules on commercial platforms",
-            "To prevent standard computers from inspecting our source logic"
-          ],
-          answer: 1,
-          explanation: "Modularity divides complex programs into manageable, reusable chunks, dramatically simplifying testing and team collaboration."
-        }
-      },
-      {
-        id: `${code}-i3`,
-        title: "Lesson 9 - File Handling & Operating Systems I/O",
-        content: "Most practical programs must interact with local or remote file systems. This intermediate section explores opening streams, writing textual or binary contents, and closing handles cleanly. Utilizing context managers is essential to prevent system resource leaks or blocking thread states.",
-        quiz: {
-          question: "Why must file handles be closed after operations complete?",
-          options: [
-            "To clear the computer's motherboard BIOS memory",
-            "To release operating system locks and prevent memory/resource leaks",
-            "To verify our user permissions with cloud cloud providers",
-            "To encrypt the documents inside the local user download folders"
-          ],
-          answer: 1,
-          explanation: "Open file handles consume file descriptors in the OS kernel. Closing them releases those descriptors, avoiding file access locks."
-        }
-      },
-      {
-        id: `${code}-i4`,
-        title: "Lesson 10 - Robust Exception Handling & Defensive Coding",
-        content: "Errors are an inevitable reality of production software. Rather than allowing your app to crash, exception blocks catch runtime errors gracefully. By using try, catch, and finally expressions, you can log exceptions, clear temporary database buffers, and present friendly instructions to the end-user.",
-        quiz: {
-          question: "What is the main role of a 'finally' block in exception handling?",
-          options: [
-            "To execute statements ONLY if an error actually happens",
-            "To guarantee cleanup code runs regardless of whether an error was raised or caught",
-            "To stop the program immediately and report to global admins",
-            "To compile the source files into standalone machine instructions"
-          ],
-          answer: 1,
-          explanation: "A finally block always runs at the end of exception processing, making it the perfect spot for closing connections or releasing files."
-        }
-      }
-    ],
-    
-    advancedLessons: [
-      {
-        id: `${code}-a1`,
-        title: "Lesson 11 - Functional Paradigms, Decorators, and Generators",
-        content: "Advanced development leverages elegant abstractions. Decorators wrap other functions to inject telemetry, authentication, or caching dynamically without modifying original definitions. Meanwhile, Generators yield values lazily, enabling apps to stream gigabytes of files without overloading RAM.",
-        quiz: {
-          question: "How do Generators differ from standard Array return values?",
-          options: [
-            "They double the execution speed of computer systems",
-            "They evaluate and yield values lazily one at a time, conserving huge amounts of RAM",
-            "They require relational database integrations to process simple values",
-            "They cannot be modified once they are imported into other scripts"
-          ],
-          answer: 1,
-          explanation: "Generators return iterators that produce values on demand (yield) rather than instantiating entire collections in memory."
-        }
-      },
-      {
-        id: `${code}-a2`,
-        title: "Lesson 12 - Advanced Asynchronous Programming Models",
-        content: "Modern environments are heavily network-bound. Waiting synchronously for database queries or API payloads blocks execution threads, freezing user interfaces. Asynchronous engines handle thousands of concurrent transactions using event loops, promises, callbacks, and simple async/await syntaxes.",
-        quiz: {
-          question: "What does asynchronous programming resolve?",
-          options: [
-            "It allows the CPU to process basic mathematical formulas twice as fast",
-            "It prevents I/O-bound tasks from blocking the primary execution thread",
-            "It secures local files against cyber threats and database errors",
-            "It translates raw coding statements into different languages"
-          ],
-          answer: 1,
-          explanation: "Async programming delegates slow I/O tasks to background processes, allowing the main runtime thread to keep processing other actions."
-        }
-      },
-      {
-        id: `${code}-a3`,
-        title: "Lesson 13 - Developing High-Performance API Systems",
-        content: "Connect your systems to the world. Architect robust REST or GraphQL API servers that communicate structured JSON messages securely. Implement route parameters, robust request validations, custom middlewares, and secure access headers to ensure your services run with extreme reliability under load.",
-        quiz: {
-          question: "What is the standard format for exchanging data in modern web APIs?",
-          options: ["Raw plain text blocks", "JSON (JavaScript Object Notation)", "Microsoft Word documents", "Compiled bytecode executables"],
-          answer: 1,
-          explanation: "JSON is the universal, lightweight, human-readable standard format used to serialize structured data across internet APIs."
-        }
-      },
-      {
-        id: `${code}-a4`,
-        title: "Lesson 14 - Capstone Project Architecture & Interview Preparation",
-        content: "Combine all lessons into a professional capstone system. This final lesson guides you through constructing a robust, scalable, and fully tested production application. We will also analyze common senior technical interview algorithms, system architecture design problems, and best coding practices.",
-        quiz: {
-          question: "What is a major focus during system architecture interviews?",
-          options: [
-            "Proving you can type code faster than any other candidate",
-            "Demonstrating scalability, modular separations, error handling, and logical reasoning",
-            "Memorizing every single built-in keyword of a language",
-            "Writing entire applications in a single monolithic script"
-          ],
-          answer: 1,
-          explanation: "Interviewers look for robust architecture, clean coding practices, and structured problem-solving under scale and load."
-        }
-      }
-    ],
+    beginnerLessons: generateLessons(lang.name, code, "beginner"),
+    intermediateLessons: generateLessons(lang.name, code, "intermediate"),
+    advancedLessons: generateLessons(lang.name, code, "advanced"),
     
     projects: [
       {
