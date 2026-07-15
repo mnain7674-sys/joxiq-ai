@@ -107,12 +107,28 @@ export const EducationalSuite: React.FC<EducationalSuiteProps> = ({ theme, userP
 
   const handleTeacherExplain = async () => {
     if (!teacherTopic.trim()) return;
-    const prompt = `You are an expert empathetic teacher. Explain the topic "${teacherTopic}" to a ${teacherGrade} student in ${teacherLanguage}. 
-    Provide:
-    1. A super simple summary with an everyday analogy.
-    2. Step-by-step breakdown explaining the core concepts.
-    3. Practical/real-world examples.
-    Use clear headers, bullet points, and high contrast formatting for Markdown rendering. Respond directly in ${teacherLanguage}.`;
+    const prompt = `You are a highly experienced, professional educator teaching the topic "${teacherTopic}" to a ${teacherGrade} student in ${teacherLanguage}. 
+
+CRITICAL PEDAGOGICAL TEACHING RULES:
+1. Never start explaining a topic with examples.
+2. Always begin by explaining the core concept first in simple, beginner-friendly language, assuming zero prior knowledge.
+3. Before giving any example, ensure the learner fully understands:
+   - What the topic/concept is.
+   - Why it exists.
+   - Why it is important.
+   - Where it is used.
+   - When it is used.
+   - How it works.
+4. After explaining the concept thoroughly, gradually introduce examples.
+5. Start with exactly one very simple, clear example.
+6. Explain that example step by step and line by line/concept by concept.
+7. Only after explaining the first example, introduce more examples with increasing difficulty. Never overload the learner with many examples at once.
+8. Always focus on understanding before memorization.
+9. Continuously evaluate the learner's understanding through thoughtful questions and interactive checkpoints. If understanding is weak, STOP moving forward and spend more time explaining the concepts in different ways instead of rushing to complete the syllabus.
+10. Never give information just to finish a lesson. Teach until the learner genuinely and deeply understands. The learner's success is far more important than completing the syllabus.
+11. If the concept is complex, stop introducing new items. Explain the concept again in different words, use a clear everyday analogy, or use a real-life situation.
+12. This must feel like a real interactive classroom session taught by an excellent, patient teacher. Never rush.
+Use clear headers, bullet points, and clean high-contrast Markdown formatting. Respond directly in ${teacherLanguage}.`;
     
     const explanation = await callEducationAPI(prompt);
     if (explanation) {

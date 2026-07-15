@@ -33,7 +33,8 @@ import {
   Shield,
   Star,
   ChevronDown,
-  UserCheck
+  UserCheck,
+  Loader2
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { CAREER_CARDS, ALL_COURSES, Course, CareerCard, Lesson } from "./coursesData";
@@ -206,6 +207,11 @@ YOUR GOALS:
   const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<number | null>(null);
   const [quizSubmitted, setQuizSubmitted] = useState<boolean>(false);
 
+  // Lesson Completion Screen States
+  const [showLessonCompletedScreen, setShowLessonCompletedScreen] = useState<boolean>(false);
+  const [completedLessonSummary, setCompletedLessonSummary] = useState<string>("");
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState<boolean>(false);
+
   // Playground state
   const [playgroundLang, setPlaygroundLang] = useState<"javascript" | "python" | "html">("javascript");
   const [playgroundCode, setPlaygroundCode] = useState<string>('// Welcome to your AI Coding Sandbox!\nconsole.log("Write, edit, and run your program code here.");\n\nfunction verifyMentorResult() {\n  let items = [1, 2, 3];\n  return items.map(n => n * 2);\n}\n\nconsole.log("Processed List:", verifyMentorResult());');
@@ -354,6 +360,39 @@ YOUR GOALS:
     });
   };
 
+  const handleLessonFinalize = async (lessonId: string) => {
+    toggleLessonComplete(lessonId);
+    setShowLessonCompletedScreen(true);
+    setIsGeneratingSummary(true);
+    setCompletedLessonSummary("");
+
+    try {
+      const promptText = `You are an expert computer science teacher. 
+Please write an encouraging, concise 3-sentence summary in **Bangla (Bengali)** with clean, beginner-friendly language, outlining the core programming concepts the student has successfully mastered in the lesson "${selectedLesson?.lesson.title}" of the course "${selectedCourse?.name}". 
+Use English terms in brackets for programming jargon (e.g., ভেরিয়েবল [Variables]). Do not include preambles, output the bullet points directly.`;
+
+      const res = await fetch("/api/education/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: promptText, jsonMode: false })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.result) {
+          setCompletedLessonSummary(data.result);
+        } else {
+          setCompletedLessonSummary(`অসাধারণ কাজ! আপনি সফলভাবে "${selectedLesson?.lesson.title}" লেসনটি সম্পন্ন করেছেন। আপনি এই পাঠের মূল কোডিং নিয়মাবলী এবং বাস্তব জীবনের প্রোগ্রামিং কৌশলসমূহ আয়ত্ত করেছেন।`);
+        }
+      } else {
+        setCompletedLessonSummary(`অসাধারণ কাজ! আপনি সফলভাবে "${selectedLesson?.lesson.title}" লেসনটি সম্পন্ন করেছেন। আপনি এই পাঠের মূল কোডিং নিয়মাবলী এবং বাস্তব জীবনের প্রোগ্রামিং কৌশলসমূহ আয়ত্ত করেছেন।`);
+      }
+    } catch {
+      setCompletedLessonSummary(`অসাধারণ কাজ! আপনি সফলভাবে "${selectedLesson?.lesson.title}" লেসনটি সম্পন্ন করেছেন। আপনি এই পাঠের মূল কোডিং নিয়মাবলী এবং বাস্তব জীবনের প্রোগ্রামিং কৌশলসমূহ আয়ত্ত করেছেন।`);
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
   const handleRunPlaygroundCode = () => {
     setPlaygroundOutput("Compiling and executing code...");
     setTimeout(() => {
@@ -437,27 +476,49 @@ I am here to help you master this concept. I explain topics step-by-step, dissec
         ? `The user is on Section "${activeSec.title}". The current theoretical course contents: "${activeSec.content}". Pro-tip is: "${activeSec.proTip}". Real-world application scenario: "${activeSec.realWorldScenario}".`
         : "";
 
-      // Instruct Gemini to behave as an elite socratic coding teacher
-      const prompt = `You are a world-class coding instructor and patient computer science mentor.
+      // Instruct Gemini to behave as an elite socratic coding teacher following strict pedagogical rules
+      const prompt = `You are an elite, highly experienced software engineering teacher and computer science mentor.
 Current Course: "${selectedCourse?.name || "Software Engineering"}"
 Current Lesson: "${selectedLesson.lesson.title}"
 ${sectionContext}
 
-The user's query: "${userMsg}"
+The user's query/message: "${userMsg}"
 
-YOUR GOALS:
-1. Respond like a world-class, caring Socratic programming instructor.
-2. Teach in high detail. Explain concepts step-by-step and why they exist.
-3. Show clean, descriptive code examples with precise, line-by-line inline comments.
-4. Never assume prior expert knowledge. Use simple, analogies when appropriate.
-5. Ask guided questions or give coding exercises, and invite them to write code in the interactive playground below.
-6. If they write code, review their answers carefully and explain WHY mistakes happen.
-7. Keep formatting professional with clear markdown headers, bold keywords, and clean bullet lists.`;
+CRITICAL PEDAGOGICAL TEACHING RULES:
+1. Never start a lesson or introduce a new topic with examples.
+2. Always begin by explaining the core concept first in simple, beginner-friendly language.
+3. Before giving any example, make sure the learner fully understands:
+   - What the topic is.
+   - Why it exists.
+   - Why it is important.
+   - Where it is used.
+   - When it is used.
+   - How it works.
+4. Explain everything using simple, beginner-friendly language. Never assume the learner already knows anything.
+5. After the learner understands the concept, gradually introduce examples.
+6. Start with exactly one very simple example. Explain that example step by step and line by line with absolute clarity.
+7. Only after the learner understands the first example, introduce more examples with increasing difficulty. Never overload the learner with many examples at once.
+8. Always focus on understanding before memorization.
+9. Continuously evaluate the learner's understanding through thoughtful questions and interactive checkpoints. If understanding is weak, STOP moving forward and spend more time explaining the concepts in different ways instead of rushing to complete the syllabus.
+10. Never give information just to finish a lesson. Teach until the learner genuinely and deeply understands. The learner's success is far more important than completing the syllabus.
+11. If the learner seems confused or makes a mistake, stop introducing new content. Instead:
+    - Explain the concept again in different words.
+    - Use a clear analogy or a real-life situation.
+    - Ask if the learner understands before continuing.
+12. This must feel like a real interactive classroom taught by an excellent, patient teacher. Never rush to finish lessons. The goal is to ensure the learner truly understands the topic.
+13. Only after the learner demonstrates understanding or successfully solves a challenge should you proceed to the next section or topic.
+14. Ask guided questions or give coding exercises, and invite them to write code in the interactive playground below.
+15. If they write code, review their answers carefully and explain WHY mistakes happen. Keep formatting professional with clear markdown headers, bold keywords, and clean bullet lists.`;
+
+      let finalPrompt = prompt;
+      if (completedLessons.includes(lessonId)) {
+        finalPrompt += `\n\nCRITICAL FOLLOW-UP DIRECTIVE: The user has successfully completed this lesson ("${selectedLesson.lesson.title}"). They have selected the "Ask More Questions About This Lesson" option to continue exploring this topic. You MUST answer unlimited follow-up questions related ONLY to the scope of this lesson. Be extremely encouraging, professional, and patient. At the end of EVERY answer, you MUST politely ask exactly: "Do you have any other questions about this lesson, or would you like to continue to the next lesson?"`;
+      }
 
       const res = await fetch("/api/education/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, jsonMode: false })
+        body: JSON.stringify({ prompt: finalPrompt, jsonMode: false })
       });
       const data = await res.json();
       const aiReply = data.result || "Keep coding! Let me know if you need another example or code drill.";
@@ -575,6 +636,97 @@ YOUR GOALS:
           const activeSections = getLessonSections(selectedLesson.lesson);
           const activeSec = activeSections[currentSectionIndex];
           const lessonId = selectedLesson.lesson.id;
+
+          if (showLessonCompletedScreen) {
+            const allCourseLessons = selectedCourse
+              ? [
+                  ...selectedCourse.beginnerLessons.map(l => ({ ...l, level: "beginner" as const })),
+                  ...selectedCourse.intermediateLessons.map(l => ({ ...l, level: "intermediate" as const })),
+                  ...selectedCourse.advancedLessons.map(l => ({ ...l, level: "advanced" as const }))
+                ]
+              : [];
+            const currentLessonIdx = allCourseLessons.findIndex(l => l.id === selectedLesson.lesson.id);
+            const nextLesson = currentLessonIdx !== -1 && currentLessonIdx < allCourseLessons.length - 1
+              ? allCourseLessons[currentLessonIdx + 1]
+              : null;
+
+            const completedInCourse = allCourseLessons.filter(l => completedLessons.includes(l.id)).length;
+            const totalInCourse = allCourseLessons.length;
+            const progressPercent = totalInCourse > 0 ? Math.round((completedInCourse / totalInCourse) * 100) : 0;
+
+            return (
+              <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-3xl shadow-2xl space-y-6 animate-fadeIn text-center mx-auto my-12">
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="w-16 h-16 bg-emerald-500/15 border border-emerald-500/30 rounded-full flex items-center justify-center text-3xl animate-bounce">
+                    🎉
+                  </div>
+                  <div className="space-y-1">
+                    <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-white">Congratulations!</h2>
+                    <p className="text-xs md:text-sm font-semibold text-emerald-400">
+                      You have successfully completed Lesson {currentLessonIdx + 1}: {selectedLesson.lesson.title.replace(/Lesson \d+ - /, "")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5 rounded-2xl border border-slate-800 bg-slate-950 text-left space-y-3">
+                  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">What You Have Learned (লেসন সারসংক্ষেপ)</h3>
+                  {isGeneratingSummary ? (
+                    <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
+                      <span>Tutor is writing a bilingual concept summary...</span>
+                    </div>
+                  ) : (
+                    <div className="text-xs md:text-sm text-slate-300 leading-relaxed whitespace-pre-line prose prose-invert max-w-none font-medium animate-fadeIn">
+                      {completedLessonSummary || "অসাধারণ কাজ! আপনি এই লেসনের সকল কোডিং কনসেপ্ট ও অনুশীলন সফলভাবে শেষ করেছেন।"}
+                    </div>
+                  )}
+                </div>
+
+                {/* Progress Tracker */}
+                <div className="space-y-2 text-left">
+                  <div className="flex justify-between items-center text-xs text-slate-400">
+                    <span className="font-semibold">Overall Course Progress</span>
+                    <span className="font-extrabold text-white">{completedInCourse} / {totalInCourse} Lessons ({progressPercent}%)</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full overflow-hidden bg-slate-800">
+                    <div 
+                      className="bg-emerald-500 h-full transition-all duration-500"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      if (nextLesson) {
+                        const isLocked = nextLesson.level !== "beginner" && !isProUser;
+                        handleSelectLesson(selectedCourse.id, nextLesson.level, nextLesson, isLocked);
+                      } else {
+                        setSelectedLesson(null);
+                      }
+                      setShowLessonCompletedScreen(false);
+                    }}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs md:text-sm py-3.5 px-5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                  >
+                    <Play className="w-4 h-4 fill-current animate-pulse" />
+                    <span>{nextLesson ? `Continue to Lesson ${currentLessonIdx + 2}` : "Syllabus Completed!"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowLessonCompletedScreen(false);
+                    }}
+                    className="w-full font-bold text-xs md:text-sm py-3.5 px-5 rounded-xl transition-all border border-slate-700 bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                    <span>Ask More Questions About This Lesson</span>
+                  </button>
+                </div>
+              </div>
+            );
+          }
 
           return (
             <div className="space-y-6">
@@ -843,12 +995,11 @@ YOUR GOALS:
                                 </div>
                                 <button
                                   onClick={() => {
-                                    toggleLessonComplete(lessonId);
-                                    setSelectedLesson(null);
+                                    handleLessonFinalize(lessonId);
                                   }}
                                   className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-3 rounded-xl transition-all shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
                                 >
-                                  <Check className="w-4 h-4" /> Finalize Lesson & Back to Course
+                                  <Check className="w-4 h-4" /> Finalize Lesson & Show Completion Progress
                                 </button>
                               </div>
                             ) : (

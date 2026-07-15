@@ -31,7 +31,8 @@ import {
   Clock,
   Zap,
   GraduationCap,
-  Search
+  Search,
+  Loader2
 } from "lucide-react";
 import Markdown from "react-markdown";
 
@@ -184,6 +185,11 @@ export const LanguageCoach: React.FC<LanguageCoachProps> = ({
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Lesson Completion Screen States
+  const [showLessonCompletedScreen, setShowLessonCompletedScreen] = useState(false);
+  const [completedLessonSummary, setCompletedLessonSummary] = useState("");
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+
   // Completed lessons storage per language
   const [completedLessons, setCompletedLessons] = useState<string[]>(() => {
     try {
@@ -318,35 +324,53 @@ export const LanguageCoach: React.FC<LanguageCoachProps> = ({
     const storageKey = `joxiq_lesson_chat_${selectedLang}_${activeLessonChat.id}`;
     localStorage.setItem(storageKey, JSON.stringify(updatedMessages));
 
-    const systemPrompt = `You are a world-class, expert, professional AI Language Teacher.
+    const systemPrompt = `You are a world-class, experienced, professional AI Language Teacher (not a chatbot).
 The user's native language is **${nativeLang}**.
 The target language they want to learn is **${selectedLang}** at a **${selectedLevel}** level.
 The current lesson is: "${activeLessonChat.title}" - ${activeLessonChat.desc}.
 
-CRITICAL PEDAGOGICAL TEACHING GUIDELINES:
-1. You MUST explain all explanations, grammar rules, concepts, context, mistake corrections, and lesson summaries in the user's native language (**${nativeLang}**).
-2. Teach vocabulary, phrases, and examples in **${selectedLang}**, accompanied by clear translations and phonetic breakdowns in **${nativeLang}**.
-3. Act like a real professional language teacher conducting a premium online course session.
-4. Teach one complete concept/step at a time. Never rush through lessons.
-5. Assume the learner knows absolutely nothing about the language. Explain every new word, grammar rule, and concept clearly in **${nativeLang}**.
-6. Always explain in depth WHERE, WHEN, and WHY something is used (contexts, formality, cultural background, native habits).
-7. Explicitly show common mistakes that beginners usually make, explain WHY those mistakes happen in **${nativeLang}**, and teach how to avoid them.
-8. Give practice activities and interactive questions after every important topic, and wait for the learner's answer before continuing.
-9. If the learner gives a wrong answer, NEVER simply provide the correct answer. Explain the mistake clearly in **${nativeLang}**, show why it is incorrect, and then teach the correct answer with additional examples.
-10. At the end of every lesson, provide a complete, clear lesson summary in **${nativeLang}**.
-11. Give a quiz based strictly on that lesson. If the learner passes, congratulate them and instruct them to click the "Complete Lesson" button at the top to unlock the next lesson. If they fail, recommend reviewing and offer another attempt.
-12. Always be patient, motivating, encouraging, and professional so the learner feels confident and excited.`;
+CRITICAL PEDAGOGICAL TEACHING RULES:
+1. Never start a lesson or introduce a new topic with examples.
+2. Always begin by explaining the core concept first in simple, beginner-friendly language.
+3. Before giving any example, make sure the learner fully understands (written in their native language **${nativeLang}**):
+   - What the topic is.
+   - Why it exists.
+   - Why it is important.
+   - Where it is used.
+   - When it is used.
+   - How it works.
+4. You MUST explain all explanations, grammar rules, concepts, contexts, mistake corrections, and lesson summaries in the user's native language (**${nativeLang}**). Teach vocabulary, phrases, and examples in **${selectedLang}**, accompanied by clear translations and phonetic breakdowns in **${nativeLang}**.
+5. Explain everything using simple, beginner-friendly language. Never assume the learner already knows anything.
+6. After (and only after) the learner understands the concept, gradually introduce examples.
+7. Start with exactly one very simple example. Explain that example step-by-step or line-by-line with absolute clarity.
+8. Only after the learner understands the first example, introduce more examples with increasing difficulty. Never overload the learner with many examples at once.
+9. Always focus on understanding before memorization.
+10. Continuously evaluate the learner's understanding through thoughtful questions and interactive checkpoints. If understanding is weak, STOP moving forward and spend more time explaining the concepts in different ways instead of rushing to complete the syllabus.
+11. Never give information just to finish a lesson. Teach until the learner genuinely and deeply understands. The learner's success is far more important than completing the syllabus.
+12. If the learner seems confused or makes a mistake, stop introducing new content. Instead:
+    - Explain the concept again in different words.
+    - Use a clear analogy or a real-life situation.
+    - Ask if the learner understands before continuing.
+13. Every session must feel like a real interactive classroom taught by an excellent, patient teacher. Never rush to finish lessons; the goal is deep mastery, not speed.
+14. Give practice activities, quizzes, or interactive questions after every important topic. Only after the learner demonstrates understanding or successfully answers should you continue to the next section or topic.
+15. If the learner gives a wrong answer, NEVER simply provide the correct answer. Explain the mistake clearly in **${nativeLang}**, show why it is incorrect, and then teach the correct answer with additional examples.
+16. At the end of every lesson, provide a complete, clear lesson summary in **${nativeLang}** and a 3-question quiz.`;
 
     try {
       // Build history for API
       const apiMessages = updatedMessages.map(m => ({ role: m.role, content: m.content }));
       
+      let finalSystemInstruction = systemPrompt;
+      if (completedLessons.includes(activeLessonChat.id)) {
+        finalSystemInstruction += `\n\nCRITICAL FOLLOW-UP DIRECTIVE: The user has successfully completed this lesson ("${activeLessonChat.title}"). They have selected the "Ask More Questions About This Lesson" option to continue exploring this topic. You MUST answer unlimited follow-up questions related ONLY to the scope of this lesson. Be extremely encouraging, professional, and patient. At the end of EVERY answer, you MUST politely ask exactly: "Do you have any other questions about this lesson, or would you like to continue to the next lesson?"`;
+      }
+
       const res = await fetch("/api/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: apiMessages,
-          systemInstruction: systemPrompt,
+          systemInstruction: finalSystemInstruction,
           model: "gemini-2.5-flash",
           temperature: 0.7
         }),
@@ -402,15 +426,56 @@ CRITICAL PEDAGOGICAL TEACHING GUIDELINES:
     }
   };
 
-  const handleMarkLessonComplete = () => {
+  const handleMarkLessonComplete = async () => {
     if (!activeLessonChat) return;
+    
+    // Save completion state immediately so if they return later, it is marked as completed
     if (!completedLessons.includes(activeLessonChat.id)) {
       const updated = [...completedLessons, activeLessonChat.id];
       saveCompleted(updated);
     }
-    alert(`🎉 Lesson "${activeLessonChat.title}" marked as completed! Next lesson unlocked.`);
-    setActiveLessonChat(null);
-    setActiveTab("roadmap");
+    
+    setShowLessonCompletedScreen(true);
+    setIsGeneratingSummary(true);
+    setCompletedLessonSummary("");
+
+    try {
+      const promptText = `You are a world-class language teacher. The user's native language is ${nativeLang} and they are learning ${selectedLang}. 
+Please write a highly encouraging, beautifully formatted, concise 3-sentence summary in **${nativeLang}** outlining the core grammar and vocabulary they have mastered in the lesson "${activeLessonChat.title}". 
+Do not use preambles; respond with the bulleted points directly.`;
+      
+      const res = await fetch("/api/education/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: promptText, jsonMode: false })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.result) {
+          setCompletedLessonSummary(data.result);
+        } else {
+          setCompletedLessonSummary(
+            nativeLang === "Bangla" || nativeLang === "Bengali"
+              ? `অসাধারণ কাজ! আপনি সফলভাবে "${activeLessonChat.title}" লেসনটি সম্পন্ন করেছেন। আপনি এই পাঠের মূল ব্যাকরণ নিয়মাবলী, গুরুত্বপূর্ণ শব্দভাণ্ডার এবং বাস্তব জীবনের বাক্য গঠন আয়ত্ত করেছেন।`
+              : `Outstanding work! You have successfully completed the lesson "${activeLessonChat.title}". You have mastered the core grammar rules, essential vocabulary, and real-world sentence patterns in this module.`
+          );
+        }
+      } else {
+        setCompletedLessonSummary(
+          nativeLang === "Bangla" || nativeLang === "Bengali"
+            ? `অসাধারণ কাজ! আপনি সফলভাবে "${activeLessonChat.title}" লেসনটি সম্পন্ন করেছেন। আপনি এই পাঠের মূল ব্যাকরণ নিয়মাবলী, গুরুত্বপূর্ণ শব্দভাণ্ডার এবং বাস্তব জীবনের বাক্য গঠন আয়ত্ত করেছেন।`
+            : `Outstanding work! You have successfully completed the lesson "${activeLessonChat.title}". You have mastered the core grammar rules, essential vocabulary, and real-world sentence patterns in this module.`
+        );
+      }
+    } catch {
+      setCompletedLessonSummary(
+        nativeLang === "Bangla" || nativeLang === "Bengali"
+          ? `অসাধারণ কাজ! আপনি সফলভাবে "${activeLessonChat.title}" লেসনটি সম্পন্ন করেছেন। আপনি এই পাঠের মূল ব্যাকরণ নিয়মাবলী, গুরুত্বপূর্ণ শব্দভাণ্ডার এবং বাস্তব জীবনের বাক্য গঠন আয়ত্ত করেছেন।`
+          : `Outstanding work! You have successfully completed the lesson "${activeLessonChat.title}". You have mastered the core grammar rules, essential vocabulary, and real-world sentence patterns in this module.`
+      );
+    } finally {
+      setIsGeneratingSummary(false);
+    }
   };
 
   const handleAskAITeacherGeneral = async () => {
@@ -443,6 +508,11 @@ Please explain step by step in ${nativeLang}, give clear examples in ${selectedL
 
   // If active lesson chat is open, render the dedicated ChatGPT-style Learning Chat view
   if (activeLessonChat) {
+    const currentIndex = currentLessonsList.findIndex(l => l.id === activeLessonChat.id);
+    const nextLanguageLesson = currentIndex !== -1 && currentIndex < currentLessonsList.length - 1
+      ? currentLessonsList[currentIndex + 1]
+      : null;
+
     return (
       <div className={`h-[calc(100vh-5rem)] flex flex-col ${theme === "dark" ? "bg-[#0d1117] text-slate-100" : "bg-slate-50 text-slate-900"}`}>
         {/* Chat Header */}
@@ -483,91 +553,187 @@ Please explain step by step in ${nativeLang}, give clear examples in ${selectedL
         </div>
 
         {/* Chat Messages List */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-          <div className={`p-4 rounded-2xl border text-xs max-w-xl mx-auto text-center ${
-            theme === "dark" ? "bg-indigo-950/30 border-indigo-500/20 text-indigo-200" : "bg-indigo-50 border-indigo-200 text-indigo-900"
-          }`}>
-            ✨ **Dedicated Learning Chat**: This chat is saved exclusively for <strong>{activeLessonChat.title}</strong>. Your chat history remains separate from the main AI assistant.
-          </div>
-
-          {lessonMessages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex gap-3 md:gap-4 max-w-3xl mx-auto ${
-                msg.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              {msg.role === "assistant" && (
-                <div className="w-9 h-9 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md">
-                  <Brain size={18} />
+        {showLessonCompletedScreen ? (
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 flex items-center justify-center">
+            <div className={`w-full max-w-2xl p-6 md:p-8 rounded-3xl border shadow-2xl space-y-6 animate-fadeIn ${
+              theme === "dark" ? "bg-slate-900 border-white/10" : "bg-white border-slate-200"
+            }`}>
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-16 h-16 bg-emerald-500/15 border border-emerald-500/30 rounded-full flex items-center justify-center text-3xl animate-bounce">
+                  🎉
                 </div>
-              )}
+                <div className="space-y-1">
+                  <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">Congratulations!</h2>
+                  <p className="text-xs md:text-sm font-semibold text-emerald-500">
+                    You have successfully completed Lesson {currentIndex + 1}
+                  </p>
+                </div>
+              </div>
 
-              <div className={`p-4 md:p-5 rounded-2xl text-xs md:text-sm leading-relaxed shadow-sm ${
-                msg.role === "user"
-                  ? "bg-indigo-600 text-white rounded-tr-none max-w-xl font-medium"
-                  : theme === "dark"
-                    ? "bg-slate-900 border border-white/30 text-white rounded-tl-none max-w-2xl dark-mode-text font-medium"
-                    : "bg-white border border-slate-200 text-slate-900 rounded-tl-none max-w-2xl"
+              <div className={`p-5 rounded-2xl border text-left space-y-3 ${
+                theme === "dark" ? "bg-black/30 border-white/10" : "bg-slate-50 border-slate-200"
               }`}>
-                {msg.role === "assistant" ? (
-                  <div className={`prose prose-invert max-w-none ${theme === "dark" ? "text-white font-medium" : "text-slate-900"}`}>
-                    <Markdown>{msg.content}</Markdown>
+                <h3 className={`text-[10px] font-bold uppercase tracking-widest ${
+                  theme === "dark" ? "text-slate-400" : "text-slate-500"
+                }`}>What You Have Learned</h3>
+                {isGeneratingSummary ? (
+                  <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
+                    <span>Tutor is writing a personalized concept summary...</span>
                   </div>
                 ) : (
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  <div className={`text-xs md:text-sm leading-relaxed whitespace-pre-line prose max-w-none ${
+                    theme === "dark" ? "text-slate-300" : "text-slate-600"
+                  }`}>
+                    {completedLessonSummary || "Great job completing this lesson! You've successfully completed your exercises, interactive quiz and concept drill with your language coach."}
+                  </div>
                 )}
               </div>
 
-              {msg.role === "user" && (
-                <div className="w-9 h-9 rounded-2xl bg-slate-700 text-white flex items-center justify-center shrink-0 shadow-md">
-                  <User size={18} />
+              {/* Progress Tracker */}
+              <div className="space-y-2 text-left">
+                <div className="flex justify-between items-center text-[10px] md:text-xs">
+                  <span className={theme === "dark" ? "text-slate-400 font-semibold" : "text-slate-500 font-semibold"}>Course Progress ({selectedLevel})</span>
+                  <span className="font-extrabold">{completedCount} / {currentLessonsList.length} Lessons ({progressPercent}%)</span>
+                </div>
+                <div className={`w-full h-2 rounded-full overflow-hidden ${
+                  theme === "dark" ? "bg-slate-800" : "bg-slate-200"
+                }`}>
+                  <div 
+                    className="bg-emerald-500 h-full transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    if (nextLanguageLesson) {
+                      // auto open next lesson
+                      setActiveLessonChat(nextLanguageLesson);
+                      setLessonMessages([
+                        {
+                          role: "assistant",
+                          content: `👋 **Welcome to your premium ${selectedLang} Classroom Session!**\n\nI am your dedicated professional Language Teacher. Today we are diving deep into **${nextLanguageLesson.title}** (${nextLanguageLesson.desc}).\n\n### 🗣️ Teaching Setup\n* **Your Native Language**: ${nativeLang}\n* **Target Language**: ${selectedLang} (${selectedLevel})\n* **Instruction Style**: All grammar rules, explanations, and corrections will be explained in **${nativeLang}**, while vocabulary and examples will be in **${selectedLang}** with phonetic guides.\n\n### 🎓 Today's Complete Learning Flow\n1. **In-Depth Explanation**: Simple, step-by-step concepts assuming zero prior knowledge.\n2. **Real-Life Examples & Usage**: Exactly where, when, and how native speakers use these terms.\n3. **Common Mistakes & Why They Happen**: Pitfalls beginners make and how to avoid them.\n4. **Interactive Practice & Quiz**: Engaging exercises with feedback and final quiz evaluation to unlock your next lesson.\n\nLet's begin! Please read through this introduction, and whenever you are ready, reply with **"Ready to start step 1"** or ask any question you have.`
+                        }
+                      ]);
+                    } else {
+                      setActiveLessonChat(null);
+                      setActiveTab("roadmap");
+                    }
+                    setShowLessonCompletedScreen(false);
+                  }}
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs md:text-sm py-3.5 px-5 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                >
+                  <Play className="w-4 h-4 fill-current animate-pulse" />
+                  <span>{nextLanguageLesson ? `Continue to Lesson ${currentIndex + 2}` : "Back to Roadmap"}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowLessonCompletedScreen(false);
+                  }}
+                  className={`w-full font-bold text-xs md:text-sm py-3.5 px-5 rounded-xl transition-all border flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${
+                    theme === "dark" ? "bg-slate-800 border-slate-700 hover:bg-slate-700 text-white" : "bg-slate-100 border-slate-200 hover:bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  <span>Ask More Questions About This Lesson</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+              <div className={`p-4 rounded-2xl border text-xs max-w-xl mx-auto text-center ${
+                theme === "dark" ? "bg-indigo-950/30 border-indigo-500/20 text-indigo-200" : "bg-indigo-50 border-indigo-200 text-indigo-900"
+              }`}>
+                ✨ **Dedicated Learning Chat**: This chat is saved exclusively for <strong>{activeLessonChat.title}</strong>. Your chat history remains separate from the main AI assistant.
+              </div>
+
+              {lessonMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex gap-3 md:gap-4 max-w-3xl mx-auto ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {msg.role === "assistant" && (
+                    <div className="w-9 h-9 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                      <Brain size={18} />
+                    </div>
+                  )}
+
+                  <div className={`p-4 md:p-5 rounded-2xl text-xs md:text-sm leading-relaxed shadow-sm ${
+                    msg.role === "user"
+                      ? "bg-indigo-600 text-white rounded-tr-none max-w-xl font-medium"
+                      : theme === "dark"
+                        ? "bg-slate-900 border border-white/30 text-white rounded-tl-none max-w-2xl dark-mode-text font-medium"
+                        : "bg-white border border-slate-200 text-slate-900 rounded-tl-none max-w-2xl"
+                  }`}>
+                    {msg.role === "assistant" ? (
+                      <div className={`prose prose-invert max-w-none ${theme === "dark" ? "text-white font-medium" : "text-slate-900"}`}>
+                        <Markdown>{msg.content}</Markdown>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    )}
+                  </div>
+
+                  {msg.role === "user" && (
+                    <div className="w-9 h-9 rounded-2xl bg-slate-700 text-white flex items-center justify-center shrink-0 shadow-md">
+                      <User size={18} />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {isSendingMessage && (
+                <div className="flex gap-3 max-w-3xl mx-auto justify-start">
+                  <div className="w-9 h-9 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                    <Brain size={18} />
+                  </div>
+                  <div className={`p-4 rounded-2xl border text-xs flex items-center gap-2 ${
+                    theme === "dark" ? "bg-slate-900 border-white/10 text-slate-400" : "bg-white border-slate-200 text-slate-500"
+                  }`}>
+                    <RefreshCw size={14} className="animate-spin text-indigo-500" />
+                    <span>AI Teacher is thinking and preparing examples...</span>
+                  </div>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </div>
-          ))}
 
-          {isSendingMessage && (
-            <div className="flex gap-3 max-w-3xl mx-auto justify-start">
-              <div className="w-9 h-9 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md">
-                <Brain size={18} />
-              </div>
-              <div className={`p-4 rounded-2xl border text-xs flex items-center gap-2 ${
-                theme === "dark" ? "bg-slate-900 border-white/10 text-slate-400" : "bg-white border-slate-200 text-slate-500"
-              }`}>
-                <RefreshCw size={14} className="animate-spin text-indigo-500" />
-                <span>AI Teacher is thinking and preparing examples...</span>
+            {/* Chat Input Bar */}
+            <div className={`p-4 md:p-6 border-t ${
+              theme === "dark" ? "bg-slate-900 border-white/10" : "bg-white border-slate-200"
+            }`}>
+              <div className="max-w-3xl mx-auto flex items-center gap-3">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendLessonChatMessage()}
+                  placeholder={`Ask a question or answer the AI teacher in ${selectedLang}...`}
+                  className={`flex-1 px-4 py-3 rounded-2xl border text-xs md:text-sm outline-none transition-all ${
+                    theme === "dark" ? "bg-black/40 border-white/10 text-white placeholder-slate-500 focus:border-indigo-500" : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500"
+                  }`}
+                />
+                <button
+                  onClick={handleSendLessonChatMessage}
+                  disabled={isSendingMessage || !chatInput.trim()}
+                  className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-lg transition-all cursor-pointer flex items-center gap-2 active:scale-95 disabled:opacity-50"
+                >
+                  <Send size={16} />
+                  <span>Send</span>
+                </button>
               </div>
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Chat Input Bar */}
-        <div className={`p-4 md:p-6 border-t ${
-          theme === "dark" ? "bg-slate-900 border-white/10" : "bg-white border-slate-200"
-        }`}>
-          <div className="max-w-3xl mx-auto flex items-center gap-3">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendLessonChatMessage()}
-              placeholder={`Ask a question or answer the AI teacher in ${selectedLang}...`}
-              className={`flex-1 px-4 py-3 rounded-2xl border text-xs md:text-sm outline-none transition-all ${
-                theme === "dark" ? "bg-black/40 border-white/10 text-white placeholder-slate-500 focus:border-indigo-500" : "bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500"
-              }`}
-            />
-            <button
-              onClick={handleSendLessonChatMessage}
-              disabled={isSendingMessage || !chatInput.trim()}
-              className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs shadow-lg transition-all cursor-pointer flex items-center gap-2 active:scale-95 disabled:opacity-50"
-            >
-              <Send size={16} />
-              <span>Send</span>
-            </button>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     );
   }
