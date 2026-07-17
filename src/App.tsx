@@ -80,7 +80,7 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { LanguageCoach } from "./components/LanguageCoach";
 import { AiLearningPlatform } from "./components/AiLearningPlatform";
-import joxiqLogo from "./assets/images/joxiq_logo_flower.png";
+const joxiqLogo = "/logo.png";
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);
