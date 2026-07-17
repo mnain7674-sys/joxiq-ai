@@ -80,7 +80,9 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { LanguageCoach } from "./components/LanguageCoach";
 import { AiLearningPlatform } from "./components/AiLearningPlatform";
-const joxiqLogo = "/logo.png";
+const joxiqLogo = "/logo.jpg";
+const joxiqFlowerLogo = "/logo-flower.png";
+const userLogo = "/user-logo.jpg";
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);
@@ -2525,6 +2527,17 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                         </div>
                       )}
                     </div>
+
+                    {isUser && (
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5 p-0.5">
+                        <img
+                          src={userLogo}
+                          alt="User Avatar"
+                          className="w-full h-full object-cover rounded-full"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
                   </div>
                 );
               })}

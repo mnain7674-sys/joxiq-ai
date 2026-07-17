@@ -14,7 +14,8 @@ import {
   Mail
 } from "lucide-react";
 import { motion } from "motion/react";
-const joxiqLogo = "/logo.png";
+const joxiqLogo = "/logo.jpg";
+const userLogo = "/user-logo.jpg";
 
 interface AboutPageProps {
   theme: "light" | "dark";
@@ -72,6 +73,22 @@ export function AboutPage({ theme }: AboutPageProps) {
             <span>Meet the Creator</span>
           </h2>
           
+          <div className="flex flex-col sm:flex-row items-center gap-4 mb-5 pb-4 border-b border-slate-500/10">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-800 shadow-md bg-white p-1">
+              <img
+                src={userLogo}
+                alt="Julkar Nain Mahi"
+                className="w-full h-full object-cover rounded-full"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            <div className="text-center sm:text-left">
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">Julkar Nain Mahi</h3>
+              <p className="text-xs text-indigo-500 dark:text-indigo-400 font-medium">Student & AI Developer</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Creator of JOXIQ AI</p>
+            </div>
+          </div>
+
           <div className="space-y-4 text-sm">
             <p className={isDark ? "text-slate-300" : "text-slate-700"}>
               JOXIQ AI is designed and developed by <strong className="text-indigo-600 dark:text-indigo-400">Julkar Nain Mahi</strong>.
