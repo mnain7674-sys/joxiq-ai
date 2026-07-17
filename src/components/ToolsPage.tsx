@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { AttachedImage, AttachedDocument } from "../types";
-const joxiqLogo = "/logo.jpg";
+import joxiqLogo from "../assets/images/joxiq_logo_icon_1783612642404.jpg";
 
 interface ToolsPageProps {
   theme: "light" | "dark";
