@@ -14,7 +14,7 @@ import {
   Mail
 } from "lucide-react";
 import { motion } from "motion/react";
-import joxiqLogo from "../assets/images/joxiq_logo_flower.jpg";
+import joxiqLogo from "../assets/images/joxiq_logo_flower.png";
 
 interface AboutPageProps {
   theme: "light" | "dark";
@@ -34,11 +34,11 @@ export function AboutPage({ theme }: AboutPageProps) {
         transition={{ duration: 0.5 }}
         className="text-center space-y-4"
       >
-        <div className="w-32 h-32 sm:w-40 sm:h-40 mx-auto rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white p-4 sm:p-5 flex items-center justify-center mb-6">
+        <div className="w-32 h-32 sm:w-40 sm:h-40 mx-auto rounded-full overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white p-2 sm:p-3 flex items-center justify-center mb-6">
           <img
             src={joxiqLogo}
             alt="JOXIQ AI Official Logo"
-            className="w-full h-full object-contain rounded-none"
+            className="w-full h-full object-contain rounded-full"
             referrerPolicy="no-referrer"
           />
         </div>
