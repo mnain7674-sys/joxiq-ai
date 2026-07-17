@@ -80,7 +80,7 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { LanguageCoach } from "./components/LanguageCoach";
 import { AiLearningPlatform } from "./components/AiLearningPlatform";
-import joxiqLogo from "./assets/images/joxiq_logo_icon_1783612642404.jpg";
+import joxiqLogo from "./assets/images/joxiq_logo_flower.jpg";
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);
@@ -1469,11 +1469,11 @@ export default function App() {
             className="flex items-center gap-2 cursor-pointer group"
             title="Return to Home"
           >
-            <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-md border border-white/20 bg-slate-900 p-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 bg-white p-1.5 group-hover:scale-105 transition-transform">
               <img
                 src={joxiqLogo}
                 alt="JOXIQ AI Logo"
-                className="w-full h-full object-cover rounded-full"
+                className="w-full h-full object-contain rounded-none"
                 referrerPolicy="no-referrer"
               />
             </div>
@@ -1796,11 +1796,11 @@ export default function App() {
               className="flex items-center gap-2 cursor-pointer group"
               title="JOXIQ AI Home"
             >
-              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full overflow-hidden flex items-center justify-center shadow-md border border-white/20 bg-slate-900 p-0.5 group-hover:scale-105 transition-transform shrink-0">
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 bg-white p-1 sm:p-1.5 group-hover:scale-105 transition-transform shrink-0">
                 <img
                   src={joxiqLogo}
                   alt="JOXIQ AI Logo"
-                  className="w-full h-full object-cover rounded-full"
+                  className="w-full h-full object-contain rounded-none"
                   referrerPolicy="no-referrer"
                 />
               </div>
@@ -2148,11 +2148,11 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                   transition={{ duration: 0.4 }}
                   className="mx-auto flex items-center justify-center mb-4"
                 >
-                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden shadow-2xl border-2 border-indigo-500/50 bg-slate-900 p-1 flex items-center justify-center">
+                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 bg-white p-4 sm:p-5 flex items-center justify-center">
                     <img
                       src={joxiqLogo}
                       alt="JOXIQ AI Logo"
-                      className="w-full h-full object-cover rounded-full"
+                      className="w-full h-full object-contain rounded-none"
                       referrerPolicy="no-referrer"
                     />
                   </div>
@@ -2270,11 +2270,11 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                     className={`flex items-start gap-4 w-full ${isUser ? "justify-end" : "justify-start"}`}
                   >
                     {!isUser && (
-                      <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 border border-white/10 shadow-sm overflow-hidden mt-0.5">
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5 p-1.5">
                         <img
                           src={joxiqLogo}
                           alt="JOXIQ AI Avatar"
-                          className="w-full h-full object-cover rounded-full"
+                          className="w-full h-full object-contain rounded-none"
                           referrerPolicy="no-referrer"
                         />
                       </div>
@@ -2532,11 +2532,11 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
               {/* Streaming AI Bubble overlay */}
               {isStreaming && currentStreamText && (
                 <div className="flex items-start gap-4 justify-start w-full">
-                  <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 border border-white/10 shadow-sm overflow-hidden mt-0.5">
+                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5 p-1.5">
                     <img
                       src={joxiqLogo}
                       alt="JOXIQ AI Avatar"
-                      className="w-full h-full object-cover rounded-full animate-pulse"
+                      className="w-full h-full object-contain rounded-none animate-pulse"
                       referrerPolicy="no-referrer"
                     />
                   </div>

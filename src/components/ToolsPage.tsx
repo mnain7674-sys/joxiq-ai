@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { AttachedImage, AttachedDocument } from "../types";
-import joxiqLogo from "../assets/images/joxiq_logo_icon_1783612642404.jpg";
+import joxiqLogo from "../assets/images/joxiq_logo_flower.jpg";
 
 interface ToolsPageProps {
   theme: "light" | "dark";
@@ -280,11 +280,11 @@ export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: Tools
             className="space-y-2 border-b border-slate-500/10 pb-6"
           >
             <div className="flex items-center gap-2.5">
-              <span className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 dark:border-white/20 shadow-md bg-slate-900 p-0.5">
+              <span className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 shadow-sm bg-white p-1.5">
                 <img
                   src={joxiqLogo}
                   alt="JOXIQ AI Logo"
-                  className="w-full h-full object-cover rounded-full"
+                  className="w-full h-full object-contain rounded-none"
                   referrerPolicy="no-referrer"
                 />
               </span>

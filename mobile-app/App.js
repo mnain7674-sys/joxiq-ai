@@ -505,8 +505,8 @@ PERSONAL ATTENTION:
       <SafeAreaView style={[styles.container, { backgroundColor: "#0b1329" }]}>
         <StatusBar barStyle="light-content" backgroundColor="#0b1329" />
         <View style={styles.authContainer}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, overflow: "hidden", marginBottom: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)", backgroundColor: "#0f172a", padding: 2, alignItems: "center", justifyContent: "center" }}>
-            <Image source={require("./assets/icon.png")} style={{ width: "100%", height: "100%", borderRadius: 32 }} resizeMode="cover" />
+          <View style={{ width: 64, height: 64, borderRadius: 12, overflow: "hidden", marginBottom: 16, borderWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#ffffff", padding: 8, alignItems: "center", justifyContent: "center" }}>
+            <Image source={require("./assets/icon.png")} style={{ width: "100%", height: "100%" }} resizeMode="contain" />
           </View>
           <Text style={styles.authTitle}>JOXIQ AI</Text>
           <Text style={styles.authSubtitle}>Cross-Platform Intelligent Assistant</Text>
@@ -570,8 +570,8 @@ PERSONAL ATTENTION:
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: isDark ? "#1e293b" : "#e2e8f0" }]}>
         <View style={styles.headerLeft}>
-          <View style={{ width: 34, height: 34, borderRadius: 17, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)", backgroundColor: "#0f172a", padding: 1, marginRight: 6, alignItems: "center", justifyContent: "center" }}>
-            <Image source={require("./assets/icon.png")} style={{ width: "100%", height: "100%", borderRadius: 17 }} resizeMode="cover" />
+          <View style={{ width: 34, height: 34, borderRadius: 6, overflow: "hidden", borderWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#ffffff", padding: 4, marginRight: 6, alignItems: "center", justifyContent: "center" }}>
+            <Image source={require("./assets/icon.png")} style={{ width: "100%", height: "100%" }} resizeMode="contain" />
           </View>
           <Text style={[styles.headerTitle, textStyle]}>JOXIQ AI</Text>
           <View style={styles.badge}>
