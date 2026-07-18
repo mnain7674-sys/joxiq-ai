@@ -505,8 +505,8 @@ PERSONAL ATTENTION:
       <SafeAreaView style={[styles.container, { backgroundColor: "#0b1329" }]}>
         <StatusBar barStyle="light-content" backgroundColor="#0b1329" />
         <View style={styles.authContainer}>
-          <View style={{ width: 64, height: 64, borderRadius: 12, overflow: "hidden", marginBottom: 16, borderWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#ffffff", padding: 8, alignItems: "center", justifyContent: "center" }}>
-            <Image source={require("./assets/icon.png")} style={{ width: "100%", height: "100%" }} resizeMode="contain" />
+          <View style={{ width: 110, height: 110, borderRadius: 55, overflow: "hidden", marginBottom: 10, borderWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#ffffff", padding: 2, alignItems: "center", justifyContent: "center" }}>
+            <Image source={require("./assets/icon.png")} style={{ width: "100%", height: "100%", borderRadius: 55 }} resizeMode="contain" />
           </View>
           <Text style={styles.authTitle}>JOXIQ AI</Text>
           <Text style={styles.authSubtitle}>Cross-Platform Intelligent Assistant</Text>
@@ -570,8 +570,8 @@ PERSONAL ATTENTION:
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: isDark ? "#1e293b" : "#e2e8f0" }]}>
         <View style={styles.headerLeft}>
-          <View style={{ width: 34, height: 34, borderRadius: 6, overflow: "hidden", borderWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#ffffff", padding: 4, marginRight: 6, alignItems: "center", justifyContent: "center" }}>
-            <Image source={require("./assets/icon.png")} style={{ width: "100%", height: "100%" }} resizeMode="contain" />
+          <View style={{ width: 44, height: 44, borderRadius: 22, overflow: "hidden", borderWidth: 1, borderColor: "#e2e8f0", backgroundColor: "#ffffff", padding: 1, marginRight: 4, alignItems: "center", justifyContent: "center" }}>
+            <Image source={require("./assets/icon.png")} style={{ width: "100%", height: "100%", borderRadius: 22 }} resizeMode="contain" />
           </View>
           <Text style={[styles.headerTitle, textStyle]}>JOXIQ AI</Text>
           <View style={styles.badge}>
@@ -659,21 +659,31 @@ PERSONAL ATTENTION:
       {/* Main Content Area */}
       {currentView === "chat" && (
         <View style={styles.chatArea}>
-          <ScrollView style={styles.messagesList} contentContainerStyle={{ padding: 16 }}>
-            {messages.map((m, idx) => (
-              <View 
-                key={idx} 
-                style={[
-                  styles.messageBubble, 
-                  m.role === "user" ? styles.userBubble : styles.aiBubble,
-                  !isDark && m.role === "assistant" && { backgroundColor: "#f1f5f9" }
-                ]}
-              >
-                <Text style={[styles.messageText, m.role === "user" ? { color: "#fff" } : textStyle]}>
-                  {m.content}
-                </Text>
+          <ScrollView style={styles.messagesList} contentContainerStyle={{ padding: 16, flexGrow: 1, justifyContent: messages.length === 0 ? "center" : "flex-start" }}>
+            {messages.length === 0 ? (
+              <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 40 }}>
+                <View style={{ width: 110, height: 110, borderRadius: 55, overflow: "hidden", borderWidth: 1, borderColor: isDark ? "#334155" : "#e2e8f0", backgroundColor: "#ffffff", padding: 2, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                  <Image source={require("./assets/icon.png")} style={{ width: "100%", height: "100%", borderRadius: 55 }} resizeMode="contain" />
+                </View>
+                <Text style={[{ fontSize: 24, fontWeight: "900", marginBottom: 6 }, textStyle]}>JOXIQ AI</Text>
+                <Text style={{ color: "#94a3b8", fontSize: 14, textAlign: "center", maxWidth: 260 }}>How can I support you today?</Text>
               </View>
-            ))}
+            ) : (
+              messages.map((m, idx) => (
+                <View 
+                  key={idx} 
+                  style={[
+                    styles.messageBubble, 
+                    m.role === "user" ? styles.userBubble : styles.aiBubble,
+                    !isDark && m.role === "assistant" && { backgroundColor: "#f1f5f9" }
+                  ]}
+                >
+                  <Text style={[styles.messageText, m.role === "user" ? { color: "#fff" } : textStyle]}>
+                    {m.content}
+                  </Text>
+                </View>
+              ))
+            )}
             {isStreaming && (
               <View style={[styles.aiBubble, cardStyle, { padding: 12 }]}>
                 <ActivityIndicator size="small" color="#6366f1" />

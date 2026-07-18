@@ -33,9 +33,9 @@ export function AboutPage({ theme }: AboutPageProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="text-center space-y-4"
+        className="text-center space-y-2"
       >
-        <div className="w-32 h-32 sm:w-40 sm:h-40 mx-auto rounded-full overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white p-2 sm:p-3 flex items-center justify-center mb-6">
+        <div className="w-36 h-36 sm:w-48 sm:h-48 mx-auto rounded-full overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white p-1 sm:p-1.5 flex items-center justify-center mb-3">
           <img
             src={joxiqLogo}
             alt="JOXIQ AI Official Logo"

@@ -279,8 +279,8 @@ export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: Tools
             exit={{ opacity: 0, y: -10 }}
             className="space-y-2 border-b border-slate-500/10 pb-6"
           >
-            <div className="flex items-center gap-2.5">
-              <span className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 shadow-sm bg-white p-1">
+            <div className="flex items-center gap-2">
+              <span className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 shadow-sm bg-white p-0.5">
                 <img
                   src={joxiqLogo}
                   alt="JOXIQ AI Logo"

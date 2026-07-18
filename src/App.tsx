@@ -1795,10 +1795,10 @@ export default function App() {
                   createNewChat();
                 }
               }}
-              className="flex items-center gap-2 cursor-pointer group"
+              className="flex items-center gap-1.5 cursor-pointer group"
               title="JOXIQ AI Home"
             >
-              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 bg-white p-0.5 sm:p-1 group-hover:scale-105 transition-transform shrink-0">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 bg-white p-0.5 group-hover:scale-105 transition-transform shrink-0">
                 <img
                   src={joxiqLogo}
                   alt="JOXIQ AI Logo"
@@ -2142,15 +2142,15 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
         <div className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 md:px-24 py-2 sm:py-4 md:py-6 pb-24 sm:pb-28 md:pb-6 space-y-4 md:space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
           {!activeConversation || activeConversation.messages.length === 0 ? (
             /* Starter welcome dashboard */
-            <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-4 px-4 space-y-4 my-auto">
-              <div className="text-center space-y-3">
+            <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-2 px-4 space-y-2 my-auto">
+              <div className="text-center space-y-2">
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.4 }}
-                  className="mx-auto flex items-center justify-center mb-4"
+                  className="mx-auto flex items-center justify-center mb-2"
                 >
-                  <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 bg-white p-2 sm:p-3 flex items-center justify-center">
+                  <div className="w-36 h-36 sm:w-48 sm:h-48 rounded-full overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 bg-white p-1 sm:p-1.5 flex items-center justify-center">
                     <img
                       src={joxiqLogo}
                       alt="JOXIQ AI Logo"
@@ -2272,7 +2272,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                     className={`flex items-start gap-4 w-full ${isUser ? "justify-end" : "justify-start"}`}
                   >
                     {!isUser && (
-                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5 p-1">
+                      <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5 p-0.5">
                         <img
                           src={joxiqLogo}
                           alt="JOXIQ AI Avatar"
@@ -2545,7 +2545,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
               {/* Streaming AI Bubble overlay */}
               {isStreaming && currentStreamText && (
                 <div className="flex items-start gap-4 justify-start w-full">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5 p-1">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5 p-0.5">
                     <img
                       src={joxiqLogo}
                       alt="JOXIQ AI Avatar"
