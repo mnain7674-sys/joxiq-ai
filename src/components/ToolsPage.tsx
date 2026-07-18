@@ -25,7 +25,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { AttachedImage, AttachedDocument } from "../types";
 
-const joxiqLogo = "/logo.png";
+import joxiqLogo from "../assets/images/logo.png";
 
 interface ToolsPageProps {
   theme: "light" | "dark";
