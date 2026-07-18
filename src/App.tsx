@@ -81,9 +81,9 @@ import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { LanguageCoach } from "./components/LanguageCoach";
 import { AiLearningPlatform } from "./components/AiLearningPlatform";
 
-import joxiqLogo from "./assets/images/joxiq_logo_icon_1783612642404.jpg";
-import joxiqFlowerLogo from "./assets/images/joxiq_logo_flower.png";
-import userLogo from "./assets/images/user_logo_1784139224775.jpg";
+const joxiqLogo = "/logo.png";
+const joxiqFlowerLogo = "/logo-flower.png";
+const userLogo = "/user-logo.jpg";
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);
