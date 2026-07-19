@@ -81,9 +81,9 @@ import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { LanguageCoach } from "./components/LanguageCoach";
 import { AiLearningPlatform } from "./components/AiLearningPlatform";
 
-const joxiqLogo = "/logo.png?v=1.0.4";
-const joxiqFlowerLogo = "/logo-flower.png?v=1.0.4";
-const userLogo = "/user-logo.jpg?v=1.0.4";
+const joxiqLogo = "/logo.png?v=1.0.5";
+const joxiqFlowerLogo = "/logo.png?v=1.0.5";
+const userLogo = "/logo.png?v=1.0.5";
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);
