@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 
-const joxiqLogo = "/logo.png";
-const userLogo = "/user-logo.jpg";
+const joxiqLogo = "/logo.png?v=1.0.4";
+const userLogo = "/user-logo.jpg?v=1.0.4";
 
 interface AboutPageProps {
   theme: "light" | "dark";
@@ -25,6 +25,7 @@ interface AboutPageProps {
 export function AboutPage({ theme }: AboutPageProps) {
   const isDark = theme === "dark";
   const [userImgError, setUserImgError] = React.useState(false);
+  const [logoError, setLogoError] = React.useState(false);
 
   return (
     <div className={`min-h-full py-10 px-4 md:px-8 max-w-4xl mx-auto space-y-10 ${
@@ -38,12 +39,19 @@ export function AboutPage({ theme }: AboutPageProps) {
         className="text-center space-y-2"
       >
         <div className="w-36 h-36 sm:w-48 sm:h-48 mx-auto rounded-full overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white p-1 sm:p-1.5 flex items-center justify-center mb-3">
-          <img
-            src={joxiqLogo}
-            alt="JOXIQ AI Official Logo"
-            className="w-full h-full object-contain rounded-full"
-            referrerPolicy="no-referrer"
-          />
+          {logoError ? (
+            <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-3xl sm:text-4xl font-black rounded-full select-none">
+              JOXIQ
+            </div>
+          ) : (
+            <img
+              src={joxiqLogo}
+              alt="JOXIQ AI Official Logo"
+              className="w-full h-full object-contain rounded-full"
+              referrerPolicy="no-referrer"
+              onError={() => setLogoError(true)}
+            />
+          )}
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
           About JOXIQ AI

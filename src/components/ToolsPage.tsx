@@ -25,7 +25,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { AttachedImage, AttachedDocument } from "../types";
 
-const joxiqLogo = "/logo.png";
+const joxiqLogo = "/logo.png?v=1.0.4";
 
 interface ToolsPageProps {
   theme: "light" | "dark";
@@ -69,6 +69,7 @@ interface ToolItem {
 
 export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: ToolsPageProps) {
   const isDark = theme === "dark";
+  const [logoError, setLogoError] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<ToolId | null>(null);
 
   // --- Image Generator State ---
@@ -281,13 +282,18 @@ export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: Tools
             className="space-y-2 border-b border-slate-500/10 pb-6"
           >
             <div className="flex items-center gap-2">
-              <span className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 shadow-sm bg-white p-0.5">
-                <img
-                  src={joxiqLogo}
-                  alt="JOXIQ AI Logo"
-                  className="w-full h-full object-contain rounded-full"
-                  referrerPolicy="no-referrer"
-                />
+              <span className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 shadow-sm bg-indigo-500 text-white font-black text-lg p-0.5">
+                {logoError ? (
+                  <span>J</span>
+                ) : (
+                  <img
+                    src={joxiqLogo}
+                    alt="JOXIQ AI Logo"
+                    className="w-full h-full object-contain rounded-full bg-white p-0.5"
+                    referrerPolicy="no-referrer"
+                    onError={() => setLogoError(true)}
+                  />
+                )}
               </span>
               <div>
                 <h1 className="text-2xl font-black tracking-tight">JOXIQ AI Workspace Tools</h1>
