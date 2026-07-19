@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 
-import joxiqLogo from "../assets/images/logo.png";
-import userLogo from "../assets/images/user_logo_1784139224775.jpg";
+const joxiqLogo = "/logo.png";
+const userLogo = "/user-logo.jpg";
 
 interface AboutPageProps {
   theme: "light" | "dark";
@@ -24,6 +24,7 @@ interface AboutPageProps {
 
 export function AboutPage({ theme }: AboutPageProps) {
   const isDark = theme === "dark";
+  const [userImgError, setUserImgError] = React.useState(false);
 
   return (
     <div className={`min-h-full py-10 px-4 md:px-8 max-w-4xl mx-auto space-y-10 ${
@@ -75,13 +76,20 @@ export function AboutPage({ theme }: AboutPageProps) {
           </h2>
           
           <div className="flex flex-col sm:flex-row items-center gap-4 mb-5 pb-4 border-b border-slate-500/10">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-800 shadow-md bg-white p-1">
-              <img
-                src={userLogo}
-                alt="Julkar Nain Mahi"
-                className="w-full h-full object-cover rounded-full"
-                referrerPolicy="no-referrer"
-              />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-800 shadow-md bg-white p-1 flex items-center justify-center">
+              {userImgError ? (
+                <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-lg font-bold rounded-full select-none">
+                  JN
+                </div>
+              ) : (
+                <img
+                  src={userLogo}
+                  alt="Julkar Nain Mahi"
+                  className="w-full h-full object-cover rounded-full"
+                  referrerPolicy="no-referrer"
+                  onError={() => setUserImgError(true)}
+                />
+              )}
             </div>
             <div className="text-center sm:text-left">
               <h3 className="font-bold text-base text-slate-900 dark:text-white">Julkar Nain Mahi</h3>

@@ -753,22 +753,24 @@ app.delete("/api/admin/users/:id", (req, res) => {
 /**
  * Start the Express + Vite server
  */
+if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
+  const distPath = path.join(process.cwd(), "dist");
+  app.use(express.static(distPath));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+  console.log("Production static files server configured.");
+}
+
 async function startServer() {
   // Vite dev server middleware configuration for assets serving
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
     console.log("Vite development middleware integrated.");
-  } else {
-    const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
-    console.log("Production static files server configured.");
   }
 
   app.listen(PORT, "0.0.0.0", () => {
