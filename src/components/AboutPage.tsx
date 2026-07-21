@@ -39,19 +39,11 @@ export function AboutPage({ theme }: AboutPageProps) {
         className="text-center space-y-2"
       >
         <div className="w-36 h-36 sm:w-48 sm:h-48 mx-auto rounded-full overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white p-1 sm:p-1.5 flex items-center justify-center mb-3">
-          {logoError ? (
-            <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-3xl sm:text-4xl font-black rounded-full select-none">
-              JOXIQ
-            </div>
-          ) : (
-            <img
-              src={joxiqLogo}
-              alt="JOXIQ AI Official Logo"
-              className="w-full h-full object-contain rounded-full"
-              referrerPolicy="no-referrer"
-              onError={() => setLogoError(true)}
-            />
-          )}
+          <img
+            src={joxiqLogo}
+            alt="JOXIQ AI Official Logo"
+            className="w-full h-full object-contain rounded-full"
+          />
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
           About JOXIQ AI
@@ -85,19 +77,11 @@ export function AboutPage({ theme }: AboutPageProps) {
           
           <div className="flex flex-col sm:flex-row items-center gap-4 mb-5 pb-4 border-b border-slate-500/10">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-800 shadow-md bg-white p-1 flex items-center justify-center">
-              {userImgError ? (
-                <div className="w-full h-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-lg font-bold rounded-full select-none">
-                  JN
-                </div>
-              ) : (
-                <img
-                  src={userLogo}
-                  alt="Julkar Nain Mahi"
-                  className="w-full h-full object-cover rounded-full"
-                  referrerPolicy="no-referrer"
-                  onError={() => setUserImgError(true)}
-                />
-              )}
+              <img
+                src={userLogo}
+                alt="Julkar Nain Mahi"
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
             <div className="text-center sm:text-left">
               <h3 className="font-bold text-base text-slate-900 dark:text-white">Julkar Nain Mahi</h3>

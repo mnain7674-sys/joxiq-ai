@@ -25,7 +25,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { AttachedImage, AttachedDocument } from "../types";
 
-const joxiqLogo = "/logo.png";
+import joxiqLogo from "../logo.png";
 
 interface ToolsPageProps {
   theme: "light" | "dark";
@@ -283,17 +283,11 @@ export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: Tools
           >
             <div className="flex items-center gap-2">
               <span className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center shrink-0 border border-slate-200/50 shadow-sm bg-indigo-500 text-white font-black text-lg p-0.5">
-                {logoError ? (
-                  <span>J</span>
-                ) : (
-                  <img
-                    src={joxiqLogo}
-                    alt="JOXIQ AI Logo"
-                    className="w-full h-full object-contain rounded-full bg-white p-0.5"
-                    referrerPolicy="no-referrer"
-                    onError={() => setLogoError(true)}
-                  />
-                )}
+                <img
+                  src={joxiqLogo}
+                  alt="JOXIQ AI Logo"
+                  className="w-full h-full object-contain rounded-full bg-white p-0.5"
+                />
               </span>
               <div>
                 <h1 className="text-2xl font-black tracking-tight">JOXIQ AI Workspace Tools</h1>
