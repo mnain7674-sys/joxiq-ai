@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" width="180" alt="JOXIQ AI Logo" />
+  <img src="https://raw.githubusercontent.com/mnain7674/joxiq-ai/main/logo.png" width="180" alt="JOXIQ AI Logo" />
 </p>
 
 <h1 align="center">JOXIQ AI</h1>
