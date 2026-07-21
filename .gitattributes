@@ -1,0 +1,6 @@
+# Disable Git LFS for image assets to prevent "Error rendering embedded code" on GitHub
+*.png -filter -merge -diff
+*.jpg -filter -merge -diff
+*.jpeg -filter -merge -diff
+*.gif -filter -merge -diff
+*.ico -filter -merge -diff
