@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 
-import joxiqLogo from "../logo.png";
-import userLogo from "../logo.png";
+const joxiqLogo = "/logo.png";
+const userLogo = "/logo.png";
 
 interface AboutPageProps {
   theme: "light" | "dark";
