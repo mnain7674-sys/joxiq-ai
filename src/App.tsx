@@ -2135,7 +2135,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
         <div className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 md:px-24 py-2 sm:py-4 md:py-6 pb-24 sm:pb-28 md:pb-6 space-y-4 md:space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
           {!activeConversation || activeConversation.messages.length === 0 ? (
             /* Starter welcome dashboard */
-            <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-2 px-4 space-y-2 my-auto">
+            <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-4 sm:py-8 px-4 space-y-3">
               <div className="text-center space-y-2">
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}

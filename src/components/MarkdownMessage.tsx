@@ -4,7 +4,7 @@ import { Copy, Check } from "lucide-react";
 
 export function MarkdownMessage({ content }: { content: string }) {
   return (
-    <div className="markdown-body prose prose-slate max-w-none text-sm md:text-base leading-relaxed break-words space-y-1">
+    <div className="markdown-body prose dark:prose-invert prose-slate max-w-none text-slate-800 dark:text-slate-100 text-sm md:text-base leading-relaxed break-words space-y-1">
       <Markdown
         components={{
           code({ node, inline, className, children, ...props }: any) {
@@ -23,45 +23,47 @@ export function MarkdownMessage({ content }: { content: string }) {
 
             return (
               <code
-                className="bg-gray-100 dark:bg-gray-850 text-rose-500 dark:text-rose-400 px-1.5 py-0.5 rounded font-mono text-[13px] border border-gray-200 dark:border-gray-800 font-medium"
+                className="bg-gray-100 dark:bg-gray-800 text-rose-600 dark:text-rose-300 px-1.5 py-0.5 rounded font-mono text-[13px] border border-gray-200 dark:border-gray-700 font-medium"
                 {...props}
               >
                 {children}
               </code>
             );
           },
-          h1: ({ children }: any) => <h1 className="text-xl md:text-2xl font-bold mt-4 mb-2 tracking-tight text-gray-900 dark:text-white">{children}</h1>,
-          h2: ({ children }: any) => <h2 className="text-lg md:text-xl font-semibold mt-3 mb-2 tracking-tight text-gray-800 dark:text-slate-100">{children}</h2>,
-          h3: ({ children }: any) => <h3 className="text-md md:text-lg font-medium mt-2 mb-1 text-gray-800 dark:text-slate-100">{children}</h3>,
-          p: ({ children }: any) => <p className="mb-2 text-gray-700 dark:text-slate-100 last:mb-0 leading-relaxed">{children}</p>,
-          ul: ({ children }: any) => <ul className="list-disc pl-5 mb-2 space-y-1 text-gray-700 dark:text-slate-100">{children}</ul>,
-          ol: ({ children }: any) => <ol className="list-decimal pl-5 mb-2 space-y-1 text-gray-700 dark:text-slate-100">{children}</ol>,
-          li: ({ children }: any) => <li className="leading-relaxed text-gray-700 dark:text-slate-100">{children}</li>,
+          h1: ({ children }: any) => <h1 className="text-xl md:text-2xl font-bold mt-4 mb-2 tracking-tight text-slate-900 dark:text-white">{children}</h1>,
+          h2: ({ children }: any) => <h2 className="text-lg md:text-xl font-semibold mt-3 mb-2 tracking-tight text-slate-800 dark:text-slate-100">{children}</h2>,
+          h3: ({ children }: any) => <h3 className="text-md md:text-lg font-medium mt-2 mb-1 text-slate-800 dark:text-slate-100">{children}</h3>,
+          p: ({ children }: any) => <p className="mb-2 text-slate-800 dark:text-slate-100 last:mb-0 leading-relaxed">{children}</p>,
+          ul: ({ children }: any) => <ul className="list-disc pl-5 mb-2 space-y-1 text-slate-800 dark:text-slate-100">{children}</ul>,
+          ol: ({ children }: any) => <ol className="list-decimal pl-5 mb-2 space-y-1 text-slate-800 dark:text-slate-100">{children}</ol>,
+          li: ({ children }: any) => <li className="leading-relaxed text-slate-800 dark:text-slate-100">{children}</li>,
+          strong: ({ children }: any) => <strong className="font-bold text-slate-900 dark:text-white">{children}</strong>,
+          em: ({ children }: any) => <em className="italic text-slate-800 dark:text-slate-200">{children}</em>,
           a: ({ href, children }: any) => (
             <a
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 hover:underline font-medium break-all"
+              className="text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 hover:underline font-medium break-all"
             >
               {children}
             </a>
           ),
           blockquote: ({ children }: any) => (
-            <blockquote className="border-l-4 border-gray-300 dark:border-gray-700 pl-4 italic my-2 text-gray-600 dark:text-gray-400">
+            <blockquote className="border-l-4 border-indigo-500/50 pl-4 italic my-2 text-slate-700 dark:text-slate-300">
               {children}
             </blockquote>
           ),
           table: ({ children }: any) => (
-            <div className="overflow-x-auto my-4 rounded-lg border border-gray-200 dark:border-gray-800">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-left text-sm">{children}</table>
+            <div className="overflow-x-auto my-4 rounded-lg border border-slate-200 dark:border-slate-800">
+              <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-left text-sm">{children}</table>
             </div>
           ),
-          thead: ({ children }: any) => <thead className="bg-gray-50 dark:bg-gray-900">{children}</thead>,
-          tbody: ({ children }: any) => <tbody className="divide-y divide-gray-200 dark:divide-gray-800">{children}</tbody>,
+          thead: ({ children }: any) => <thead className="bg-slate-100 dark:bg-slate-900">{children}</thead>,
+          tbody: ({ children }: any) => <tbody className="divide-y divide-slate-200 dark:divide-slate-800">{children}</tbody>,
           tr: ({ children }: any) => <tr>{children}</tr>,
-          th: ({ children }: any) => <th className="px-4 py-2 font-semibold text-gray-900 dark:text-gray-100">{children}</th>,
-          td: ({ children }: any) => <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{children}</td>,
+          th: ({ children }: any) => <th className="px-4 py-2 font-semibold text-slate-900 dark:text-slate-100">{children}</th>,
+          td: ({ children }: any) => <td className="px-4 py-2 text-slate-800 dark:text-slate-200">{children}</td>,
         }}
       >
         {content}
