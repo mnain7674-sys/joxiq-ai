@@ -28,6 +28,8 @@ export function JoxiqLogo({
       src={src}
       alt={alt}
       className={className}
+      referrerPolicy="no-referrer"
+      crossOrigin="anonymous"
       onError={() => {
         if (src === "/logo.png") {
           setSrc(joxiqLogoAsset);

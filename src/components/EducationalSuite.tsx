@@ -1591,7 +1591,7 @@ Use clear headers, bullet points, and clean high-contrast Markdown formatting. R
             ) : (
               <div className="space-y-3">
                 <div className="relative border rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center">
-                  <img src={photoPreview} alt="Snapshot Preview" className="max-h-full max-w-full object-contain" />
+                  <img src={photoPreview} alt="Snapshot Preview" className="max-h-full max-w-full object-contain" referrerPolicy="no-referrer" />
                   <button
                     onClick={handleResetPhotoSolver}
                     className="absolute right-2 top-2 p-1 bg-black/80 hover:bg-rose-500 text-white rounded-lg transition-colors cursor-pointer"

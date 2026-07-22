@@ -1143,6 +1143,7 @@ Provide:
                             src={analyzerAttachedImg.data} 
                             alt="Analysis target" 
                             className="w-full object-contain rounded-lg max-h-[100px] bg-black border border-slate-500/10"
+                            referrerPolicy="no-referrer"
                           />
                         </div>
                       ) : (

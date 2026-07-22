@@ -60,20 +60,41 @@ function saveAdminSettings() {
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
-// Explicit endpoint for logo images to guarantee access across dev, prod, and proxy environments
-app.get(["/logo.png", "/favicon.ico", "/logo.jpg", "/logo.jpeg"], (req, res) => {
+// Explicit endpoint for image assets (logo, mobile app assets) to guarantee access across environments
+app.get([
+  "/logo.png",
+  "/favicon.ico",
+  "/logo.jpg",
+  "/logo.jpeg",
+  "/public/logo.png",
+  "/src/logo.png",
+  "/mobile-app/assets/:file",
+  "/public/*",
+  "/assets/*"
+], (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  
+  const reqPath = req.path;
+  const fileName = req.params.file || path.basename(reqPath);
+  
   const possiblePaths = [
+    path.join(process.cwd(), "public", fileName),
+    path.join(process.cwd(), "src", fileName),
+    path.join(process.cwd(), "mobile-app", "assets", fileName),
+    path.join(process.cwd(), reqPath),
     path.join(process.cwd(), "public", "logo.png"),
     path.join(process.cwd(), "src", "logo.png"),
     path.join(process.cwd(), "logo.png"),
     path.join(process.cwd(), "dist", "logo.png"),
   ];
+  
   for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
+    if (fs.existsSync(p) && fs.statSync(p).isFile()) {
       return res.sendFile(p);
     }
   }
-  res.status(404).send("Logo image not found");
+  res.status(404).send("Image asset not found");
 });
 
 let aiClient: GoogleGenAI | null = null;

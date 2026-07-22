@@ -2276,6 +2276,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                                 src={msg.image.data}
                                 alt="User uploaded attachment"
                                 className="max-h-56 w-auto object-contain mx-auto"
+                                referrerPolicy="no-referrer"
                               />
                             </div>
                           )}
@@ -2302,6 +2303,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                                 src={msg.image.data}
                                 alt="User uploaded attachment"
                                 className="max-h-56 w-auto object-contain mx-auto"
+                                referrerPolicy="no-referrer"
                               />
                             </div>
                           )}
@@ -2624,6 +2626,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                       src={attachedImage.data}
                       alt="Attachment preview"
                       className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
