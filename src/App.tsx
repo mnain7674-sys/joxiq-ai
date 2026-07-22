@@ -80,6 +80,7 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { LanguageCoach } from "./components/LanguageCoach";
 import { AiLearningPlatform } from "./components/AiLearningPlatform";
+import { JoxiqLogo } from "./components/JoxiqLogo";
 
 import joxiqLogo from "./logo.png";
 const joxiqFlowerLogo = joxiqLogo;
@@ -1475,11 +1476,7 @@ export default function App() {
             title="Return to Home"
           >
             <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 bg-indigo-500 text-white font-black text-sm group-hover:scale-105 transition-transform">
-              <img
-                src={joxiqLogo}
-                alt="JOXIQ AI Logo"
-                className="w-full h-full object-contain rounded-full bg-white p-1"
-              />
+              <JoxiqLogo className="w-full h-full object-contain rounded-full bg-white p-1" />
             </div>
           </div>
           <button
@@ -1801,11 +1798,7 @@ export default function App() {
               title="JOXIQ AI Home"
             >
               <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 bg-indigo-500 text-white font-black text-sm sm:text-base group-hover:scale-105 transition-transform shrink-0">
-                <img
-                  src={joxiqLogo}
-                  alt="JOXIQ AI Logo"
-                  className="w-full h-full object-contain rounded-full bg-white p-0.5"
-                />
+                <JoxiqLogo className="w-full h-full object-contain rounded-full bg-white p-0.5" />
               </div>
               <span className="font-extrabold text-xs sm:text-sm tracking-tight text-slate-800 dark:text-slate-100">JOXIQ AI</span>
             </div>
@@ -2152,11 +2145,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                   className="mx-auto flex items-center justify-center mb-2"
                 >
                   <div className="w-36 h-36 sm:w-48 sm:h-48 rounded-full overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 bg-indigo-500 text-white font-black text-4xl sm:text-5xl flex items-center justify-center">
-                    <img
-                      src={joxiqLogo}
-                      alt="JOXIQ AI Logo"
-                      className="w-full h-full object-contain rounded-full bg-white p-1 sm:p-1.5"
-                    />
+                    <JoxiqLogo className="w-full h-full object-contain rounded-full bg-white p-1 sm:p-1.5" />
                   </div>
                 </motion.div>
                 <h1 className={`text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mt-3 ${
@@ -2273,11 +2262,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                   >
                     {!isUser && (
                       <div className="w-10 h-10 rounded-full bg-indigo-500 text-white font-black text-xs flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5">
-                        <img
-                          src={joxiqLogo}
-                          alt="JOXIQ AI Avatar"
-                          className="w-full h-full object-contain rounded-full bg-white p-0.5"
-                        />
+                        <JoxiqLogo className="w-full h-full object-contain rounded-full bg-white p-0.5" alt="JOXIQ AI Avatar" />
                       </div>
                     )}
 
@@ -2529,11 +2514,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
 
                     {isUser && (
                       <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5">
-                        <img
-                          src={userLogo}
-                          alt="User Avatar"
-                          className="w-full h-full object-cover rounded-full bg-white p-0.5"
-                        />
+                        <JoxiqLogo className="w-full h-full object-contain rounded-full bg-white p-0.5" alt="User Avatar" fallbackText="U" />
                       </div>
                     )}
                   </div>
@@ -2544,11 +2525,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
               {isStreaming && currentStreamText && (
                 <div className="flex items-start gap-4 justify-start w-full">
                   <div className="w-10 h-10 rounded-full bg-indigo-500 text-white font-black text-xs flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5">
-                    <img
-                      src={joxiqLogo}
-                      alt="JOXIQ AI Avatar"
-                      className="w-full h-full object-contain rounded-full bg-white p-0.5 animate-pulse"
-                    />
+                    <JoxiqLogo className="w-full h-full object-contain rounded-full bg-white p-0.5 animate-pulse" alt="JOXIQ AI Avatar" />
                   </div>
                   <div className="flex flex-col gap-2 flex-1 min-w-0">
                     <div className="text-slate-800 dark:text-slate-100 space-y-3 text-sm md:text-base leading-relaxed w-full">

@@ -60,6 +60,22 @@ function saveAdminSettings() {
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
 
+// Explicit endpoint for logo images to guarantee access across dev, prod, and proxy environments
+app.get(["/logo.png", "/favicon.ico", "/logo.jpg", "/logo.jpeg"], (req, res) => {
+  const possiblePaths = [
+    path.join(process.cwd(), "public", "logo.png"),
+    path.join(process.cwd(), "src", "logo.png"),
+    path.join(process.cwd(), "logo.png"),
+    path.join(process.cwd(), "dist", "logo.png"),
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+  res.status(404).send("Logo image not found");
+});
+
 let aiClient: GoogleGenAI | null = null;
 
 /**
