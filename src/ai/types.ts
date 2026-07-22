@@ -4,6 +4,19 @@
 
 export type AIProviderId = "gemini" | "openai" | "claude";
 
+export type UserPlanTier = "free" | "premium" | "pro";
+
+export type RequestCategory = 
+  | "simple_text"
+  | "ai_tutor"
+  | "image_multimodal"
+  | "document_pdf"
+  | "simple_coding"
+  | "complex_reasoning"
+  | "research_paper";
+
+export type ComplexityLevel = "easy" | "medium" | "hard";
+
 export interface ChatMessagePart {
   text?: string;
   inlineData?: {
@@ -38,16 +51,47 @@ export interface ChatOptions {
   maxTokens?: number;
   useSearch?: boolean; // Search grounding (Google Search or web search)
   isAutoRoute?: boolean; // Enable automatic AI Model selection based on input task
-  userTier?: "free" | "premium"; // User subscription tier
+  userTier?: UserPlanTier; // User subscription plan
+  userId?: string;
+  userEmail?: string;
 }
 
 export interface RouteDecision {
   providerId: AIProviderId;
   model: string;
   reason: string;
-  taskCategory: "multimodal_image" | "document_pdf" | "general_tutor" | "coding_math" | "fallback";
+  taskCategory: RequestCategory;
+  complexity: ComplexityLevel;
+  userTier: UserPlanTier;
+  estimatedCostPer1k: number; // in USD
+  maxOutputTokens: number;
   isFallback: boolean;
   fallbackReason?: string;
+}
+
+export interface TokenUsageRecord {
+  id?: string;
+  userId: string;
+  userEmail: string;
+  modelUsed: string;
+  providerUsed: AIProviderId;
+  requestType: RequestCategory;
+  complexity: ComplexityLevel;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  estimatedCost: number; // in USD
+  timestamp: string | number;
+  dateKey?: string; // e.g. YYYY-MM-DD
+}
+
+export interface PlanLimits {
+  tier: UserPlanTier;
+  dailyTokenLimit: number;
+  maxOutputTokens: number;
+  pdfAnalysisAllowed: boolean;
+  advancedReasoningAllowed: boolean;
+  customSystemInstructionsAllowed: boolean;
 }
 
 export interface StreamChunk {
@@ -59,8 +103,56 @@ export interface StreamChunk {
   providerUsed?: AIProviderId;
   modelUsed?: string;
   routeInfo?: RouteDecision;
+  tokenUsage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    estimatedCost: number;
+  };
   isDone?: boolean;
   error?: string;
+}
+
+export interface CostAuditReport {
+  totalSpentUSD: number;
+  projectedMonthlySpentUSD: number;
+  totalTokensProcessed: number;
+  unnecessaryExpensiveCallsCount: number;
+  estimatedSavingsPotentialUSD: number;
+  highTokenAnomalyCount: number;
+  recommendations: CostOptimizationSuggestion[];
+  alerts: CostAnomalyAlert[];
+}
+
+export interface CostOptimizationSuggestion {
+  id: string;
+  type: "model_downgrade" | "prompt_trimming" | "rate_limit" | "caching";
+  title: string;
+  description: string;
+  suggestedAlternativeModel?: string;
+  estimatedSavingsPercentage: number;
+  impactLevel: "high" | "medium" | "low";
+}
+
+export interface CostAnomalyAlert {
+  id: string;
+  timestamp: number;
+  userEmail: string;
+  modelUsed: string;
+  tokensConsumed: number;
+  costUSD: number;
+  severity: "critical" | "warning" | "info";
+  message: string;
+}
+
+export interface PromptOptimizationResult {
+  originalText: string;
+  optimizedText: string;
+  originalTokens: number;
+  optimizedTokens: number;
+  savedTokens: number;
+  savingsPercentage: number;
+  removedRedundancies: string[];
 }
 
 /**

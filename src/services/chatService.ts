@@ -54,6 +54,9 @@ export class ChatService {
     const mergedOptions: ChatOptions = {
       ...options,
       systemInstruction: finalSystemInstruction,
+      userTier: options?.userTier || "free",
+      userId: options?.userId,
+      userEmail: options?.userEmail,
     };
 
     yield* this.router.routeStream(messages, mergedOptions);

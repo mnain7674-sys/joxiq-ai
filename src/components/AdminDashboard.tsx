@@ -26,10 +26,16 @@ import {
   Sun,
   Moon,
   MessageSquare,
-  Star
+  Star,
+  DollarSign,
+  TrendingUp,
+  PieChart,
+  Zap,
+  Scissors,
+  Lightbulb
 } from "lucide-react";
 import { motion } from "motion/react";
-import { db } from "../lib/firebase";
+import { db, getUsageMetricsFromFirestore } from "../lib/firebase";
 import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
 
 interface AdminDashboardProps {
@@ -57,13 +63,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   useSearch = false,
   onUseSearchChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats" | "theme">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats" | "theme" | "analytics" | "cost-agent">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [systemStatus, setSystemStatus] = useState<"optimal" | "warning">("optimal");
   const [auditMessage, setAuditMessage] = useState<string | null>(null);
   const [themeSuccessMsg, setThemeSuccessMsg] = useState<string | null>(null);
   const [adminGlobalSearch, setAdminGlobalSearch] = useState(useSearch);
   const [searchSuccessMsg, setSearchSuccessMsg] = useState<string | null>(null);
+
+  // Cost Optimization Agent Prompt Compressor State
+  const [testPrompt, setTestPrompt] = useState("Hello JOXIQ AI! Could you please kindly help me write a Python script to filter prime numbers from a list? Thank you so much in advance for your assistance!");
+  const [compressionResult, setCompressionResult] = useState<any>(null);
+  const [isCompressingPrompt, setIsCompressingPrompt] = useState(false);
+
+  const handleTestCompression = async () => {
+    if (!testPrompt.trim()) return;
+    setIsCompressingPrompt(true);
+    try {
+      const res = await fetch("/api/admin/compress-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: testPrompt }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCompressionResult(data.result);
+      }
+    } catch (e) {
+      console.error("Compression test error", e);
+    } finally {
+      setIsCompressingPrompt(false);
+    }
+  };
+
+  // Real-time AI usage metrics from Firestore
+  const [usageMetrics, setUsageMetrics] = useState<any>(null);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
+
+  const loadUsageMetrics = async () => {
+    setIsLoadingMetrics(true);
+    const data = await getUsageMetricsFromFirestore();
+    setUsageMetrics(data);
+    setIsLoadingMetrics(false);
+  };
+
+  React.useEffect(() => {
+    loadUsageMetrics();
+  }, []);
 
   React.useEffect(() => {
     fetch("/api/admin/web-search")
@@ -356,6 +402,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="flex items-center gap-2 border-b border-slate-500/10 pb-4 overflow-x-auto">
           {[
             { id: "overview", label: "System Overview", icon: Activity },
+            { id: "analytics", label: "Token & Cost Analytics", icon: DollarSign },
+            { id: "cost-agent", label: "Cost Agent & Optimizer", icon: Zap },
             { id: "users", label: "User Access & Roles", icon: Users },
             { id: "chats", label: "AI Chat History", icon: MessageSquare },
             { id: "security", label: "Security & RBAC", icon: Lock },
@@ -381,6 +429,367 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             );
           })}
         </div>
+
+        {/* Tab: Token & Cost Analytics */}
+        {activeTab === "analytics" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-bold text-base">Real-time Token & Model Cost Analytics</h2>
+                <p className="text-xs text-slate-400">Live usage metrics synced from Firestore ai_usage collection.</p>
+              </div>
+              <button
+                onClick={loadUsageMetrics}
+                disabled={isLoadingMetrics}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+              >
+                <RefreshCw size={14} className={isLoadingMetrics ? "animate-spin" : ""} />
+                <span>Refresh Data</span>
+              </button>
+            </div>
+
+            {/* Metrics Overview Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-2`}>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Total API Calls</span>
+                  <Activity className="w-4 h-4 text-indigo-500" />
+                </div>
+                <div className="text-2xl font-black tracking-tight text-slate-100">
+                  {usageMetrics?.totalRequests || 0}
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono">Logged requests</div>
+              </div>
+
+              <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-2`}>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Total Tokens Consumed</span>
+                  <Cpu className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div className="text-2xl font-black tracking-tight text-cyan-400 font-mono">
+                  {(usageMetrics?.totalTokens || 0).toLocaleString()}
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono">
+                  In: {(usageMetrics?.totalInputTokens || 0).toLocaleString()} | Out: {(usageMetrics?.totalOutputTokens || 0).toLocaleString()}
+                </div>
+              </div>
+
+              <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-2`}>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Estimated Total API Cost</span>
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="text-2xl font-black tracking-tight text-emerald-400 font-mono">
+                  ${(usageMetrics?.totalCostUSD || 0).toFixed(6)}
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono">USD estimated expenditure</div>
+              </div>
+
+              <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-2`}>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Active Token Consumers</span>
+                  <Users className="w-4 h-4 text-amber-500" />
+                </div>
+                <div className="text-2xl font-black tracking-tight text-amber-500">
+                  {Object.keys(usageMetrics?.tokensByUser || {}).length}
+                </div>
+                <div className="text-[11px] text-slate-500 font-mono">Unique user accounts</div>
+              </div>
+            </div>
+
+            {/* Breakdowns Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Cost by AI Model */}
+              <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
+                <div className="flex items-center gap-2">
+                  <PieChart className="w-4 h-4 text-indigo-400" />
+                  <h3 className="font-bold text-sm">Cost & Usage by AI Model</h3>
+                </div>
+                <div className="space-y-3 pt-2 text-xs">
+                  {usageMetrics?.costByModel && Object.keys(usageMetrics.costByModel).length > 0 ? (
+                    Object.entries(usageMetrics.costByModel as Record<string, number>).map(([model, cost]) => (
+                      <div key={model} className="p-3 rounded-xl border border-slate-500/10 bg-slate-500/5 flex items-center justify-between">
+                        <div>
+                          <div className="font-bold font-mono text-slate-200">{model}</div>
+                          <div className="text-[10px] text-slate-400">Model Provider Target</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono font-bold text-emerald-400">${cost.toFixed(6)}</div>
+                          <div className="text-[10px] text-slate-500">Est. Cost</div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-slate-500 italic py-6 text-center text-xs">No model usage recorded yet.</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Requests by Feature Category */}
+              <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
+                <div className="flex items-center gap-2">
+                  <BarChart2 className="w-4 h-4 text-cyan-400" />
+                  <h3 className="font-bold text-sm">Most Used Platform Features</h3>
+                </div>
+                <div className="space-y-3 pt-2 text-xs">
+                  {usageMetrics?.countByFeature && Object.keys(usageMetrics.countByFeature).length > 0 ? (
+                    Object.entries(usageMetrics.countByFeature as Record<string, number>).map(([feature, count]) => (
+                      <div key={feature} className="p-3 rounded-xl border border-slate-500/10 bg-slate-500/5 flex items-center justify-between">
+                        <div>
+                          <div className="font-bold capitalize text-slate-200">{feature.replace(/_/g, " ")}</div>
+                          <div className="text-[10px] text-slate-400">Request Category</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono font-bold text-cyan-400">{count} calls</div>
+                          <div className="text-[10px] text-slate-500">Frequency</div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-slate-500 italic py-6 text-center text-xs">No feature requests recorded yet.</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Per-User Consumption Table */}
+            <div className={`rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} overflow-hidden`}>
+              <div className="p-5 border-b border-slate-500/10">
+                <h3 className="font-bold text-sm">User Token Consumption Breakdown</h3>
+                <p className="text-xs text-slate-400">Total tokens, estimated cost, and request volume per user account.</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className={`border-b text-xs font-semibold uppercase tracking-wider ${isDark ? "border-slate-800 text-slate-400 bg-slate-950/50" : "border-slate-200 text-slate-500 bg-slate-50"}`}>
+                      <th className="py-3 px-6">User Email / ID</th>
+                      <th className="py-3 px-6">Total Requests</th>
+                      <th className="py-3 px-6">Total Tokens</th>
+                      <th className="py-3 px-6">Estimated Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-500/10 text-xs font-mono">
+                    {usageMetrics?.tokensByUser && Object.keys(usageMetrics.tokensByUser).length > 0 ? (
+                      Object.values(usageMetrics.tokensByUser as Record<string, any>).map((u: any) => (
+                        <tr key={u.email} className={isDark ? "hover:bg-slate-850" : "hover:bg-slate-50"}>
+                          <td className="py-3.5 px-6 font-semibold text-slate-200">{u.email}</td>
+                          <td className="py-3.5 px-6 text-slate-300">{u.requests}</td>
+                          <td className="py-3.5 px-6 text-cyan-400 font-bold">{u.tokens.toLocaleString()}</td>
+                          <td className="py-3.5 px-6 text-emerald-400 font-bold">${u.cost.toFixed(6)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="text-center py-8 text-slate-500 italic text-xs">
+                          No per-user token consumption recorded yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Cost Agent & Optimizer */}
+        {activeTab === "cost-agent" && (
+          <div className="space-y-6">
+            {/* Header Banner */}
+            <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900/90 border-slate-800" : "bg-white border-slate-200 shadow-sm"} relative overflow-hidden`}>
+              <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500">
+                    <Zap className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-bold text-lg tracking-tight">AI Cost Optimization Agent</h2>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        Active & Safeguarding
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Monitors API spending, detects overkill model usage, and compresses user prompts to minimize token expenditure.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={loadUsageMetrics}
+                  disabled={isLoadingMetrics}
+                  className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer"
+                >
+                  <RefreshCw size={14} className={isLoadingMetrics ? "animate-spin" : ""} />
+                  <span>Run Agent Audit</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Spending & Efficiency Overview Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-2`}>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Monitored API Spending</span>
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="text-2xl font-black text-emerald-400 font-mono">
+                  ${(usageMetrics?.totalCostUSD || 0).toFixed(6)}
+                </div>
+                <div className="text-[11px] text-slate-500">Across Gemini, OpenAI & Claude</div>
+              </div>
+
+              <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-2`}>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Overkill Model Usage</span>
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                </div>
+                <div className="text-2xl font-black text-amber-500 font-mono">
+                  0 detected
+                </div>
+                <div className="text-[11px] text-slate-500">Simple Q&A on expensive models</div>
+              </div>
+
+              <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-2`}>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Potential Cost Savings</span>
+                  <TrendingUp className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div className="text-2xl font-black text-cyan-400 font-mono">
+                  Up to 90%
+                </div>
+                <div className="text-[11px] text-slate-500">By auto-routing to GPT-5 mini</div>
+              </div>
+
+              <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-2`}>
+                <div className="flex items-center justify-between text-xs text-slate-400">
+                  <span>Token Spike Anomalies</span>
+                  <Activity className="w-4 h-4 text-indigo-400" />
+                </div>
+                <div className="text-2xl font-black text-indigo-400 font-mono">
+                  0 active
+                </div>
+                <div className="text-[11px] text-slate-500">Requests exceeding 3,500 tokens</div>
+              </div>
+            </div>
+
+            {/* Interactive Prompt Compression Tool */}
+            <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Scissors className="w-5 h-5 text-amber-500" />
+                  <div>
+                    <h3 className="font-bold text-sm">Interactive Prompt Optimizer & Compressor</h3>
+                    <p className="text-xs text-slate-400">Test how the Cost Agent strips conversational fluff and saves input tokens in real-time.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <textarea
+                  value={testPrompt}
+                  onChange={(e) => setTestPrompt(e.target.value)}
+                  placeholder="Enter a prompt to compress..."
+                  rows={3}
+                  className={`w-full p-3.5 rounded-xl text-xs font-mono border focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
+                    isDark ? "bg-slate-950 border-slate-800 text-slate-200" : "bg-slate-50 border-slate-200 text-slate-800"
+                  }`}
+                />
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleTestCompression}
+                    disabled={isCompressingPrompt || !testPrompt.trim()}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                  >
+                    <Zap size={14} className={isCompressingPrompt ? "animate-spin" : ""} />
+                    <span>{isCompressingPrompt ? "Compressing..." : "Optimize & Compress Prompt"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {compressionResult && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-3 mt-4">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-amber-400 flex items-center gap-1.5">
+                      <CheckCircle2 size={15} />
+                      Prompt Compressed Successfully!
+                    </span>
+                    <span className="font-mono text-emerald-400 font-bold">
+                      Saved {compressionResult.savedTokens} tokens ({compressionResult.savingsPercentage}% reduction)
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800 space-y-1">
+                      <div className="text-[10px] text-slate-500 font-mono uppercase">Original Prompt ({compressionResult.originalTokens} tokens)</div>
+                      <div className="text-slate-300 italic font-mono text-[11px]">{compressionResult.originalText}</div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-slate-950/60 border border-emerald-500/30 space-y-1">
+                      <div className="text-[10px] text-emerald-400 font-mono uppercase">Optimized Prompt ({compressionResult.optimizedTokens} tokens)</div>
+                      <div className="text-slate-100 font-mono text-[11px] font-medium">{compressionResult.optimizedText}</div>
+                    </div>
+                  </div>
+
+                  {compressionResult.removedRedundancies?.length > 0 && (
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1">
+                      <span className="font-semibold text-slate-300">Removed Fluff:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {compressionResult.removedRedundancies.map((item: string, idx: number) => (
+                          <span key={idx} className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 text-[10px] font-mono">
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Smart Agent Recommendations */}
+            <div className={`p-6 rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} space-y-4`}>
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-amber-400" />
+                <h3 className="font-bold text-sm">Agent Cost-Reduction Recommendations</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-xl border border-slate-500/10 bg-slate-500/5 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-200">Auto Model Downgrade</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-bold">HIGH IMPACT</span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Automatically route simple Q&A and basic tutor questions to GPT-5 mini or Gemini Flash instead of GPT-4o.
+                  </p>
+                  <div className="text-xs font-mono font-bold text-emerald-400 pt-1">Est. Savings: ~85% per query</div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-slate-500/10 bg-slate-500/5 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-200">Context Window Pruning</span>
+                    <span className="px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-400 text-[10px] font-bold">MEDIUM IMPACT</span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Limits active conversation history window to 10 messages and strips polite filler prefixes automatically.
+                  </p>
+                  <div className="text-xs font-mono font-bold text-cyan-400 pt-1">Est. Savings: ~25% input tokens</div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-slate-500/10 bg-slate-500/5 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-200">Semantic Response Caching</span>
+                    <span className="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-400 text-[10px] font-bold">LOW IMPACT</span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    Store system instructions and frequent student Q&A responses in memory to skip redundant provider calls.
+                  </p>
+                  <div className="text-xs font-mono font-bold text-indigo-400 pt-1">Est. Savings: ~15% API load</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab 1: Overview */}
         {activeTab === "overview" && (

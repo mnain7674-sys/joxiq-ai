@@ -6,6 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import Stripe from "stripe";
 import { chatService } from "./src/services/chatService.js";
+import { costOptimizationAgent } from "./src/ai/costOptimizationAgent.js";
 
 // Load environment variables
 dotenv.config();
@@ -185,12 +186,28 @@ app.get("/api/ai/models", (req, res) => {
 });
 
 /**
+ * Cost Optimization Agent - Prompt Compressor Tool API
+ */
+app.post("/api/admin/compress-prompt", (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ success: false, error: "Prompt is required." });
+    }
+    const result = costOptimizationAgent.optimizePrompt(prompt);
+    res.json({ success: true, result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * Chat Stream API Endpoint (Server-Sent Events)
  * Streams responses dynamically routed to Gemini, OpenAI, or Claude via AI Router
  */
 app.post("/api/chat/stream", async (req, res) => {
   try {
-    const { messages, model, systemInstruction, temperature, useSearch } = req.body;
+    const { messages, model, systemInstruction, temperature, useSearch, userTier, userId, userEmail } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: "Messages array is required." });
@@ -209,6 +226,9 @@ app.post("/api/chat/stream", async (req, res) => {
       systemInstruction,
       temperature,
       useSearch: effectiveSearch,
+      userTier: userTier || "free",
+      userId,
+      userEmail,
     });
 
     for await (const chunk of stream) {

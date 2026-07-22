@@ -19,6 +19,9 @@
 import { GeminiProvider } from "./gemini.js";
 import { OpenAIProvider } from "./openai.js";
 import { ClaudeProvider } from "./claude.js";
+import { aiDecisionEngine } from "./decisionEngine.js";
+import { tokenOptimizer } from "./tokenOptimizer.js";
+import { costOptimizationAgent } from "./costOptimizationAgent.js";
 import {
   IAIProvider,
   AIProviderId,
@@ -26,6 +29,7 @@ import {
   ChatOptions,
   StreamChunk,
   RouteDecision,
+  UserPlanTier,
 } from "./types.js";
 
 export class AIRouter {
@@ -60,110 +64,35 @@ export class AIRouter {
   }
 
   /**
-   * Smartly classifies user messages to pick the optimal AI provider and model.
-   * 
-   * Roles:
-   * - Gemini Flash: Image/multimodal input, photo-to-answer, screenshot/diagrams, fast responses
-   * - Claude Haiku: PDF analysis, large document processing, long text summarization, reports
-   * - GPT-5 mini: General Q&A, AI Tutor, writing, translation, grammar, coding, math
+   * Evaluates classification using AI Decision Engine and validates API availability with graceful fallback
    */
   public classifyRequest(
     messages: ChatMessage[],
     options?: ChatOptions
   ): RouteDecision {
-    const isPremium = options?.userTier === "premium";
+    const rawDecision = aiDecisionEngine.evaluateDecision(messages, options);
+    const targetProvider = this.providers.get(rawDecision.providerId);
+    const isAvailable = targetProvider ? targetProvider.isAvailable() : false;
 
-    // 1. Check for Multimodal Image Content (Photo, screenshot, diagram)
-    const hasImage = messages.some(
-      (m) =>
-        m.image?.data ||
-        (m.content && m.content.toLowerCase().includes("[attached image"))
-    );
-
-    if (hasImage) {
-      const targetModel = isPremium ? "gemini-1.5-pro" : "gemini-2.5-flash";
-      const provider = this.providers.get("gemini")!;
-      const isAvailable = provider.isAvailable();
-
+    if (isAvailable) {
       return {
-        providerId: "gemini",
-        model: targetModel,
-        reason: "Image or screenshot input detected. Google Gemini Flash selected for ultra-fast multimodal analysis.",
-        taskCategory: "multimodal_image",
-        isFallback: !isAvailable,
-        fallbackReason: isAvailable ? undefined : "Gemini API key missing.",
-      };
-    }
-
-    // 2. Check for PDF / Large Document / Long Text Input
-    const hasDocument = messages.some(
-      (m) =>
-        m.document ||
-        (m.content && m.content.toLowerCase().includes("=== document content start ===")) ||
-        (m.content && m.content.length > 2500)
-    );
-
-    const isDocTaskPrompt = messages.some((m) => {
-      const text = (m.content || "").toLowerCase();
-      return (
-        text.includes("pdf") ||
-        text.includes("summarize document") ||
-        text.includes("research paper") ||
-        text.includes("business plan") ||
-        text.includes("report analysis")
-      );
-    });
-
-    if (hasDocument || isDocTaskPrompt) {
-      const targetModel = isPremium ? "claude-3-5-sonnet-20241022" : "claude-3-haiku-20240307";
-      const claudeProvider = this.providers.get("claude");
-      const isAvailable = claudeProvider ? claudeProvider.isAvailable() : false;
-
-      if (isAvailable) {
-        return {
-          providerId: "claude",
-          model: targetModel,
-          reason: "Document, PDF, or long-text research detected. Anthropic Claude Haiku selected for high-precision text analysis.",
-          taskCategory: "document_pdf",
-          isFallback: false,
-        };
-      } else {
-        // Fallback to Gemini for document tasks if Anthropic key is not configured
-        const fallbackProvider = this.providers.get("gemini")!;
-        return {
-          providerId: "gemini",
-          model: fallbackProvider.defaultModel,
-          reason: "Document processing requested. Falling back to Gemini Flash (ANTHROPIC_API_KEY not configured).",
-          taskCategory: "document_pdf",
-          isFallback: true,
-          fallbackReason: "Anthropic Claude API key missing in environment. Set ANTHROPIC_API_KEY to unlock Claude Haiku.",
-        };
-      }
-    }
-
-    // 3. General AI Conversation, AI Tutor, Coding, Math, Grammar, Writing
-    const targetModel = isPremium ? "gpt-4o" : "gpt-5-mini";
-    const openaiProvider = this.providers.get("openai");
-    const isOpenAIAvailable = openaiProvider ? openaiProvider.isAvailable() : false;
-
-    if (isOpenAIAvailable) {
-      return {
-        providerId: "openai",
-        model: targetModel,
-        reason: "General Q&A / AI Tutor / Coding task detected. OpenAI GPT-5 mini selected.",
-        taskCategory: "general_tutor",
+        ...rawDecision,
         isFallback: false,
       };
     } else {
-      // Fallback to Gemini Flash if OpenAI key is not configured yet
+      // Graceful Fallback to Google Gemini Flash
       const fallbackProvider = this.providers.get("gemini")!;
       return {
         providerId: "gemini",
         model: fallbackProvider.defaultModel,
-        reason: "General AI conversation. Routed to Google Gemini Flash (OPENAI_API_KEY not configured).",
-        taskCategory: "general_tutor",
+        reason: `${rawDecision.reason} (Falling back to Gemini Flash as ${rawDecision.providerId.toUpperCase()}_API_KEY is not configured)`,
+        taskCategory: rawDecision.taskCategory,
+        complexity: rawDecision.complexity,
+        userTier: rawDecision.userTier,
+        estimatedCostPer1k: 0.000075,
+        maxOutputTokens: rawDecision.maxOutputTokens,
         isFallback: true,
-        fallbackReason: "OpenAI API key missing in environment. Set OPENAI_API_KEY to unlock GPT-5 mini.",
+        fallbackReason: `API key for ${rawDecision.providerId} missing in backend environment variables. Set ${rawDecision.providerId.toUpperCase()}_API_KEY in .env to unlock.`,
       };
     }
   }
@@ -190,7 +119,11 @@ export class AIRouter {
           providerId: p.id,
           model: explicitModel || p.defaultModel,
           reason: `Explicitly requested provider '${explicitProvider}'.`,
-          taskCategory: "general_tutor",
+          taskCategory: "simple_text",
+          complexity: "easy",
+          userTier: options?.userTier || "free",
+          estimatedCostPer1k: 0.0001,
+          maxOutputTokens: options?.maxTokens || 1024,
           isFallback: false,
         };
         return { provider: p, modelToUse: decision.model, routeDecision: decision };
@@ -209,14 +142,18 @@ export class AIRouter {
           providerId: p.id,
           model: explicitModel,
           reason: `Explicitly requested model '${explicitModel}'.`,
-          taskCategory: "general_tutor",
+          taskCategory: "simple_text",
+          complexity: "easy",
+          userTier: options?.userTier || "free",
+          estimatedCostPer1k: 0.0001,
+          maxOutputTokens: options?.maxTokens || 1024,
           isFallback: false,
         };
         return { provider: p, modelToUse: explicitModel, routeDecision: decision };
       }
     }
 
-    // Otherwise, execute Smart Classification algorithm
+    // Otherwise, execute Decision Engine classification algorithm
     const decision = this.classifyRequest(messages, options);
     const chosenProvider = this.providers.get(decision.providerId) || this.providers.get("gemini")!;
 
@@ -228,13 +165,31 @@ export class AIRouter {
   }
 
   /**
-   * Routes streaming chat request through Smart AI Router
+   * Routes streaming chat request through Decision Engine & Token Optimizer
    */
   async *routeStream(
     messages: ChatMessage[],
     options?: ChatOptions
   ): AsyncGenerator<StreamChunk, void, unknown> {
-    const { provider, modelToUse, routeDecision } = this.selectProvider(messages, options);
+    // 1. Optimize input messages context window
+    const windowMessages = tokenOptimizer.optimizeMessages(messages, 10);
+
+    // 2. Automatically compress last user prompt via Cost Optimization Agent to eliminate token fluff
+    const optimizedMessages = windowMessages.map((msg, index) => {
+      if (index === windowMessages.length - 1 && msg.role === "user" && msg.content) {
+        const compressed = costOptimizationAgent.optimizePrompt(msg.content);
+        if (compressed.savedTokens > 0) {
+          console.info(`[Cost Optimization Agent] Compressed user prompt: saved ${compressed.savedTokens} tokens (${compressed.savingsPercentage}%)`);
+          return {
+            ...msg,
+            content: compressed.optimizedText,
+          };
+        }
+      }
+      return msg;
+    });
+
+    const { provider, modelToUse, routeDecision } = this.selectProvider(optimizedMessages, options);
 
     console.info(`[Smart AIRouter] Selected ${provider.displayName} (${modelToUse}). Category: ${routeDecision.taskCategory}. Reason: ${routeDecision.reason}`);
 
@@ -248,26 +203,59 @@ export class AIRouter {
     const effectiveOptions: ChatOptions = {
       ...options,
       model: modelToUse,
+      maxTokens: routeDecision.maxOutputTokens,
     };
 
-    yield* provider.generateStream(messages, effectiveOptions);
+    let fullGeneratedText = "";
+
+    for await (const chunk of provider.generateStream(optimizedMessages, effectiveOptions)) {
+      if (chunk.text) {
+        fullGeneratedText += chunk.text;
+      }
+      yield chunk;
+    }
+
+    // Calculate final Token Usage Record for tracking
+    const inputText = optimizedMessages.map((m) => m.content + (m.document?.content || "")).join(" ");
+    const tokenUsage = tokenOptimizer.calculateUsageRecord({
+      userId: options?.userId,
+      userEmail: options?.userEmail,
+      modelUsed: modelToUse,
+      providerUsed: provider.id,
+      requestType: routeDecision.taskCategory,
+      complexity: routeDecision.complexity,
+      inputText,
+      outputText: fullGeneratedText,
+    });
+
+    yield {
+      tokenUsage: {
+        inputTokens: tokenUsage.inputTokens,
+        outputTokens: tokenUsage.outputTokens,
+        totalTokens: tokenUsage.totalTokens,
+        estimatedCost: tokenUsage.estimatedCost,
+      },
+      isDone: true,
+    };
   }
 
   /**
-   * Routes non-streaming chat request through Smart AI Router
+   * Routes non-streaming chat request through Decision Engine & Token Optimizer
    */
   async routeGenerate(
     messages: ChatMessage[],
     options?: ChatOptions
   ): Promise<string> {
-    const { provider, modelToUse } = this.selectProvider(messages, options);
+    const optimizedMessages = tokenOptimizer.optimizeMessages(messages, 10);
+    const { provider, modelToUse, routeDecision } = this.selectProvider(optimizedMessages, options);
 
     const effectiveOptions: ChatOptions = {
       ...options,
       model: modelToUse,
+      maxTokens: routeDecision.maxOutputTokens,
     };
 
-    return await provider.generateContent(messages, effectiveOptions);
+    return await provider.generateContent(optimizedMessages, effectiveOptions);
   }
 }
 
