@@ -40,7 +40,7 @@ export function AboutPage({ theme }: AboutPageProps) {
         <div className="w-36 h-36 sm:w-48 sm:h-48 mx-auto rounded-full overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-white p-1 sm:p-1.5 flex items-center justify-center mb-3">
           <JoxiqLogo className="w-full h-full object-contain rounded-full" alt="JOXIQ AI Official Logo" />
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-indigo-600 dark:text-indigo-400">
           About JOXIQ AI
         </h1>
         <p className={`text-sm max-w-lg mx-auto ${isDark ? "text-slate-400" : "text-slate-600"}`}>

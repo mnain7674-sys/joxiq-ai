@@ -630,6 +630,15 @@ export default function App() {
     scrollToBottom();
   }, [conversations, currentStreamText, isStreaming]);
 
+  // Ensure activeId always points to a valid conversation if conversations exist
+  useEffect(() => {
+    if (conversations.length > 0) {
+      if (!activeId || !conversations.some((c) => c.id === activeId)) {
+        setActiveId(conversations[0].id);
+      }
+    }
+  }, [conversations, activeId]);
+
   // Get active conversation object
   const activeConversation = conversations.find(
     (c) => c.id === activeId
@@ -1423,10 +1432,10 @@ export default function App() {
 
   return (
     <div
-      className={`relative w-full h-[100dvh] h-screen flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
+      className={`relative w-full h-[100dvh] min-h-screen flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
         theme === "light" ? "bg-[#f4f7fc] text-slate-800" : "bg-[#050b18] text-slate-200 dark"
       }`}
-      style={isKeyboardOpen && viewportHeight !== null && viewportHeight > 200 ? { height: `${viewportHeight}px`, top: `${viewportOffsetTop}px`, position: 'fixed', left: 0, right: 0 } : undefined}
+      style={isKeyboardOpen && viewportHeight !== null && viewportHeight > 200 ? { height: `${viewportHeight}px` } : undefined}
     >
       {/* Mesh Gradient Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
@@ -2148,8 +2157,8 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                   </div>
                 </motion.div>
                 <h1 className={`text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mt-3 ${
-                  theme === "dark" ? "text-white bg-gradient-to-r from-white via-indigo-200 to-slate-300" : "text-slate-900 bg-gradient-to-r from-slate-900 via-indigo-950 to-indigo-900"
-                } bg-clip-text text-transparent`}>
+                  theme === "dark" ? "text-white" : "text-slate-900"
+                }`}>
                   How can I support you today?
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto text-xs sm:text-sm leading-relaxed px-4">

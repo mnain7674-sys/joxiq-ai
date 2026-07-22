@@ -111,7 +111,7 @@ export function ProSubscriptionModal({
             <Crown size={28} />
           </div>
           <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
-            Upgrade to <span className="bg-gradient-to-r from-amber-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent">JOXIQ AI {selectedPlan === "ultra" ? "Ultra" : "Pro"}</span>
+            Upgrade to <span className="text-amber-400 dark:text-amber-300 font-extrabold">JOXIQ AI {selectedPlan === "ultra" ? "Ultra" : "Pro"}</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto px-2">
             {step === "payment" 
