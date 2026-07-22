@@ -69,7 +69,6 @@ interface ToolItem {
 
 export function ToolsPage({ theme, onStartToolSession, onNavigateToChat }: ToolsPageProps) {
   const isDark = theme === "dark";
-  const [logoError, setLogoError] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<ToolId | null>(null);
 
   // --- Image Generator State ---

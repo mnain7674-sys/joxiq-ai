@@ -24,8 +24,6 @@ interface AboutPageProps {
 
 export function AboutPage({ theme }: AboutPageProps) {
   const isDark = theme === "dark";
-  const [userImgError, setUserImgError] = React.useState(false);
-  const [logoError, setLogoError] = React.useState(false);
 
   return (
     <div className={`min-h-full py-10 px-4 md:px-8 max-w-4xl mx-auto space-y-10 ${
