@@ -754,19 +754,16 @@ app.delete("/api/admin/users/:id", (req, res) => {
  * Start the Express + Vite server
  */
 const distPath = path.join(process.cwd(), "dist");
-const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL || fs.existsSync(distPath);
-
-if (isProduction) {
-  app.use(express.static(distPath));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
-  });
-  console.log("Production static files server configured (isProduction = true).");
-}
+const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 
 async function startServer() {
-  // Vite dev server middleware configuration for assets serving
-  if (!isProduction) {
+  if (isProduction) {
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+    console.log("Production static files server configured (isProduction = true).");
+  } else {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
