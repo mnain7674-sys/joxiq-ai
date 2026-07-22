@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createServer as createViteServer } from "vite";
 import Stripe from "stripe";
+import { chatService } from "./src/services/chatService.js";
 
 // Load environment variables
 dotenv.config();
@@ -172,8 +173,20 @@ app.post("/api/auth/admin-login", (req, res) => {
 });
 
 /**
+ * Available AI Models & Providers Metadata API
+ */
+app.get("/api/ai/models", (req, res) => {
+  try {
+    const models = chatService.getAvailableModels();
+    res.json({ success: true, models });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * Chat Stream API Endpoint (Server-Sent Events)
- * Streams response from Gemini models with optional grounding (Google Search).
+ * Streams responses dynamically routed to Gemini, OpenAI, or Claude via AI Router
  */
 app.post("/api/chat/stream", async (req, res) => {
   try {
@@ -183,145 +196,50 @@ app.post("/api/chat/stream", async (req, res) => {
       return res.status(400).json({ error: "Messages array is required." });
     }
 
-    const ai = getGeminiClient();
-
-    // Map conversation history to Gemini SDK format
-    // Each message has 'role': 'user' | 'model'
-    // 'parts': array of parts (text or inlineData)
-    const contentsArray = messages.map((msg: any) => {
-      const parts = [];
-
-      let msgText = msg.content || "";
-
-      // Embed document text content if present
-      if (msg.document && msg.document.content) {
-        msgText = `[Attached Document: ${msg.document.name} (${msg.document.size})]\n=== DOCUMENT CONTENT START ===\n${msg.document.content}\n=== DOCUMENT CONTENT END ===\n\n${msgText}`;
-      }
-
-      // Add text part if text is present
-      if (msgText) {
-        parts.push({ text: msgText });
-      }
-
-      // Add image part if image (base64) is present
-      if (msg.image && msg.image.data && msg.image.mimeType) {
-        parts.push({
-          inlineData: {
-            mimeType: msg.image.mimeType,
-            data: msg.image.data.replace(/^data:image\/\w+;base64,/, ""),
-          },
-        });
-      }
-
-      return {
-        role: msg.role === "assistant" ? "model" : "user",
-        parts,
-      };
-    });
-
-    const modelName = model || "gemini-2.5-flash";
-
-    // Build tools config if search grounding is enabled (admin global or user request)
     const effectiveSearch = Boolean(adminGlobalSearch || useSearch);
-    const tools = effectiveSearch ? [{ googleSearch: {} }] : undefined;
-
-    const baseInstruction = `You are JOXIQ AI.
-IMPORTANT SYSTEM RULES:
-1. Your name is JOXIQ AI. When anyone asks you what your name is or who you are, you must answer that your name is JOXIQ AI (never Julkar AI).
-2. Your creator, founder, and developer is Julkar Nain Mahi.
-3. You must answer questions about your creator ('Julkar Nain Mahi'), your name ('JOXIQ AI'), or related background accurately and naturally using the following profile:
-- Creator Name: Julkar Nain Mahi
-- Nationality: Bangladeshi
-- Current Location: Living in Qatar
-- Occupation / Role: Student, AI enthusiast, and founder/creator of JOXIQ AI.
-- Mission: To build intelligent, user-friendly AI tools that help people learn, solve problems, become more productive, and access reliable assistance.
-- Vision: Created JOXIQ AI as a helpful assistant supporting students, creators, developers, and anyone looking for reliable AI assistance.
-- Personality / Traits: Curious, hardworking, and goal-oriented student who enjoys building technology projects and continuously learning and improving his skills.
-4. When users ask about Julkar (e.g., 'Who is Julkar?', 'Tell me about Julkar', 'What kind of person is Julkar?', 'What is Julkar's mission?', 'Why did Julkar create this AI?'), answer naturally, truthfully, and consistently based on this profile. Do not invent personal facts that are not provided. If a user asks something unknown about Julkar, clearly say that the information is not available instead of making up an answer.
-5. Maintain a professional, friendly, and helpful tone throughout.`;
-
-    const finalSystemInstruction = `${systemInstruction || "You are a helpful assistant."}\n\n${baseInstruction}`;
-
-    // Start generating streaming content with self-healing fallback
-    let responseStream;
-    try {
-      responseStream = await ai.models.generateContentStream({
-        model: modelName,
-        contents: contentsArray,
-        config: {
-          systemInstruction: finalSystemInstruction,
-          temperature: typeof temperature === "number" ? temperature : 0.7,
-          tools,
-        },
-      });
-    } catch (primaryError: any) {
-      console.warn(`Primary model ${modelName} stream failed. Trying fallback to gemini-2.5-flash...`, primaryError);
-      try {
-        responseStream = await ai.models.generateContentStream({
-          model: "gemini-2.5-flash",
-          contents: contentsArray,
-          config: {
-            systemInstruction: finalSystemInstruction,
-            temperature: typeof temperature === "number" ? temperature : 0.7,
-            tools,
-          },
-        });
-      } catch (secondaryError: any) {
-        console.error("Secondary model gemini-2.5-flash stream failed. Trying tertiary gemini-2.0-flash...", secondaryError);
-        try {
-          responseStream = await ai.models.generateContentStream({
-            model: "gemini-2.0-flash",
-            contents: contentsArray,
-            config: {
-              systemInstruction: finalSystemInstruction,
-              temperature: typeof temperature === "number" ? temperature : 0.7,
-              tools,
-            },
-          });
-        } catch (tertiaryError: any) {
-          console.error("Tertiary model gemini-2.0-flash stream failed. Trying tertiary gemini-2.5-flash...", tertiaryError);
-          responseStream = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash",
-            contents: contentsArray,
-            config: {
-              systemInstruction: finalSystemInstruction,
-              temperature: typeof temperature === "number" ? temperature : 0.7,
-              tools,
-            },
-          });
-        }
-      }
-    }
 
     // Set SSE Headers
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
-    res.flushHeaders(); // Establish the connection immediately
+    res.flushHeaders();
 
-    let metadataSent = false;
+    const stream = chatService.streamChat(messages, {
+      model,
+      systemInstruction,
+      temperature,
+      useSearch: effectiveSearch,
+    });
 
-    for await (const chunk of responseStream) {
-      const text = chunk.text;
+    for await (const chunk of stream) {
       const dataPayload: any = {};
 
-      if (text) {
-        dataPayload.text = text;
+      if (chunk.text) {
+        dataPayload.text = chunk.text;
       }
 
-      // Extract grounding metadata if search was enabled and metadata exists
-      const groundingChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks;
-      const searchQueries = chunk.candidates?.[0]?.groundingMetadata?.webSearchQueries;
-
-      if (groundingChunks || searchQueries) {
-        dataPayload.grounding = {
-          chunks: groundingChunks || [],
-          queries: searchQueries || [],
-        };
+      if (chunk.grounding) {
+        dataPayload.grounding = chunk.grounding;
       }
 
-      // Send chunk if there is text or grounding metadata
-      if (dataPayload.text || dataPayload.grounding) {
+      if (chunk.routeInfo) {
+        dataPayload.routeInfo = chunk.routeInfo;
+      }
+
+      if (chunk.providerUsed) {
+        dataPayload.providerUsed = chunk.providerUsed;
+      }
+
+      if (chunk.modelUsed) {
+        dataPayload.modelUsed = chunk.modelUsed;
+      }
+
+      if (
+        dataPayload.text ||
+        dataPayload.grounding ||
+        dataPayload.routeInfo ||
+        dataPayload.providerUsed
+      ) {
         res.write(`data: ${JSON.stringify(dataPayload)}\n\n`);
       }
     }
@@ -330,7 +248,6 @@ IMPORTANT SYSTEM RULES:
     res.end();
   } catch (error: any) {
     console.error("Chat streaming error:", error);
-    // If headers already sent, close stream with an error event
     if (res.headersSent) {
       res.write(`data: ${JSON.stringify({ error: error.message || "Internal Server Error" })}\n\n`);
       res.end();
