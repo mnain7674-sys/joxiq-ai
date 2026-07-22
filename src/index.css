@@ -12,9 +12,10 @@ html, body {
   width: 100%;
   margin: 0;
   padding: 0;
-  background-color: #0b1329;
+  background-color: #050b18 !important;
   color: #f8fafc;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 #root {
@@ -24,6 +25,7 @@ html, body {
   padding: 0;
   overflow: hidden;
   box-sizing: border-box;
+  background-color: #050b18 !important;
 }
 
 *, *:before, *:after {

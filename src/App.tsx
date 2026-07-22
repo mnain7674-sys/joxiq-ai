@@ -386,9 +386,8 @@ export default function App() {
     if (savedTheme) {
       setTheme(savedTheme);
     } else {
-      // Default to dark mode but check system preferences as fallback
-      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(systemPrefersDark ? "dark" : "light");
+      setTheme("dark");
+      localStorage.setItem("gemini_theme", "dark");
     }
 
     if (saved) {
@@ -1424,10 +1423,10 @@ export default function App() {
 
   return (
     <div
-      className={`relative w-full h-[100dvh] flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
-        theme === "dark" ? "bg-[#050b18] text-slate-200 dark" : "bg-[#f4f7fc] text-slate-800"
+      className={`relative w-full h-[100dvh] h-screen flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
+        theme === "light" ? "bg-[#f4f7fc] text-slate-800" : "bg-[#050b18] text-slate-200 dark"
       }`}
-      style={viewportHeight !== null ? { height: `${viewportHeight}px`, top: `${viewportOffsetTop}px`, position: 'fixed', left: 0, right: 0 } : undefined}
+      style={isKeyboardOpen && viewportHeight !== null && viewportHeight > 200 ? { height: `${viewportHeight}px`, top: `${viewportOffsetTop}px`, position: 'fixed', left: 0, right: 0 } : undefined}
     >
       {/* Mesh Gradient Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
