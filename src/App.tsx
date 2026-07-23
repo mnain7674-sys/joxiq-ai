@@ -2378,49 +2378,43 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
 
                       {/* Message metadata line and audio controls */}
                       <div
-                        className={`flex items-center gap-3 text-[10px] text-slate-400 dark:text-slate-500 px-1 mt-1 ${
-                          isUser ? "justify-end" : "justify-between w-full"
+                        className={`flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500 px-1 mt-1 ${
+                          isUser ? "justify-end" : "justify-start"
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <span>
-                            {new Date(msg.timestamp).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                          {!isUser && (
-                            <>
-                              <span>&bull;</span>
-                              <button
-                                onClick={() => handleSpeakTts(msg)}
-                                disabled={isGeneratingTts && activeSpeechMsgId !== msg.id}
-                                className={`flex items-center gap-1 hover:text-indigo-500 transition-colors cursor-pointer ${
-                                  activeSpeechMsgId === msg.id ? "text-indigo-500 font-bold" : ""
-                                }`}
-                              >
-                                {activeSpeechMsgId === msg.id ? (
-                                  isGeneratingTts ? (
-                                    <>
-                                      <Loader2 className="w-3 h-3 animate-spin" />
-                                      <span>Synthesizing...</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <VolumeX className="w-3 h-3" />
-                                      <span>Mute</span>
-                                    </>
-                                  )
-                                ) : (
-                                  <>
-                                    <Volume2 className="w-3 h-3" />
-                                    <span>Speak Aloud</span>
-                                  </>
-                                )}
-                              </button>
-                            </>
-                          )}
-                        </div>
+                        <span>
+                          {new Date(msg.timestamp).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {!isUser && (
+                          <button
+                            onClick={() => handleSpeakTts(msg)}
+                            disabled={isGeneratingTts && activeSpeechMsgId !== msg.id}
+                            className={`p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 hover:text-indigo-500 transition-colors cursor-pointer ${
+                              activeSpeechMsgId === msg.id ? "text-indigo-500" : "text-slate-400 dark:text-slate-500"
+                            }`}
+                            title={
+                              activeSpeechMsgId === msg.id
+                                ? isGeneratingTts
+                                  ? "Synthesizing audio..."
+                                  : "Stop speech"
+                                : "Speak Aloud"
+                            }
+                            aria-label="Speak Aloud"
+                          >
+                            {activeSpeechMsgId === msg.id ? (
+                              isGeneratingTts ? (
+                                <Loader2 className="w-3 h-3 animate-spin text-indigo-500" />
+                              ) : (
+                                <VolumeX className="w-3 h-3 text-indigo-500" />
+                              )
+                            ) : (
+                              <Volume2 className="w-3 h-3" />
+                            )}
+                          </button>
+                        )}
                       </div>
 
                       {/* Modern Compact Response Action Toolbar (Assistant Only) */}
@@ -2614,6 +2608,30 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
           theme === "dark" ? "border-white/5 bg-slate-950/95 backdrop-blur-xl" : "border-slate-200/50 bg-white/95 backdrop-blur-xl"
         }`}>
           <div className="w-full max-w-3xl relative">
+            {/* Suggested prompt chips row above input box */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none no-scrollbar w-full select-none">
+              {[
+                { label: "Explain a topic", icon: Sparkles, prompt: "Can you explain a complex topic in simple terms?" },
+                { label: "Fix my code", icon: Code, prompt: "Help me review and fix issues in my code." },
+                { label: "Summarize text", icon: FileText, prompt: "Summarize this text into key bullet points:" },
+                { label: "Draft an email", icon: Mail, prompt: "Help me write a professional email for:" },
+              ].map((item, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSendMessage(item.prompt)}
+                  disabled={isStreaming}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 flex items-center gap-1.5 shadow-xs active:scale-95 ${
+                    theme === "dark"
+                      ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-300 hover:text-white hover:border-white/20"
+                      : "bg-slate-100/80 border-slate-200/80 hover:bg-slate-200/80 text-slate-700 hover:text-slate-900"
+                  } ${isStreaming ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <item.icon size={12} className="text-indigo-400 shrink-0" />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+
             {/* Draggable/clickable visual representation container */}
             <div
               onDragOver={handleDragOver}
@@ -2885,10 +2903,8 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
             </div>
 
             {/* Platform powered notice */}
-            <div className="mt-2 text-center text-[9px] uppercase tracking-widest text-slate-500/60 dark:text-slate-500/50 font-medium flex items-center justify-center gap-1 select-none">
-              <span>Powered by JOXIQ AI Engine</span>
-              <span>&bull;</span>
-              <span>Professional Edition</span>
+            <div className="mt-1.5 text-center text-[8px] text-slate-400/60 dark:text-slate-500/50 font-normal select-none">
+              Powered by JOXIQ AI
             </div>
           </div>
         </footer>
