@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import joxiqLogoAsset from "../logo.png";
 
 interface JoxiqLogoProps {
   className?: string;
@@ -12,7 +11,6 @@ export function JoxiqLogo({
   alt = "JOXIQ AI Official Logo",
   fallbackText = "JOXIQ"
 }: JoxiqLogoProps) {
-  const [src, setSrc] = useState<string>("/logo.png");
   const [hasError, setHasError] = useState<boolean>(false);
 
   if (hasError) {
@@ -25,17 +23,11 @@ export function JoxiqLogo({
 
   return (
     <img
-      src={src}
+      src="/logo.png"
       alt={alt}
       className={className}
       referrerPolicy="no-referrer"
-      onError={() => {
-        if (src === "/logo.png" && joxiqLogoAsset) {
-          setSrc(joxiqLogoAsset);
-        } else {
-          setHasError(true);
-        }
-      }}
+      onError={() => setHasError(true)}
     />
   );
 }
