@@ -2423,53 +2423,48 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                         </div>
                       </div>
 
-                      {/* Modern ChatGPT-style Response Action Toolbar (Assistant Only) */}
+                      {/* Modern Compact Response Action Toolbar (Assistant Only) */}
                       {!isUser && (
-                        <div className="flex flex-wrap items-center gap-1.5 mt-2.5 pt-2 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5">
+                        <div className="flex items-center gap-1 mt-1.5 pt-1.5 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5">
                           {/* Like Button */}
                           <button
                             onClick={() => rateMessage(msg.id, msg.rating === "like" ? null : "like")}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                            className={`p-1.5 rounded-md border transition-all duration-200 cursor-pointer ${
                               msg.rating === "like"
                                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500 font-medium"
                                 : "bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300"
                             }`}
                             title="Like response"
+                            aria-label="Like response"
                           >
                             <ThumbsUp size={13} className={msg.rating === "like" ? "fill-emerald-500" : ""} />
-                            <span>Like</span>
                           </button>
 
                           {/* Dislike Button */}
                           <button
                             onClick={() => rateMessage(msg.id, msg.rating === "dislike" ? null : "dislike")}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                            className={`p-1.5 rounded-md border transition-all duration-200 cursor-pointer ${
                               msg.rating === "dislike"
                                 ? "bg-rose-500/10 border-rose-500/30 text-rose-500 font-medium"
                                 : "bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300"
                             }`}
                             title="Dislike response"
+                            aria-label="Dislike response"
                           >
                             <ThumbsDown size={13} className={msg.rating === "dislike" ? "fill-rose-500" : ""} />
-                            <span>Dislike</span>
                           </button>
 
                           {/* Copy Button */}
                           <button
                             onClick={() => copyMessageText(msg)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer"
-                            title="Copy full response"
+                            className="p-1.5 rounded-md border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer"
+                            title={copiedMsgId === msg.id ? "Copied!" : "Copy response"}
+                            aria-label="Copy response"
                           >
                             {copiedMsgId === msg.id ? (
-                              <>
-                                <Check size={13} className="text-emerald-500" />
-                                <span className="text-emerald-500 font-medium">Copied!</span>
-                              </>
+                              <Check size={13} className="text-emerald-500" />
                             ) : (
-                              <>
-                                <Copy size={13} />
-                                <span>Copy</span>
-                              </>
+                              <Copy size={13} />
                             )}
                           </button>
 
@@ -2478,48 +2473,48 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                             <button
                               onClick={handleRegenerate}
                               disabled={isStreaming}
-                              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer ${
+                              className={`p-1.5 rounded-md border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer ${
                                 isStreaming ? "opacity-40 cursor-not-allowed" : ""
                               }`}
                               title="Regenerate response"
+                              aria-label="Regenerate response"
                             >
                               <RefreshCw size={13} className={isStreaming ? "animate-spin" : ""} />
-                              <span>Regenerate</span>
                             </button>
                           )}
 
                           {/* Share Button */}
                           <button
                             onClick={() => shareMessage(msg)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer"
+                            className="p-1.5 rounded-md border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer"
                             title="Share response"
+                            aria-label="Share response"
                           >
                             <Share2 size={13} />
-                            <span>Share</span>
                           </button>
 
                           {/* Save / Bookmark Button */}
                           <button
                             onClick={() => toggleSaveMessage(msg.id)}
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+                            className={`p-1.5 rounded-md border transition-all duration-200 cursor-pointer ${
                               savedMessageIds.includes(msg.id)
                                 ? "bg-amber-500/10 border-amber-500/30 text-amber-500 font-medium"
                                 : "bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300"
                             }`}
-                            title="Save to bookmarks"
+                            title={savedMessageIds.includes(msg.id) ? "Saved in bookmarks" : "Save to bookmarks"}
+                            aria-label="Save response"
                           >
                             <Bookmark size={13} className={savedMessageIds.includes(msg.id) ? "fill-amber-500" : ""} />
-                            <span>{savedMessageIds.includes(msg.id) ? "Saved" : "Save"}</span>
                           </button>
 
                           {/* Delete Button */}
                           <button
                             onClick={() => deleteMessage(msg.id)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 text-slate-600 dark:text-slate-300 hover:text-rose-500 transition-all duration-200 cursor-pointer ml-auto"
+                            className="p-1.5 rounded-md border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 text-slate-600 dark:text-slate-300 hover:text-rose-500 transition-all duration-200 cursor-pointer ml-auto"
                             title="Delete message"
+                            aria-label="Delete message"
                           >
                             <Trash2 size={13} />
-                            <span>Delete</span>
                           </button>
                         </div>
                       )}
@@ -2862,9 +2857,9 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                       }
                     }, 200);
                   }}
-                  placeholder={isListening ? "Listening closely... Speak now..." : "Ask JOXIQ AI anything..."}
+                  placeholder={isListening ? "Listening... Speak now..." : "Ask JOXIQ AI anything..."}
                   rows={1}
-                  className={`flex-1 px-2 py-3 text-sm min-h-[44px] bg-transparent resize-none focus:outline-none max-h-[200px] ${
+                  className={`flex-1 px-2 py-3 text-xs sm:text-sm min-h-[44px] bg-transparent resize-none focus:outline-none max-h-[200px] leading-snug whitespace-nowrap overflow-x-auto ${
                     theme === "dark" ? "text-slate-100 placeholder-slate-400" : "text-slate-900 placeholder-slate-500"
                   }`}
                 />
@@ -2876,8 +2871,9 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                   className={`p-3 rounded-xl transition-all shadow-lg text-white mb-1 shrink-0 cursor-pointer ${
                     isStreaming || (!inputText.trim() && !attachedImage && !attachedDocument)
                       ? "bg-black/5 dark:bg-white/5 text-slate-400 dark:text-slate-600 cursor-not-allowed shadow-none"
-                      : "bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30 hover:scale-105 active:scale-95"
+                      : "bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 shadow-indigo-600/40 hover:scale-105 active:scale-95"
                   }`}
+                  title={inputText.trim() || attachedImage || attachedDocument ? "Send message" : "Type a message..."}
                 >
                   {isStreaming ? (
                     <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
@@ -2889,7 +2885,7 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
             </div>
 
             {/* Platform powered notice */}
-            <div className="mt-3 text-center text-[10px] uppercase tracking-wider text-slate-600 font-bold flex items-center justify-center gap-1 select-none">
+            <div className="mt-2 text-center text-[9px] uppercase tracking-widest text-slate-500/60 dark:text-slate-500/50 font-medium flex items-center justify-center gap-1 select-none">
               <span>Powered by JOXIQ AI Engine</span>
               <span>&bull;</span>
               <span>Professional Edition</span>
