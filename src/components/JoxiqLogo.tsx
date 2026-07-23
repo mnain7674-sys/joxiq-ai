@@ -12,7 +12,7 @@ export function JoxiqLogo({
   alt = "JOXIQ AI Official Logo",
   fallbackText = "JOXIQ"
 }: JoxiqLogoProps) {
-  const [src, setSrc] = useState<string>(joxiqLogoAsset || "/logo.png");
+  const [src, setSrc] = useState<string>("/logo.png");
   const [hasError, setHasError] = useState<boolean>(false);
 
   if (hasError) {
@@ -30,8 +30,8 @@ export function JoxiqLogo({
       className={className}
       referrerPolicy="no-referrer"
       onError={() => {
-        if (src !== "/logo.png") {
-          setSrc("/logo.png");
+        if (src === "/logo.png" && joxiqLogoAsset) {
+          setSrc(joxiqLogoAsset);
         } else {
           setHasError(true);
         }
