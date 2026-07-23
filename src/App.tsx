@@ -57,7 +57,8 @@ import {
   LayoutGrid,
   Wrench,
   Crown,
-  MoreVertical
+  MoreVertical,
+  Calculator
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Analytics } from "@vercel/analytics/react";
@@ -2220,36 +2221,6 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                 </button>
               </div>
 
-              {/* Starter grids */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl mt-2">
-                {SUGGESTED_STARTERS.map((starter, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: idx * 0.08 }}
-                    onClick={() => handleSendMessage(starter.prompt)}
-                    className={`p-4 border rounded-xl transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md flex flex-col justify-between group text-left active:scale-[0.98] ${
-                      theme === "dark"
-                        ? "bg-white/[0.03] border-white/10 hover:border-white/20 text-slate-300"
-                        : "bg-white border-slate-200/80 hover:border-slate-300 text-slate-700 shadow-slate-100"
-                    }`}
-                  >
-                    <div>
-                      <div className="font-semibold text-sm group-hover:text-indigo-500 transition-colors">
-                        {starter.title}
-                      </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                        {starter.subtitle}
-                      </div>
-                    </div>
-                    <div className="flex justify-end mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <Send size={14} className="text-indigo-500 dark:text-indigo-400" />
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-
               {/* Guide tips */}
               <div className={`flex items-center gap-2 border px-4 py-2.5 rounded-lg text-xs max-w-md text-center ${
                 theme === "dark" ? "bg-indigo-500/5 border-indigo-500/10 text-slate-400" : "bg-indigo-50/50 border-indigo-100 text-slate-600"
@@ -2613,8 +2584,8 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
               {[
                 { label: "Explain a topic", icon: Sparkles, prompt: "Can you explain a complex topic in simple terms?" },
                 { label: "Fix my code", icon: Code, prompt: "Help me review and fix issues in my code." },
-                { label: "Summarize text", icon: FileText, prompt: "Summarize this text into key bullet points:" },
-                { label: "Draft an email", icon: Mail, prompt: "Help me write a professional email for:" },
+                { label: "Practice English", icon: Languages, prompt: "Let's practice conversational English together. Start by greeting me." },
+                { label: "Solve a math problem", icon: Calculator, prompt: "Help me step-by-step to solve a math problem:" },
               ].map((item, idx) => (
                 <button
                   key={idx}
