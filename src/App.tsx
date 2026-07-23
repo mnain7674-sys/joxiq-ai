@@ -119,6 +119,16 @@ function cleanErrorMessage(err: any): string {
 }
 
 export default function App() {
+  // --- Launch Splash Screen state ---
+  const [showSplash, setShowSplash] = useState<boolean>(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, []);
+
   // --- Active main layout view ---
   const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools" | "admin" | "language-coach" | "ai-learning">("chat");
 
@@ -1441,6 +1451,50 @@ export default function App() {
       }`}
       style={isKeyboardOpen && viewportHeight !== null && viewportHeight > 200 ? { height: `${viewportHeight}px` } : undefined}
     >
+      {/* Full-screen Launch Splash Screen */}
+      <AnimatePresence>
+        {showSplash && (
+          <motion.div
+            key="splash-screen"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#050b18] bg-gradient-to-br from-[#0a0f24] via-[#050b18] to-[#12092b] text-white select-none overflow-hidden"
+          >
+            {/* Ambient branding glow */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[450px] h-[350px] sm:h-[450px] bg-gradient-to-tr from-indigo-600/30 via-purple-600/30 to-pink-600/20 rounded-full blur-[100px] pointer-events-none animate-pulse" />
+
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="relative flex flex-col items-center justify-center space-y-4 text-center z-10"
+            >
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl p-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 shadow-2xl shadow-indigo-500/30 flex items-center justify-center">
+                <div className="w-full h-full rounded-[22px] bg-slate-950/80 backdrop-blur-md flex items-center justify-center overflow-hidden p-2">
+                  <JoxiqLogo className="w-full h-full object-contain" />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300">
+                  JOXIQ AI
+                </h1>
+                <p className="text-xs text-indigo-300/80 font-medium tracking-widest uppercase">
+                  Intelligence Redefined
+                </p>
+              </div>
+
+              {/* Loading dots animation */}
+              <div className="pt-4 flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mesh Gradient Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-violet-600/15 rounded-full blur-[150px] pointer-events-none" />
