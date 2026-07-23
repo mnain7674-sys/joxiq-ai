@@ -1470,9 +1470,9 @@ export default function App() {
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="relative flex flex-col items-center justify-center space-y-4 text-center z-10"
             >
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl p-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 shadow-2xl shadow-indigo-500/30 flex items-center justify-center">
-                <div className="w-full h-full rounded-[22px] bg-slate-950/80 backdrop-blur-md flex items-center justify-center overflow-hidden p-2">
-                  <JoxiqLogo className="w-full h-full object-contain" />
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full p-1 bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 shadow-2xl shadow-indigo-500/30 flex items-center justify-center">
+                <div className="w-full h-full rounded-full bg-slate-950/80 backdrop-blur-md flex items-center justify-center overflow-hidden p-2">
+                  <JoxiqLogo className="w-full h-full object-cover rounded-full" />
                 </div>
               </div>
 
