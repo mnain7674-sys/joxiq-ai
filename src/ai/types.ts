@@ -4,7 +4,7 @@
 
 export type AIProviderId = "gemini" | "openai" | "claude";
 
-export type UserPlanTier = "free" | "premium" | "pro";
+export type UserPlanTier = "free" | "pro" | "annual" | "ultra" | "premium";
 
 export type RequestCategory = 
   | "simple_text"
@@ -88,6 +88,7 @@ export interface TokenUsageRecord {
 export interface PlanLimits {
   tier: UserPlanTier;
   dailyTokenLimit: number;
+  monthlyTokenLimit: number;
   maxOutputTokens: number;
   pdfAnalysisAllowed: boolean;
   advancedReasoningAllowed: boolean;

@@ -21,24 +21,45 @@ import {
 export const PLAN_LIMITS: Record<UserPlanTier, PlanLimits> = {
   free: {
     tier: "free",
-    dailyTokenLimit: 50000,
+    dailyTokenLimit: 5000,
+    monthlyTokenLimit: 100000,
     maxOutputTokens: 800,
-    pdfAnalysisAllowed: true, // Auto-fallback if key missing
+    pdfAnalysisAllowed: true,
     advancedReasoningAllowed: false,
     customSystemInstructionsAllowed: true,
   },
-  premium: {
-    tier: "premium",
-    dailyTokenLimit: 250000,
+  pro: {
+    tier: "pro",
+    dailyTokenLimit: 50000,
+    monthlyTokenLimit: 1500000,
     maxOutputTokens: 2048,
     pdfAnalysisAllowed: true,
     advancedReasoningAllowed: true,
     customSystemInstructionsAllowed: true,
   },
-  pro: {
-    tier: "pro",
-    dailyTokenLimit: 1000000,
+  annual: {
+    tier: "annual",
+    dailyTokenLimit: 50000,
+    monthlyTokenLimit: 1500000,
+    maxOutputTokens: 2048,
+    pdfAnalysisAllowed: true,
+    advancedReasoningAllowed: true,
+    customSystemInstructionsAllowed: true,
+  },
+  ultra: {
+    tier: "ultra",
+    dailyTokenLimit: 200000,
+    monthlyTokenLimit: 6000000,
     maxOutputTokens: 4096,
+    pdfAnalysisAllowed: true,
+    advancedReasoningAllowed: true,
+    customSystemInstructionsAllowed: true,
+  },
+  premium: {
+    tier: "premium",
+    dailyTokenLimit: 50000,
+    monthlyTokenLimit: 1500000,
+    maxOutputTokens: 2048,
     pdfAnalysisAllowed: true,
     advancedReasoningAllowed: true,
     customSystemInstructionsAllowed: true,
@@ -177,26 +198,26 @@ export class AIDecisionEngine {
     switch (category) {
       case "image_multimodal":
         providerId = "gemini";
-        model = userTier === "pro" ? "gemini-1.5-pro" : "gemini-2.5-flash";
-        reason = "Image input detected. Gemini Flash selected for ultra-fast visual understanding.";
+        model = userTier === "ultra" ? "gemini-1.5-pro" : "gemini-2.5-flash";
+        reason = "Image/screenshot question detected. Gemini Flash selected for ultra-fast, cost-efficient visual understanding.";
         break;
 
       case "document_pdf":
       case "research_paper":
         providerId = "claude";
-        model = userTier === "pro" ? "claude-3-5-sonnet-20241022" : "claude-3-haiku-20240307";
-        reason = "PDF/Document uploaded. Claude Haiku selected for high-precision text analysis.";
+        model = userTier === "ultra" ? "claude-3-5-sonnet-20241022" : "claude-3-haiku-20240307";
+        reason = "PDF or long document analysis detected. Claude Haiku selected for high-precision document text processing.";
         break;
 
       case "simple_coding":
-        if (complexity === "hard" && (userTier === "premium" || userTier === "pro")) {
+        if (complexity === "hard" && userTier === "ultra") {
           providerId = "openai";
           model = "gpt-4o";
-          reason = "Advanced coding or complex reasoning task. GPT-4o selected for high intelligence.";
+          reason = "Advanced coding mentor request for Ultra user. GPT-4o selected.";
         } else {
           providerId = "openai";
           model = "gpt-5-mini";
-          reason = "Simple coding request. Cost-effective GPT-5 mini selected.";
+          reason = "Basic coding question. Cost-optimal GPT-5 mini selected.";
         }
         break;
 
@@ -205,7 +226,7 @@ export class AIDecisionEngine {
       default:
         providerId = "openai";
         model = "gpt-5-mini";
-        reason = "General question / AI Tutor session. GPT-5 mini selected.";
+        reason = "Student question / AI Tutor / Grammar / Writing session. GPT-5 mini selected for speed & lowest token cost.";
         break;
     }
 

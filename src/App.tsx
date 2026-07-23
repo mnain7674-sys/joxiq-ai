@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import { SubscriptionModal } from "./components/SubscriptionModal";
+import { SubscriptionPlanId } from "./config/subscriptionPlans";
 import { syncUserToFirestore, auth, googleProvider, db, doc, getDoc, updateDoc } from "./lib/firebase";
 import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "firebase/auth";
 import {
@@ -158,6 +160,7 @@ export default function App() {
     return saved !== null ? parseInt(saved, 10) : 15;
   });
   const [proModalOpen, setProModalOpen] = useState<boolean>(false);
+  const [userTokensUsed, setUserTokensUsed] = useState<number>(0);
   const [showChatHistoryModal, setShowChatHistoryModal] = useState<boolean>(false);
 
   // --- Theme Mode state ---
@@ -3456,6 +3459,25 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
         onDeleteConversation={deleteChat}
         onToggleFavorite={toggleFavorite}
         onClearAll={clearAllChats}
+        theme={theme === "light" ? "light" : "dark"}
+      />
+
+      {/* JOXIQ AI Subscription & Token Quota Modal */}
+      <SubscriptionModal
+        isOpen={proModalOpen}
+        onClose={() => setProModalOpen(false)}
+        userEmail={userProfile?.email || "guest@joxiq.ai"}
+        currentPlan={isProUser ? "pro" : "free"}
+        tokensUsedCurrentMonth={userTokensUsed || 0}
+        onPlanUpdated={(newPlan) => {
+          if (newPlan === "pro" || newPlan === "annual" || newPlan === "ultra") {
+            setIsProUser(true);
+            localStorage.setItem("julkar_is_pro", "true");
+          } else {
+            setIsProUser(false);
+            localStorage.setItem("julkar_is_pro", "false");
+          }
+        }}
         theme={theme === "light" ? "light" : "dark"}
       />
 
