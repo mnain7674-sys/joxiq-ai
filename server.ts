@@ -351,6 +351,535 @@ app.post("/api/chat/tts", async (req, res) => {
 });
 
 /**
+ * JOXIQ AI Learning Academy - AI Teacher Classroom Explanation API
+ * Generates interactive, step-by-step AI teacher explanations in English or Bangla
+ */
+app.post("/api/learning/teacher-explain", async (req, res) => {
+  try {
+    const {
+      classTitle,
+      explanationTopic,
+      courseCategory,
+      level,
+      language = "English",
+      studentQuestion,
+      requestMode, // "explain_again" | "another_example" | "explain_easier"
+      currentStep
+    } = req.body;
+
+    if (!classTitle || !explanationTopic) {
+      return res.status(400).json({ error: "classTitle and explanationTopic are required." });
+    }
+
+    const ai = getGeminiClient();
+
+    let modeInstruction = "";
+    if (requestMode === "explain_again") {
+      modeInstruction = language === "Bangla"
+        ? "শিক্ষার্থী অনুরোধ করেছে: 'পুনরায় ব্যাখ্যা করুন'। আগের ব্যাখ্যাটি আরও পরিষ্কারভাবে এবং সংক্ষেপে শুরু থেকে উপস্থাপন করো।"
+        : "The student requested: 'Explain again'. Re-explain the lesson from the beginning in a fresh, ultra-clear manner.";
+    } else if (requestMode === "another_example") {
+      modeInstruction = language === "Bangla"
+        ? "শিক্ষার্থী অনুরোধ করেছে: 'আরেকটি উদাহরণ দিন'। আগের উদাহরণের চেয়ে সম্পূর্ণ নতুন, আকর্ষণীয় ও বাস্তবমুখী একটি উদাহরণ দাও।"
+        : "The student requested: 'Give another example'. Provide a brand-new, creative, real-world analogy and practical example different from the previous one.";
+    } else if (requestMode === "explain_easier") {
+      modeInstruction = language === "Bangla"
+        ? "শিক্ষার্থী অনুরোধ করেছে: 'সহজভাবে বোঝান'। কোনো জটিল শব্দ ব্যবহার না করে একদম শিক্ষানবিস বা বাচ্চার মতো সহজ ভাষায় দৈনন্দিন জীবনের সাদৃশ্য দিয়ে বোঝাও।"
+        : "The student requested: 'Explain easier'. Simplify the entire explanation so a complete beginner can understand it instantly. Avoid jargon and use everyday analogies.";
+    }
+
+    const systemPrompt = `You are JOXIQ AI Master Voice Teacher - a warm, patient, and world-class tutor in JOXIQ Learning Academy.
+Your task is to teach: "${classTitle}" (${explanationTopic}) for a student studying ${courseCategory || "Tech"} at ${level || "Beginner"} level.
+Current Step: Step ${currentStep || 2} of 6.
+Requested Language: ${language === "Bangla" ? "Bangla (বাংলা) with clear English technical terms" : "English"}.
+
+${modeInstruction ? `SPECIAL STUDENT REQUEST: ${modeInstruction}` : ""}
+${studentQuestion ? `STUDENT QUESTION: "${studentQuestion}" - Answer this question directly with high clarity!` : ""}
+
+PEDAGOGICAL VOICE GUIDELINES:
+1. Speak warmly like a real private teacher in a live 1-on-1 session.
+2. Be friendly, beginner-friendly, and engaging. Avoid complex jargon without immediate plain-language definition.
+3. Structure your response with markdown headings, bullet points, and practical examples.
+4. Keep the explanation punchy, accurate, and inspiring.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: [{ parts: [{ text: systemPrompt }] }],
+    });
+
+    const explanationText = response.candidates?.[0]?.content?.parts?.[0]?.text || (language === "Bangla" ? "দুঃখিত, কোনো উত্তর তৈরি করা সম্ভব হয়নি।" : "Failed to generate AI Teacher explanation.");
+    res.json({ success: true, explanation: explanationText });
+  } catch (error: any) {
+    console.error("AI Teacher Explanation error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to generate AI Teacher response." });
+  }
+});
+
+/**
+ * JOXIQ AI Learning Academy - AI Doubt Chat API
+ * Handles lesson-aware conversational doubt resolution for students in English or Bangla
+ */
+app.post("/api/learning/doubt-chat", async (req, res) => {
+  try {
+    const {
+      courseName,
+      courseCategory,
+      level,
+      moduleTitle,
+      classTitle,
+      classNumber,
+      explanationTopic,
+      learningObjective,
+      currentStep,
+      selectedCodeLine,
+      language = "English",
+      chatHistory = [],
+      userQuestion
+    } = req.body;
+
+    if (!classTitle || !userQuestion) {
+      return res.status(400).json({ error: "classTitle and userQuestion are required." });
+    }
+
+    const ai = getGeminiClient();
+
+    // Construct lesson context prompt
+    const contextPrompt = `You are JOXIQ AI Master Teacher - a patient, encouraging, and highly intelligent tutor in JOXIQ Learning Academy.
+A student is currently sitting in your interactive classroom for the lesson:
+- Course: ${courseName || "General Tech"} (${courseCategory || "Tech"})
+- Level: ${level || "Beginner"}
+- Module: ${moduleTitle || "Core Module"}
+- Class #${classNumber || 1}: "${classTitle}"
+- Learning Objective: ${learningObjective || classTitle}
+- Core Lesson Topic: ${explanationTopic}
+- Current Classroom Step: Step ${currentStep || 1} of 6
+${selectedCodeLine ? `- Currently Highlighted Code Line: Line ${selectedCodeLine}` : ""}
+- Requested Language: ${language === "Bangla" ? "Bangla (বাংলা) with clear English technical terms in brackets if helpful" : "English"}
+
+STUDENT PEDAGOGY RULES:
+1. Be extremely patient, supportive, and clear.
+2. If the student expresses confusion (e.g., "আমি এটা বুঝতে পারছি না", "I don't understand"), DO NOT give a lazy short reply.
+3. Identify what might be confusing, break down the concept to absolute fundamentals, and provide a NEW real-world analogy or example.
+4. Use bullet points or numbered steps to make explanations easy to read.
+5. Keep technical terms clear and accurate.
+6. Always end with an encouraging question or brief check-in (e.g., "does this make sense now?" / "এখন কি বিষয়টি পরিষ্কার হয়েছে?").
+
+FORMAT: Clean markdown formatting with bold points.`;
+
+    // Map chat history into Gemini contents structure
+    const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [
+      {
+        role: "user",
+        parts: [{ text: `[SYSTEM INSTRUCTION & LESSON CONTEXT]\n${contextPrompt}` }]
+      },
+      {
+        role: "model",
+        parts: [{ text: language === "Bangla" ? `ধন্যবাদ! আমি এই পাঠের AI Teacher। তোমার যেকোনো প্রশ্নের উত্তর দিতে আমি প্রস্তুত।` : `Hello! I am your AI Teacher for this lesson. I am ready to answer any questions or clarify any doubts!` }]
+      }
+    ];
+
+    // Append prior chat history if present
+    if (Array.isArray(chatHistory)) {
+      chatHistory.forEach((msg: { role: string; text: string }) => {
+        if (msg.role && msg.text) {
+          contents.push({
+            role: msg.role === "user" ? "user" : "model",
+            parts: [{ text: msg.text }]
+          });
+        }
+      });
+    }
+
+    // Append the current student question
+    contents.push({
+      role: "user",
+      parts: [{ text: userQuestion }]
+    });
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents,
+    });
+
+    const replyText = response.candidates?.[0]?.content?.parts?.[0]?.text || (language === "Bangla" ? "দুঃখিত, কোনো উত্তর তৈরি করা সম্ভব হয়নি। আবার চেষ্টা করো।" : "I apologize, I could not generate a response right now. Please try asking again.");
+
+    res.json({ success: true, reply: replyText });
+  } catch (error: any) {
+    console.error("AI Doubt Chat error:", error);
+    res.status(500).json({ success: false, error: error.message || "Doubt Chat service failed." });
+  }
+});
+
+/**
+ * JOXIQ AI Learning Academy - AI Programming Code Teacher API
+ * Explains code line-by-line, debugs errors, gives hints, refactors code, and evaluates student solutions
+ */
+app.post("/api/learning/code-teacher", async (req, res) => {
+  try {
+    const {
+      code,
+      language = "Python",
+      action = "explain",
+      courseName,
+      classTitle,
+      topic,
+      exerciseDescription,
+      beginnerMode = true,
+      userQuestion,
+      langPreference = "English"
+    } = req.body;
+
+    if (!code && !userQuestion) {
+      return res.status(400).json({ error: "Code snippet or user question is required." });
+    }
+
+    const ai = getGeminiClient();
+
+    let teacherSystemPrompt = `You are JOXIQ AI Code Teacher - an expert, patient, and highly skilled programming instructor inside JOXIQ Learning Academy.
+You specialize in teaching programming languages: Python, JavaScript, TypeScript, Java, C++, C#, Kotlin, Swift, Dart, PHP, Go, and Rust.
+Language to teach: ${language}.
+Requested Language for Explanation: ${langPreference === "Bangla" ? "Bangla (বাংলা) with English code & keywords" : "English"}.
+Beginner Mode: ${beginnerMode ? "ENABLED (Explain every line, syntax, and why code works simply without jargon)" : "DISABLED (Concise engineering review)"}.
+${courseName ? `Course Context: ${courseName}` : ""}
+${classTitle ? `Lesson Context: ${classTitle}` : ""}
+${topic ? `Topic: ${topic}` : ""}`;
+
+    let userPrompt = "";
+
+    if (action === "beginner_breakdown" || (action === "explain" && beginnerMode)) {
+      userPrompt = `Please provide a beginner-friendly breakdown of this ${language} code:
+
+\`\`\`${language.toLowerCase()}
+${code}
+\`\`\`
+
+Provide:
+1. **High-Level Overview**: What does this code do in plain everyday terms?
+2. **Line-by-Line Breakdown**: Explain line by line what each variable, function, loop, or keyword is doing.
+3. **Syntax Explanation**: Highlight 2-3 key language syntax features used here (e.g. function definition, loop condition, data types).
+4. **Why It Works**: Explain why the logic flows the way it does.
+${userQuestion ? `\nStudent's Specific Question: "${userQuestion}"` : ""}`;
+
+    } else if (action === "debug") {
+      userPrompt = `Act as an expert AI Code Debugger. Analyze this ${language} code for errors, syntax mistakes, logical bugs, and edge cases:
+
+\`\`\`${language.toLowerCase()}
+${code}
+\`\`\`
+
+Provide:
+1. **Mistakes / Errors Found**: Point out any syntax errors, undefined variables, boundary bugs, or missing imports/returns.
+2. **Line Number & Explanation**: Explain why each error occurs and how to avoid it in ${language}.
+3. **Corrected Code Solution**: Provide the clean, fixed, runnable code snippet.
+4. **Teacher Tip**: A quick rule of thumb to remember.
+${userQuestion ? `\nStudent asked: "${userQuestion}"` : ""}`;
+
+    } else if (action === "refactor") {
+      userPrompt = `Act as a Senior Software Engineer & Code Teacher. Review this ${language} code for best practices and refactoring:
+
+\`\`\`${language.toLowerCase()}
+${code}
+\`\`\`
+
+Provide:
+1. **Code Quality Analysis**: Readability, efficiency, type safety, and naming conventions in ${language}.
+2. **Suggested Improvements**: 2-3 clean code tips (e.g., idiomatic syntax, memory usage, cleaner structure).
+3. **Refactored Code**: Write the improved, professional version of the code.`;
+
+    } else if (action === "hint") {
+      userPrompt = `A beginner student is working on this coding exercise in ${language}:
+Exercise Goal: ${exerciseDescription || topic || classTitle}
+
+Current Student Code:
+\`\`\`${language.toLowerCase()}
+${code}
+\`\`\`
+
+DO NOT give away the complete code answer directly.
+Give a helpful, step-by-step hint or guiding question that prompts the student to think about the next step or fix their error themselves!`;
+
+    } else if (action === "evaluate_submission") {
+      userPrompt = `Evaluate this student's solution for the coding challenge:
+Challenge Requirement: ${exerciseDescription || topic || classTitle}
+Programming Language: ${language}
+
+Student's Submitted Code:
+\`\`\`${language.toLowerCase()}
+${code}
+\`\`\`
+
+Provide evaluation in structured Markdown:
+1. **Score**: (Give a percentage score e.g. 90/100%)
+2. **Status**: (PASSED / NEEDS REVISION)
+3. **Correctness Analysis**: Does it satisfy the problem requirements?
+4. **Code Quality**: Syntax correctness, style, and edge case handling.
+5. **AI Teacher Encouragement**: Feedback on what was done well and what to practice next.`;
+
+    } else {
+      userPrompt = `Answer the student's programming question about ${language}:
+"${userQuestion || "Please explain this code"}"
+
+Code context:
+\`\`\`${language.toLowerCase()}
+${code}
+\`\`\``;
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: [
+        { role: "user", parts: [{ text: `${teacherSystemPrompt}\n\n${userPrompt}` }] }
+      ]
+    });
+
+    const teacherResponse = response.candidates?.[0]?.content?.parts?.[0]?.text ||
+      (langPreference === "Bangla" ? "দুঃখিত, কোনো উত্তর পাওয়া যায়নি।" : "Unable to generate code teacher guidance.");
+
+    res.json({
+      success: true,
+      language,
+      action,
+      explanation: teacherResponse
+    });
+  } catch (error: any) {
+    console.error("AI Code Teacher API error:", error);
+    res.status(500).json({ success: false, error: error.message || "Code Teacher service failed." });
+  }
+});
+
+/**
+ * JOXIQ AI Learning Academy - AI Project Mentor API
+ * Guides students through 7-step practical projects, creates roadmaps, debugs code/plans, and provides reviews.
+ */
+app.post("/api/learning/project-mentor", async (req, res) => {
+  try {
+    const {
+      projectTitle,
+      category = "Programming",
+      difficulty = "Beginner",
+      courseName,
+      moduleTitle,
+      classNumber,
+      action = "qa",
+      currentStepNumber = 1,
+      submissionCodeOrPlan,
+      userQuestion,
+      langPreference = "English"
+    } = req.body;
+
+    if (!projectTitle) {
+      return res.status(400).json({ error: "projectTitle is required." });
+    }
+
+    const ai = getGeminiClient();
+
+    const mentorSystemPrompt = `You are JOXIQ AI Project Mentor - a world-class senior engineering lead, business strategist, and patient mentor in JOXIQ Learning Academy.
+Your goal is to help students turn theoretical knowledge into real-world skills by guiding them step-by-step through practical projects.
+
+Project Context:
+- Project Title: "${projectTitle}"
+- Category: ${category}
+- Difficulty Level: ${difficulty}
+${courseName ? `- Connected Course: ${courseName}` : ""}
+${moduleTitle ? `- Connected Module: ${moduleTitle}` : ""}
+${classNumber ? `- Connected Class #: ${classNumber}` : ""}
+- Current Project Workflow Step: Step ${currentStepNumber} of 7
+- Output Language: ${langPreference === "Bangla" ? "Bangla (বাংলা) with clear technical terms" : "English"}
+
+MENTOR GUIDELINES:
+1. Provide actionable, structured, and highly encouraging guidance.
+2. Use markdown headings, bullet points, and code/plan examples.
+3. Keep explanation clear, practical, and beginner-friendly.`;
+
+    let promptContent = "";
+
+    if (action === "roadmap") {
+      promptContent = `Create a complete Project Roadmap & Requirement Explanation for the project "${projectTitle}".
+Break down:
+1. **Project Objective**: Why build this project & real-world impact.
+2. **Key Requirements**: Core features & deliverable components.
+3. **7-Step Action Plan**:
+   - Step 1: Choose & Scope Project
+   - Step 2: Understand Requirements & Architecture
+   - Step 3: Create Plan & Schema
+   - Step 4: Build Step by Step
+   - Step 5: Test & Validate
+   - Step 6: Improve & Polish
+   - Step 7: Finalize & Save to Student Portfolio
+4. **Skills Gained**: Core technical/business skills mastered upon completion.`;
+
+    } else if (action === "step_guidance") {
+      promptContent = `Provide step-by-step guidance for Step ${currentStepNumber} of the project "${projectTitle}".
+Student's current work / plan snippet:
+\`\`\`
+${submissionCodeOrPlan || "(No submission draft yet)"}
+\`\`\`
+
+Explain:
+1. **What to do in Step ${currentStepNumber}**: Core goals for this specific step.
+2. **Actionable Checklist**: 3-4 clear micro-tasks.
+3. **Starter Code or Example Structure**: Concrete snippet or template to move forward.
+4. **Mentor Pro-Tip**: Common pitfall to avoid in this step.`;
+
+    } else if (action === "debug_help") {
+      promptContent = `The student is asking for debugging / problem-solving help on the project "${projectTitle}":
+Student Question: "${userQuestion || "Why is my code or plan not working as expected?"}"
+
+Current Student Code / Plan:
+\`\`\`
+${submissionCodeOrPlan || "(No code provided)"}
+\`\`\`
+
+Provide:
+1. **Root Cause Analysis**: Identify why the issue or confusion occurred.
+2. **Step-by-Step Fix**: Explain how to solve it clearly.
+3. **Corrected Code / Plan Snippet**: Provide the fixed solution.
+4. **Learning Takeaway**: How to prevent similar issues in the future.`;
+
+    } else if (action === "review_improve") {
+      promptContent = `Review the student's project submission and suggest improvements for "${projectTitle}":
+
+Student's Project Work:
+\`\`\`
+${submissionCodeOrPlan || "(No code or plan submitted)"}
+\`\`\`
+
+Provide:
+1. **Overall Grade / Rating**: (e.g., 95/100, Excellent Execution!)
+2. **Strengths**: What was implemented really well.
+3. **3 Key Improvements**: Refactoring, optimization, security, or design enhancements ("How can I improve this?").
+4. **Portfolio Highlight**: How to showcase this project to employers or clients.`;
+
+    } else {
+      promptContent = `Answer the student's question about the project "${projectTitle}":
+"${userQuestion || "How do I start this project?"}"
+
+Student's Current Draft:
+\`\`\`
+${submissionCodeOrPlan || "(No draft)"}
+\`\`\``;
+    }
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: [{ role: "user", parts: [{ text: `${mentorSystemPrompt}\n\n${promptContent}` }] }]
+    });
+
+    const mentorFeedback = response.candidates?.[0]?.content?.parts?.[0]?.text ||
+      (langPreference === "Bangla" ? "দুঃখিত, কোনো উত্তর পাওয়া যায়নি।" : "Unable to generate project mentor response.");
+
+    res.json({
+      success: true,
+      projectTitle,
+      action,
+      feedback: mentorFeedback
+    });
+  } catch (error: any) {
+    console.error("AI Project Mentor API error:", error);
+    res.status(500).json({ success: false, error: error.message || "Project Mentor service failed." });
+  }
+});
+
+/**
+ * JOXIQ AI Learning Academy - Personalized AI Recommendation Engine API
+ * Analyzes student learning stats, quiz scores, weak topics, and progress to generate personalized recommendations, AI Teacher feedback, and difficulty adjustments.
+ */
+app.post("/api/learning/recommendations", async (req, res) => {
+  try {
+    const {
+      completedClassCount = 0,
+      averageQuizScore = 80,
+      quizHistory = [],
+      completedCourses = [],
+      enrolledCourses = [],
+      practiceCount = 0,
+      studentInterests = ["Programming", "AI Engineering"],
+      langPreference = "English"
+    } = req.body;
+
+    const ai = getGeminiClient();
+
+    const recommendationPrompt = `You are JOXIQ AI Learning Advisor & Personal Pedagogy Engine in JOXIQ Learning Academy.
+Analyze the following real student learning data and produce a personalized, structured learning recommendation plan in JSON format.
+
+STUDENT PERFORMANCE DATA:
+- Total Classes Completed: ${completedClassCount}
+- Average Quiz Score: ${averageQuizScore}%
+- Total Practice Tasks Completed: ${practiceCount}
+- Completed Courses: ${JSON.stringify(completedCourses)}
+- Currently Enrolled Courses: ${JSON.stringify(enrolledCourses)}
+- Student Interests / Goals: ${JSON.stringify(studentInterests)}
+- Recent Quiz History Snippets: ${JSON.stringify(quizHistory.slice(-5))}
+- Language Preference: ${langPreference === "Bangla" ? "Bangla (বাংলা)" : "English"}
+
+REQUIREMENTS FOR JSON RESPONSE:
+Return a JSON object matching this schema EXACTLY:
+{
+  "learningSpeed": "Fast Learner" | "Steady Pace" | "Needs Guided Practice",
+  "adaptiveDifficulty": "Beginner Fundamentals" | "Intermediate Problem Solver" | "Advanced Mastery",
+  "strongTopics": ["topic 1", "topic 2"],
+  "weakTopics": ["weak topic 1", "weak topic 2"],
+  "aiTeacherFeedback": {
+    "whatYouLearned": "Specific summary of what the student has mastered so far...",
+    "whatYouNeedToImprove": "Specific areas where the student needs focused practice...",
+    "whatYouShouldLearnNext": "Immediate clear next step lesson or concept..."
+  },
+  "dailyGoal": {
+    "dailyGoalTitle": "Daily learning goal description...",
+    "recommendedClassTitle": "Recommended next class title...",
+    "practiceReminderText": "Actionable practice reminder...",
+    "targetMinutes": 30
+  },
+  "recommendedActions": [
+    {
+      "id": "rec-1",
+      "type": "next_lesson" | "revision_topic" | "practice_task" | "extra_exercise" | "hard_challenge" | "project_build",
+      "title": "Action title...",
+      "description": "Short explanation...",
+      "courseName": "Course name...",
+      "difficulty": "Beginner" | "Intermediate" | "Advanced",
+      "reason": "Why this specific recommendation was chosen based on student performance...",
+      "actionText": "Start Lesson / Practice / Build"
+    }
+  ],
+  "suggestedCourses": [
+    {
+      "courseId": "ai-eng",
+      "courseName": "Recommended course title...",
+      "category": "AI Engineering",
+      "requiredLevel": "Beginner",
+      "matchScorePercentage": 95,
+      "reason": "Why this course connects with student's completed studies...",
+      "skillsYouWillGain": ["Skill 1", "Skill 2"]
+    }
+  ]
+}
+
+Ensure all advice is directly grounded in the student's performance data. If quiz scores are under 70%, recommend revision and extra exercises. If quiz scores are high (>85%), adjust difficulty upwards and recommend harder challenges or capstone projects!`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: [{ role: "user", parts: [{ text: recommendationPrompt }] }],
+      config: { responseMimeType: "application/json" }
+    });
+
+    const responseText = response.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!responseText) {
+      return res.status(500).json({ success: false, error: "Empty AI response" });
+    }
+
+    const jsonResult = JSON.parse(responseText);
+    res.json({
+      success: true,
+      analysis: jsonResult
+    });
+  } catch (error: any) {
+    console.error("AI Recommendation API error:", error);
+    res.status(500).json({ success: false, error: error.message || "Recommendation service failed." });
+  }
+});
+
+/**
  * Educational Content Generation API Endpoint
  * Generates custom structured quizzes, exam papers, and goal study plans using Gemini.
  */

@@ -82,6 +82,7 @@ import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { LanguageCoach } from "./components/LanguageCoach";
+import { LearningAcademy } from "./components/learning/LearningAcademy";
 import { JoxiqLogo } from "./components/JoxiqLogo";
 
 const joxiqLogo = "/logo.png";
@@ -129,7 +130,7 @@ export default function App() {
   }, []);
 
   // --- Active main layout view ---
-  const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools" | "admin" | "language-coach">("chat");
+  const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools" | "admin" | "language-coach" | "learning-academy">("chat");
 
   // --- Conversations and active state ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -1671,6 +1672,19 @@ export default function App() {
           </button>
 
           <button
+            onClick={() => setActiveView("learning-academy")}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              activeView === "learning-academy"
+                ? (theme === "dark" ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold")
+                : "border-transparent text-slate-500 hover:text-slate-400 dark:hover:text-slate-200"
+            }`}
+          >
+            <GraduationCap size={14} className="text-violet-500" />
+            <span className="flex-1 text-left">Learning Academy</span>
+            <span className="text-[9px] uppercase font-extrabold tracking-widest bg-violet-500/10 text-violet-500 px-1.5 py-0.5 rounded-md">New</span>
+          </button>
+
+          <button
             onClick={() => setActiveView("language-coach")}
             className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
               activeView === "language-coach"
@@ -2052,6 +2066,10 @@ export default function App() {
               useSearch={useSearch}
               onUseSearchChange={setUseSearch}
             />
+          </div>
+        ) : activeView === "learning-academy" ? (
+          <div className="flex-1 overflow-y-auto">
+            <LearningAcademy theme={theme} userProfile={userProfile} />
           </div>
         ) : activeView === "education" ? (
           <div className="flex-1 overflow-y-auto">
