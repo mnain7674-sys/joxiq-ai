@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import Markdown from "react-markdown";
 import { CAREER_CARDS, ALL_COURSES, Course, CareerCard, Lesson } from "./coursesData";
+import { AiTeacherVideoPlayer } from "./AiTeacherVideoPlayer";
+import { LessonTeacherChat } from "./LessonTeacherChat";
 
 interface AiLearningPlatformProps {
   theme: string;
@@ -886,11 +888,11 @@ YOUR TASK:
   };
 
   // Dedicated AI Lesson Socratic Tutor Chat System
-  const handleSendLessonChat = async () => {
-    if (!chatInput.trim() || !selectedLesson) return;
+  const handleSendLessonChat = async (customPrompt?: string) => {
+    const userMsg = (customPrompt || chatInput).trim();
+    if (!userMsg || !selectedLesson) return;
+    if (!customPrompt) setChatInput("");
     const lessonId = selectedLesson.lesson.id;
-    const userMsg = chatInput.trim();
-    setChatInput("");
 
     const activeChats = lessonChats[lessonId] || [
       {
@@ -1170,8 +1172,17 @@ CRITICAL FIRST LESSON DIRECTIVES:
                 </div>
               </div>
 
-              {/* Two Column Layout: Material + Playground on Left, AI Mentor Chat on Right */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* 1. PRIMARY TEACHING METHOD: AI TEACHER VIDEO SECTION AT THE TOP */}
+              <AiTeacherVideoPlayer
+                courseName={selectedCourse?.name || "Software Engineering"}
+                lessonTitle={selectedLesson.lesson.title}
+                lessonLevel={selectedLesson.level}
+                lessonCategory={selectedCourse?.category || "Core"}
+                lessonContent={selectedLesson.lesson.content}
+              />
+
+              {/* Two Column Layout: Material + Playground on Left, Ask Your AI Teacher Chat on Right */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
                 {/* Left Side: Course content reading and code playground */}
                 <div className="lg:col-span-7 space-y-6">
@@ -1594,82 +1605,26 @@ YOUR TASK:
 
                 </div>
 
-                {/* Right Side: Persistent Lesson Chat Box with AI Teacher */}
-                <div className="lg:col-span-5">
-                  <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col h-[740px] sticky top-6">
-                    <div className="flex items-center gap-3 pb-3.5 border-b border-slate-800">
-                      <div className="w-10 h-10 rounded-2xl bg-violet-600/15 border border-violet-500/30 flex items-center justify-center text-violet-400">
-                        <GraduationCap className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-extrabold text-white">Socratic Coding Mentor</h4>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Lesson 1-on-1 Session</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Messages Body */}
-                    <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1 scrollbar-thin scrollbar-thumb-slate-800">
-                      {(lessonChats[lessonId] || [
-                        {
-                          role: "assistant",
-                          content: lessonId.endsWith("-b1")
-                            ? `👋 **Welcome to the wonderful world of coding!** \n\nI am your personal AI programming instructor. Today you are about to start your very first and most important coding lesson! We will not memorize complex formulas or boring rules today. Instead, we'll unlock the secrets of coding using simple real-world stories and fun analogies.\n\n### 🎯 What You'll Achieve by Completing This Course:\n1. **Become a Creator**: You will be able to build your own custom apps, games, or websites from scratch.\n2. **Unlock New Horizons (Career Opportunities)**: Unlimited options will open up for high-paying remote roles, freelance work, and tech careers.\n3. **Think Logically**: You will learn to break down any complex, messy problem in life and solve it step-by-step.\n\n### 🌟 Our Simple Classroom Guidelines:\n* We will never rush. We will go slowly and master one concept at a time.\n* After every single concept, I will ask you a quick, fun question to make sure you've grasped it fully.\n* Making mistakes is a brilliant thing—it's how we grow! No need to feel afraid at all.\n\nAre you ready to begin your very first coding adventure? Simply type **"I am ready"** or **"Ready"** below to let me know!`
-                            : `Greetings! I am your Socratic AI Programming Instructor for **${selectedLesson.lesson.title}**.\n\nI am here to help you master this concept. I explain topics step-by-step, dissect syntax line-by-line, walk through code structures, and review challenges. Ask me any question, or ask for a practice problem to solve!`
-                        }
-                      ]).map((msg, idx) => (
-                        <div key={idx} className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                          {msg.role === "assistant" && (
-                            <div className="w-7 h-7 rounded-lg bg-violet-600 text-white font-extrabold flex items-center justify-center shrink-0 text-xs shadow-md shadow-violet-600/10">
-                              AI
-                            </div>
-                          )}
-                          <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
-                            msg.role === "user"
-                              ? "bg-violet-600 text-white shadow-lg shadow-violet-600/10 rounded-tr-none font-medium"
-                              : "bg-slate-950 text-slate-200 border border-slate-850 rounded-tl-none prose prose-invert max-w-none"
-                          }`}>
-                            <Markdown>{msg.content}</Markdown>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {isAiLoading && (
-                        <div className="flex gap-2.5 justify-start">
-                          <div className="w-7 h-7 rounded-lg bg-violet-600 text-white font-extrabold flex items-center justify-center shrink-0 text-xs">
-                            AI
-                          </div>
-                          <div className="bg-slate-950 border border-slate-850 px-4 py-3 rounded-2xl rounded-tl-none animate-pulse text-xs text-slate-400 flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce [animation-delay:0.2s]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-bounce [animation-delay:0.4s]" />
-                            <span>AI Instructor is structuring explanation...</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Chat Footer Input */}
-                    <div className="pt-3 border-t border-slate-800 flex gap-2">
-                      <input
-                        type="text"
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSendLessonChat()}
-                        placeholder="Ask mentor to review code, explain line-by-line, etc..."
-                        className="flex-1 bg-slate-950 border border-slate-805 rounded-xl px-4 py-2.5 text-xs text-slate-200 outline-none focus:border-violet-500 placeholder:text-slate-500 transition-colors"
-                      />
-                      <button
-                        onClick={handleSendLessonChat}
-                        disabled={isAiLoading || !chatInput.trim()}
-                        className="bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white p-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-violet-600/10"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+                {/* Right Side: Dedicated "Ask Your AI Teacher" Chat Box */}
+                <div className="lg:col-span-5 sticky top-6">
+                  <LessonTeacherChat
+                    courseName={selectedCourse?.name || "Software Engineering"}
+                    lessonTitle={selectedLesson.lesson.title}
+                    lessonLevel={selectedLesson.level}
+                    lessonCategory={selectedCourse?.category || "Core"}
+                    lessonContent={selectedLesson.lesson.content}
+                    lessonId={lessonId}
+                    messages={lessonChats[lessonId] || [
+                      {
+                        role: "assistant",
+                        content: lessonId.endsWith("-b1")
+                          ? `👋 **Welcome to the wonderful world of coding!** \n\nI am your personal AI programming instructor. Today you are about to start your very first and most important coding lesson! We will not memorize complex formulas or boring rules today. Instead, we'll unlock the secrets of coding using simple real-world stories and fun analogies.\n\n### 🎯 What You'll Achieve by Completing This Course:\n1. **Become a Creator**: You will be able to build your own custom apps, games, or websites from scratch.\n2. **Unlock New Horizons (Career Opportunities)**: Unlimited options will open up for high-paying remote roles, freelance work, and tech careers.\n3. **Think Logically**: You will learn to break down any complex, messy problem in life and solve it step-by-step.\n\n### 🌟 Our Simple Classroom Guidelines:\n* We will never rush. We will go slowly and master one concept at a time.\n* After every single concept, I will ask you a quick, fun question to make sure you've grasped it fully.\n* Making mistakes is a brilliant thing—it's how we grow! No need to feel afraid at all.\n\nAre you ready to begin your very first coding adventure? Simply type **"I am ready"** or **"Ready"** below to let me know!`
+                          : `Greetings! I am your Socratic AI Programming Instructor for **${selectedLesson.lesson.title}**.\n\nI am here to help you master this concept. I explain topics step-by-step, dissect syntax line-by-line, walk through code structures, and review challenges. Ask me any question, or ask for a practice problem to solve!`
+                      }
+                    ]}
+                    onSendMessage={(prompt) => handleSendLessonChat(prompt)}
+                    isLoading={isAiLoading}
+                  />
                 </div>
 
               </div>
