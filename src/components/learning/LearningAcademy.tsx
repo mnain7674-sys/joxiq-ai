@@ -569,7 +569,7 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
         </div>
 
         {/* Header Navigation Tabs */}
-        <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 w-full md:w-auto overflow-x-auto">
+        <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 w-full md:w-auto">
           <button
             onClick={() => {
               setActiveTab("dashboard");
@@ -800,7 +800,7 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
               </div>
 
               {/* Level Filter Tabs */}
-              <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 w-full sm:w-auto">
                 <button
                   onClick={() => setCourseSyllabusLevelTab("All")}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
@@ -1155,7 +1155,7 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
             </div>
 
             {/* Level Selection Pills */}
-            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
               <span className="text-xs font-bold text-slate-400 flex items-center gap-1 shrink-0">
                 <Filter className="w-3.5 h-3.5 text-violet-400" /> Filter Level:
               </span>

@@ -320,7 +320,7 @@ export const ProjectBuilder: React.FC<ProjectBuilderProps> = ({
           </div>
 
           {/* Mode Tabs */}
-          <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 w-full sm:w-auto">
             <button
               onClick={() => setMainMode("builder")}
               className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-2 ${
@@ -355,7 +355,7 @@ export const ProjectBuilder: React.FC<ProjectBuilderProps> = ({
               <span className="text-blue-400">Active Project: {activeProject.title}</span>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+            <div className="flex flex-wrap items-center gap-2 pb-2">
               {WORKFLOW_STEPS.map((s) => {
                 const isActive = currentStep === s.num;
                 const isCompleted = currentStep > s.num;

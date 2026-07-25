@@ -305,7 +305,7 @@ export const CodeLearningEnvironment: React.FC<CodeLearningEnvironmentProps> = (
             <span className="text-[11px] text-blue-400 font-normal">Active: {langMeta.name} ({langMeta.category})</span>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <div className="flex flex-wrap items-center gap-2 pb-2">
             {SUPPORTED_LANGUAGES.map((lang) => {
               const isSelected = selectedLanguage === lang.id;
               return (

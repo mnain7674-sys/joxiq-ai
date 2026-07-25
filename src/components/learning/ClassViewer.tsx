@@ -159,38 +159,38 @@ export const ClassViewer: React.FC<ClassViewerProps> = ({
         </div>
 
         {/* View Mode Toggle & Completion Button */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 w-full sm:w-auto">
             <button
               onClick={() => setViewMode("classroom")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 viewMode === "classroom"
                   ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <BrainCircuit className="w-3.5 h-3.5" />
+              <BrainCircuit className="w-3.5 h-3.5 shrink-0" />
               <span>AI Classroom Mode</span>
             </button>
 
             <button
               onClick={() => setViewMode("reading")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 viewMode === "reading"
                   ? "bg-slate-800 text-white shadow-md"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5" />
+              <BookOpen className="w-3.5 h-3.5 shrink-0" />
               <span>Reading Mode</span>
             </button>
 
             {onOpenCodeStudio && (
               <button
                 onClick={onOpenCodeStudio}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer bg-blue-600 hover:bg-blue-500 text-white shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer bg-blue-600 hover:bg-blue-500 text-white shadow-md whitespace-nowrap"
               >
-                <Code2 className="w-3.5 h-3.5" />
+                <Code2 className="w-3.5 h-3.5 shrink-0" />
                 <span>Code Studio</span>
               </button>
             )}
@@ -198,9 +198,9 @@ export const ClassViewer: React.FC<ClassViewerProps> = ({
             {onOpenProjectBuilder && (
               <button
                 onClick={onOpenProjectBuilder}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-md whitespace-nowrap"
               >
-                <Rocket className="w-3.5 h-3.5 text-indigo-200" />
+                <Rocket className="w-3.5 h-3.5 text-indigo-200 shrink-0" />
                 <span>AI Project Builder</span>
               </button>
             )}
@@ -208,7 +208,7 @@ export const ClassViewer: React.FC<ClassViewerProps> = ({
 
           <button
             onClick={() => onToggleClassCompleted(currentClass.id)}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border shrink-0 ${
               isCompleted
                 ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-lg shadow-emerald-500/10"
                 : "bg-slate-950 text-slate-300 border-slate-800 hover:border-violet-500/40"
@@ -216,13 +216,13 @@ export const ClassViewer: React.FC<ClassViewerProps> = ({
           >
             {isCompleted ? (
               <>
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span className="hidden sm:inline">Completed</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Completed</span>
               </>
             ) : (
               <>
-                <Circle className="w-4 h-4 text-slate-500" />
-                <span className="hidden sm:inline">Complete</span>
+                <Circle className="w-4 h-4 text-slate-500 shrink-0" />
+                <span>Complete</span>
               </>
             )}
           </button>

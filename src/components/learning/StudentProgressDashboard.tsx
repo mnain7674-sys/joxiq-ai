@@ -369,7 +369,7 @@ export const StudentProgressDashboard: React.FC<StudentProgressDashboardProps> =
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-xl shrink-0 overflow-x-auto">
+          <div className="flex flex-wrap items-center gap-1.5 bg-slate-900 border border-slate-800 p-1.5 rounded-xl w-full sm:w-auto">
             {["all", "progress", "mastery", "streak", "project", "certificate"].map((cat) => (
               <button
                 key={cat}
