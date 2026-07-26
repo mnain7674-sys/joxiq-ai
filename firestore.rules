@@ -44,5 +44,32 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Courses collection - readable by all, writable by authenticated users / admins
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Student Progress collection - authenticated users can manage their progress
+    match /studentProgress/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Certificates collection - public verification read, authenticated write
+    match /certificates/{certId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Subscriptions collection
+    match /subscriptions/{userId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Practice Projects collection
+    match /projects/{projectId} {
+      allow read, write: if isAuthenticated();
+    }
   }
 }

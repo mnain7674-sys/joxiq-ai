@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "entities": {
+    "courses": {
+      "title": "Courses",
+      "description": "JOXIQ AI Learning Academy Courses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "requiredLevel": { "type": "string" },
+        "shortDescription": { "type": "string" },
+        "longDescription": { "type": "string" },
+        "estimatedHours": { "type": "number" },
+        "totalClasses": { "type": "number" },
+        "certificateAvailable": { "type": "boolean" },
+        "modules": { "type": "array", "items": { "type": "object" } },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "category"]
+    },
+    "studentProgress": {
+      "title": "Student Progress",
+      "description": "User progress for learning academy courses",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "courseId": { "type": "string" },
+        "completedClassIds": { "type": "array", "items": { "type": "string" } },
+        "quizScores": { "type": "object" },
+        "lastAccessedClassId": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "courseId"]
+    },
+    "certificates": {
+      "title": "Certificates",
+      "description": "Course completion certificates",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "courseId": { "type": "string" },
+        "courseTitle": { "type": "string" },
+        "issuedAt": { "type": "string" },
+        "certificateCode": { "type": "string" }
+      },
+      "required": ["userId", "courseId", "certificateCode"]
+    },
+    "subscriptions": {
+      "title": "Subscriptions",
+      "description": "User subscription status",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "status": { "type": "string" },
+        "plan": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "status"]
+    },
+    "projects": {
+      "title": "Projects",
+      "description": "User practice project progress",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "projectId": { "type": "string" },
+        "title": { "type": "string" },
+        "code": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "projectId"]
+    }
+  }
+}

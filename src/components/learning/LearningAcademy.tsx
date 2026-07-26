@@ -21,6 +21,13 @@ import { checkAndCalculateBadges } from "../../lib/learningBadges";
 import { isAcademyProActive } from "../../lib/academySubscription";
 import { RewardNotificationData } from "./RewardNotificationModal";
 import {
+  fetchCoursesFromFirebase,
+  fetchUserProgressFromFirebase,
+  saveUserProgressToFirebase,
+  saveCertificateToFirebase,
+  saveProjectToFirebase
+} from "../../lib/learningFirebase";
+import {
   GraduationCap,
   BookOpen,
   Search,
@@ -122,24 +129,10 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
         console.error("Failed loading learning progress:", e);
       }
     }
-    // Default initial progress sample for demo student experience
-    return {
-      "py-course": {
-        courseId: "py-course",
-        completedClassIds: ["py-course-cls-1", "py-course-cls-2"],
-        lastAccessedClassId: "py-course-cls-3",
-        enrolledAt: Date.now() - 86400000 * 3
-      },
-      "llm-course": {
-        courseId: "llm-course",
-        completedClassIds: ["llm-course-cls-1"],
-        lastAccessedClassId: "llm-course-cls-2",
-        enrolledAt: Date.now() - 86400000 * 7
-      }
-    };
+    return {};
   });
 
-  // Save progress to localStorage on change
+  // Save progress to localStorage and sync to Firebase on change
   useEffect(() => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userProgressMap));
@@ -147,6 +140,32 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
       console.error("Failed saving learning progress:", e);
     }
   }, [userProgressMap]);
+
+  // Load real courses and progress from Firebase on mount / profile change
+  useEffect(() => {
+    let isMounted = true;
+    async function syncFirebaseData() {
+      try {
+        const fbCourses = await fetchCoursesFromFirebase();
+        if (isMounted && fbCourses && fbCourses.length > 0) {
+          setCoursesList(fbCourses);
+        }
+
+        if (userProfile?.email) {
+          const fbProgress = await fetchUserProgressFromFirebase(userProfile.email);
+          if (isMounted && fbProgress && Object.keys(fbProgress).length > 0) {
+            setUserProgressMap((prev) => ({ ...prev, ...fbProgress }));
+          }
+        }
+      } catch (err) {
+        console.warn("Firebase sync notice:", err);
+      }
+    }
+    syncFirebaseData();
+    return () => {
+      isMounted = false;
+    };
+  }, [userProfile?.email]);
 
   // Persistent Courses Catalog State (syncs with Admin Course Manager edits)
   const [coursesList, setCoursesList] = useState<Course[]>(() => {
@@ -295,6 +314,13 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
       [courseId]: updatedProg
     });
 
+    if (userProfile?.email) {
+      saveUserProgressToFirebase(userProfile.email, courseId, updatedProg as any);
+      if (updatedProg.certificate) {
+        saveCertificateToFirebase(updatedProg.certificate as any);
+      }
+    }
+
     // Trigger Reward Notification if completing a class (not unchecking)
     if (!isAlreadyCompleted) {
       const newPct = Math.round((updatedClassIds.length / 100) * 100);
@@ -369,6 +395,10 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
       [courseId]: updatedProg
     });
 
+    if (userProfile?.email) {
+      saveUserProgressToFirebase(userProfile.email, courseId, updatedProg as any);
+    }
+
     if (percentage >= 70) {
       if (newlyUnlocked.length > 0) {
         setActiveReward({
@@ -428,6 +458,10 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
       [courseId]: updatedProg
     });
 
+    if (userProfile?.email) {
+      saveUserProgressToFirebase(userProfile.email, courseId, updatedProg as any);
+    }
+
     if (newlyUnlocked.length > 0) {
       setActiveReward({
         type: "badge_unlocked",
@@ -466,6 +500,11 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
       ...userProgressMap,
       [courseId]: updatedProg
     });
+
+    if (userProfile?.email) {
+      saveUserProgressToFirebase(userProfile.email, courseId, updatedProg as any);
+      saveProjectToFirebase(userProfile.email, projectId, "", true);
+    }
 
     if (newlyUnlocked.length > 0) {
       setActiveReward({
