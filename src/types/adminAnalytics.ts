@@ -7,6 +7,7 @@ export interface AdminOverviewMetrics {
   totalCompletedLessons: number;
   totalCertificatesIssued: number;
   proSubscribers: number;
+  platformQuizAveragePercentage?: number;
 }
 
 export interface CourseAnalyticsItem {

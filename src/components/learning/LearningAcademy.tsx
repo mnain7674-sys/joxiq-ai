@@ -1278,7 +1278,7 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
                 <Trophy className="w-6 h-6" />
               </div>
               <div>
-                <div className="text-2xl font-black text-white">44 Courses</div>
+                <div className="text-2xl font-black text-white">{coursesList.length} Courses</div>
                 <div className="text-xs font-semibold text-slate-400">Complete Catalog</div>
               </div>
             </div>

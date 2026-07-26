@@ -11,7 +11,8 @@ import {
 } from "../../types/adminAnalytics";
 import {
   getStoredAdminAnalytics,
-  calculateRealAdminAnalytics
+  calculateRealAdminAnalytics,
+  fetchRealAdminAnalyticsFromFirebase
 } from "../../lib/adminAnalyticsStorage";
 import {
   BarChart3,
@@ -97,20 +98,34 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
   const [aiAnalysisGenerating, setAiAnalysisGenerating] = useState(false);
   const [aiGenerateSuccess, setAiGenerateSuccess] = useState(false);
 
-  // Sync real analytics on progress or courses update
+  // Sync real analytics on progress or courses update directly from Firestore
   useEffect(() => {
+    let isMounted = true;
     const fresh = calculateRealAdminAnalytics(courses, userProgressMap, userEmail, userName);
     setAnalytics(fresh);
+
+    fetchRealAdminAnalyticsFromFirebase(courses, userEmail, userName, userProgressMap).then((remoteData) => {
+      if (isMounted && remoteData) {
+        setAnalytics(remoteData);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [courses, userProgressMap, userEmail, userName]);
 
-  const handleManualRefresh = () => {
+  const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      const fresh = calculateRealAdminAnalytics(courses, userProgressMap, userEmail, userName);
-      setAnalytics(fresh);
-      setIsRefreshing(false);
+    try {
+      const remoteData = await fetchRealAdminAnalyticsFromFirebase(courses, userEmail, userName, userProgressMap);
+      setAnalytics(remoteData);
       setLastRefreshedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    }, 600);
+    } catch (err) {
+      console.error("Manual analytics refresh failed:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleGenerateAIInsights = async () => {
@@ -409,7 +424,9 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                   <Target className="w-5 h-5" />
                 </div>
               </div>
-              <div className="text-3xl font-black text-white">88.4%</div>
+              <div className="text-3xl font-black text-white">
+                {analytics.overview.platformQuizAveragePercentage ?? 0}%
+              </div>
               <div className="text-[11px] text-blue-400 mt-2 font-medium">
                 High understanding index
               </div>
@@ -556,7 +573,14 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
-              {analytics.students.map((student) => (
+              {analytics.students.length === 0 ? (
+                <div className="bg-slate-950 border border-slate-800/80 rounded-2xl p-8 text-center space-y-2 col-span-full">
+                  <Users className="w-8 h-8 text-slate-500 mx-auto mb-2" />
+                  <p className="text-sm font-bold text-white">0 Students Enrolled Yet</p>
+                  <p className="text-xs text-slate-400">No activity yet. Real student enrollments and progress will appear here automatically as users join.</p>
+                </div>
+              ) : (
+                analytics.students.map((student) => (
                 <div
                   key={student.studentId}
                   onClick={() => setSelectedStudent(student)}
@@ -607,7 +631,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                     </div>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
 
@@ -850,7 +874,14 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredStudentsList.map((student) => (
+            {filteredStudentsList.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center space-y-2 col-span-full">
+                <Users className="w-10 h-10 text-slate-500 mx-auto mb-2" />
+                <p className="text-base font-bold text-white">0 Students Found</p>
+                <p className="text-xs text-slate-400">No activity yet or no students match your search filter.</p>
+              </div>
+            ) : (
+              filteredStudentsList.map((student) => (
               <div
                 key={student.studentId}
                 className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4 hover:border-slate-700 transition-all"
@@ -915,7 +946,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                   </button>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
 
         </div>
@@ -1002,7 +1033,14 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
-                  {analytics.revenue.recentTransactions.map((tx) => (
+                  {analytics.revenue.recentTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-400 text-xs font-medium">
+                        No transactions yet • Revenue metrics will update automatically when students subscribe to Pro.
+                      </td>
+                    </tr>
+                  ) : (
+                    analytics.revenue.recentTransactions.map((tx) => (
                     <tr key={tx.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-3.5 px-4 font-mono font-bold text-indigo-400">{tx.id}</td>
                       <td className="py-3.5 px-4 font-bold text-white">
@@ -1018,7 +1056,7 @@ export const AdminAnalyticsDashboard: React.FC<AdminAnalyticsDashboardProps> = (
                         </span>
                       </td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </table>
             </div>

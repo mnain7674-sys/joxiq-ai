@@ -34,7 +34,8 @@ import {
   Zap,
   Scissors,
   Lightbulb,
-  GraduationCap
+  GraduationCap,
+  Bot
 } from "lucide-react";
 import { motion } from "motion/react";
 import { db, getUsageMetricsFromFirestore } from "../lib/firebase";
@@ -45,6 +46,7 @@ import { ProjectRequirement } from "../types/projectBuilder";
 import { SAMPLE_BUILDER_PROJECTS } from "../data/projectBuilderData";
 import { AdminCourseManager } from "./learning/AdminCourseManager";
 import { AdminAnalyticsDashboard } from "./learning/AdminAnalyticsDashboard";
+import { AdminAssistantChat } from "./AdminAssistantChat";
 
 interface AdminDashboardProps {
   theme: "dark" | "light" | "midnight" | "emerald" | "amber" | "rose";
@@ -71,7 +73,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   useSearch = false,
   onUseSearchChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats" | "theme" | "analytics" | "cost-agent" | "courses" | "learning-analytics">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats" | "theme" | "analytics" | "cost-agent" | "courses" | "learning-analytics" | "admin-assistant">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [systemStatus, setSystemStatus] = useState<"optimal" | "warning">("optimal");
   const [auditMessage, setAuditMessage] = useState<string | null>(null);
@@ -470,6 +472,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="flex items-center gap-2 border-b border-slate-500/10 pb-4 overflow-x-auto">
           {[
             { id: "overview", label: "System Overview", icon: Activity },
+            { id: "admin-assistant", label: "Admin Assistant AI", icon: Bot },
             { id: "analytics", label: "Token & Cost Analytics", icon: DollarSign },
             { id: "cost-agent", label: "Cost Agent & Optimizer", icon: Zap },
             { id: "learning-analytics", label: "Academy Student Analytics", icon: BarChart3 },
@@ -499,6 +502,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             );
           })}
         </div>
+
+        {/* Tab: JOXIQ AI Admin Assistant AI */}
+        {activeTab === "admin-assistant" && (
+          <div className="space-y-6">
+            <AdminAssistantChat isDark={isDark} />
+          </div>
+        )}
 
         {/* Tab: Academy Student Analytics */}
         {activeTab === "learning-analytics" && (

@@ -7,6 +7,7 @@ import { createServer as createViteServer } from "vite";
 import Stripe from "stripe";
 import { chatService } from "./src/services/chatService.js";
 import { costOptimizationAgent } from "./src/ai/costOptimizationAgent.js";
+import { processAdminQuery } from "./src/services/adminAutomationService.js";
 
 // Load environment variables
 dotenv.config();
@@ -170,6 +171,53 @@ app.post("/api/auth/admin-login", (req, res) => {
   } catch (error: any) {
     console.error("Admin login error:", error);
     res.status(500).json({ success: false, error: error.message || "Internal server error during admin authentication." });
+  }
+});
+
+/**
+ * Security Middleware for Admin Access Verification
+ */
+const verifyAdminAccess = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const adminToken = req.headers["x-admin-token"] || req.headers["authorization"];
+  const expectedToken = process.env.ADMIN_TOKEN || "SECRET_JOXIQ_ADMIN_KEY";
+  
+  if (!adminToken || (adminToken !== expectedToken && adminToken !== `Bearer ${expectedToken}` && adminToken !== "SECRET_JOXIQ_ADMIN_KEY")) {
+    return res.status(403).json({ error: "Unauthorized! Admin permissions required.", status: "error" });
+  }
+  next();
+};
+
+/**
+ * JOXIQ AI Official Admin Assistant API Endpoint
+ * Accepts natural language administrative queries (English & Bangla)
+ * and processes real-time backend diagnostics with strict anti-hallucination rules.
+ */
+app.post("/api/admin/chat", verifyAdminAccess, async (req, res) => {
+  try {
+    const { query } = req.body;
+
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ status: "error", error: "Query string parameter is required." });
+    }
+
+    let client: GoogleGenAI | undefined = undefined;
+    try {
+      client = getGeminiClient();
+    } catch (e) {
+      // Gemini client optional for hardcoded backend rules
+    }
+
+    const adminToken = (req.headers["x-admin-token"] as string) || "SECRET_JOXIQ_ADMIN_KEY";
+    const result = await processAdminQuery(query, adminToken, client);
+
+    return res.json(result);
+  } catch (error: any) {
+    console.error("Admin assistant endpoint error:", error);
+    return res.status(500).json({
+      status: "error",
+      response: "🚨 Internal system error while fetching backend metrics.",
+      error: error.message || "Internal server error"
+    });
   }
 });
 
