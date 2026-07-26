@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import {
   Course,
   CourseCategory,
@@ -10,20 +10,16 @@ import {
   AIFeedbackResult
 } from "../../types/learning";
 import { CATEGORIES, COURSES_CATALOG } from "../../data/learningData";
+import { ProjectRequirement } from "../../types/projectBuilder";
+import { SAMPLE_BUILDER_PROJECTS } from "../../data/projectBuilderData";
 import { CourseCard } from "./CourseCard";
 import { ClassViewer } from "./ClassViewer";
-import { ProUpgradeModal } from "./ProUpgradeModal";
-import { LockedClassPreviewModal } from "./LockedClassPreviewModal";
-import { StudentProgressDashboard } from "./StudentProgressDashboard";
-import { CertificateModal } from "./CertificateModal";
-import { AIEvaluationModal } from "./AIEvaluationModal";
-import { CurriculumPlanner } from "./CurriculumPlanner";
-import { CodeLearningEnvironment } from "./CodeLearningEnvironment";
-import { ProjectBuilder } from "./ProjectBuilder";
-import { AIRecommendationHub } from "./AIRecommendationHub";
-import { RewardNotificationModal, RewardNotificationData } from "./RewardNotificationModal";
+import { AcademyErrorBoundary } from "./AcademyErrorBoundary";
+import { AcademyLoadingFallback } from "./AcademyLoadingFallback";
 import { isClassLocked, getClassAccessBadge } from "../../lib/learningAccess";
 import { checkAndCalculateBadges } from "../../lib/learningBadges";
+import { isAcademyProActive } from "../../lib/academySubscription";
+import { RewardNotificationData } from "./RewardNotificationModal";
 import {
   GraduationCap,
   BookOpen,
@@ -40,6 +36,7 @@ import {
   Star,
   Code2,
   BrainCircuit,
+  Brain,
   Rocket,
   Globe,
   Smartphone,
@@ -57,14 +54,30 @@ import {
   Compass
 } from "lucide-react";
 
+// Lazy-loaded sub-modules & modals for low memory footprint and high load performance
+const CodeLearningEnvironment = lazy(() => import("./CodeLearningEnvironment").then((m) => ({ default: m.CodeLearningEnvironment })));
+const ProjectBuilder = lazy(() => import("./ProjectBuilder").then((m) => ({ default: m.ProjectBuilder })));
+const AIRecommendationHub = lazy(() => import("./AIRecommendationHub").then((m) => ({ default: m.AIRecommendationHub })));
+const AIStudyAssistant = lazy(() => import("./AIStudyAssistant").then((m) => ({ default: m.AIStudyAssistant })));
+const CurriculumPlanner = lazy(() => import("./CurriculumPlanner").then((m) => ({ default: m.CurriculumPlanner })));
+const StudentProgressDashboard = lazy(() => import("./StudentProgressDashboard").then((m) => ({ default: m.StudentProgressDashboard })));
+const AcademySubscriptionPanel = lazy(() => import("./AcademySubscriptionPanel").then((m) => ({ default: m.AcademySubscriptionPanel })));
+const CertificateModal = lazy(() => import("./CertificateModal").then((m) => ({ default: m.CertificateModal })));
+const AIEvaluationModal = lazy(() => import("./AIEvaluationModal").then((m) => ({ default: m.AIEvaluationModal })));
+const RewardNotificationModal = lazy(() => import("./RewardNotificationModal").then((m) => ({ default: m.RewardNotificationModal })));
+const ProUpgradeModal = lazy(() => import("./ProUpgradeModal").then((m) => ({ default: m.ProUpgradeModal })));
+const LockedClassPreviewModal = lazy(() => import("./LockedClassPreviewModal").then((m) => ({ default: m.LockedClassPreviewModal })));
+
 interface LearningAcademyProps {
   theme?: string;
   userProfile?: any;
+  onOpenAdmin?: () => void;
 }
 
 export const LearningAcademy: React.FC<LearningAcademyProps> = ({
   theme = "dark",
-  userProfile
+  userProfile,
+  onOpenAdmin
 }) => {
   // Persistence state key in localStorage
   const LOCAL_STORAGE_KEY = "joxiq_learning_progress_v1";
@@ -72,18 +85,22 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
   // Pro Subscription State
   const [isProMember, setIsProMember] = useState<boolean>(() => {
     if (userProfile?.isPro || userProfile?.subscription === "pro" || userProfile?.plan === "pro") return true;
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("joxiq_pro_access") === "true";
-    }
-    return false;
+    return isAcademyProActive(userProfile?.email);
   });
+
+  useEffect(() => {
+    const syncSubStatus = () => {
+      const active = isAcademyProActive(userProfile?.email) || userProfile?.isPro;
+      setIsProMember(Boolean(active));
+    };
+    syncSubStatus();
+    window.addEventListener("joxiq_academy_sub_updated", syncSubStatus);
+    return () => window.removeEventListener("joxiq_academy_sub_updated", syncSubStatus);
+  }, [userProfile?.email, userProfile?.isPro]);
 
   const toggleProMember = () => {
     const next = !isProMember;
     setIsProMember(next);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("joxiq_pro_access", next ? "true" : "false");
-    }
   };
 
   // Modals state for Pro Upgrade & Locked Lesson Preview
@@ -131,8 +148,56 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
     }
   }, [userProgressMap]);
 
+  // Persistent Courses Catalog State (syncs with Admin Course Manager edits)
+  const [coursesList, setCoursesList] = useState<Course[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("joxiq_admin_courses_v2");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed loading custom admin courses:", e);
+      }
+    }
+    return COURSES_CATALOG;
+  });
+
+  const handleSaveCourses = (updatedCourses: Course[]) => {
+    setCoursesList(updatedCourses);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("joxiq_admin_courses_v2", JSON.stringify(updatedCourses));
+      } catch (e) {
+        console.error("Failed saving custom admin courses:", e);
+      }
+    }
+  };
+
+  // Persistent Builder Projects State (syncs with Admin Course Manager edits)
+  const [projectsList, setProjectsList] = useState<ProjectRequirement[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("joxiq_admin_projects_v1");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed loading custom admin projects:", e);
+      }
+    }
+    return SAMPLE_BUILDER_PROJECTS;
+  });
+
+  const handleSaveProjects = (updatedProjects: ProjectRequirement[]) => {
+    setProjectsList(updatedProjects);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("joxiq_admin_projects_v1", JSON.stringify(updatedProjects));
+      } catch (e) {
+        console.error("Failed saving custom admin projects:", e);
+      }
+    }
+  };
+
   // Navigation & Filter States
-  const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "mylearning" | "planner" | "codestudio" | "projectbuilder" | "recommendations">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "catalog" | "mylearning" | "planner" | "codestudio" | "projectbuilder" | "recommendations" | "studyassistant" | "subscription">("dashboard");
   const [selectedCategory, setSelectedCategory] = useState<CourseCategory | "All">("All");
   const [selectedLevelFilter, setSelectedLevelFilter] = useState<CourseLevel | "All">("All");
   const [courseSyllabusLevelTab, setCourseSyllabusLevelTab] = useState<CourseLevel | "All">("All");
@@ -173,7 +238,8 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
   // Handler: Select a class with lock check
   const handleSelectClass = (course: Course, mod: CourseModule, cls: ClassItem) => {
     if (isClassLocked(cls, mod, isProMember)) {
-      setPreviewLockedClass({ course, module: mod, classItem: cls });
+      setUpgradeReasonText(`Class #${cls.classNumber}: "${cls.title}" (${mod.level} Level) is a Pro class. Subscribe to JOXIQ AI Learning Academy Pro ($14.99/mo) to access all 100 classes!`);
+      setIsUpgradeModalOpen(true);
     } else {
       setActiveClassView({ module: mod, classItem: cls });
     }
@@ -486,34 +552,43 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
 
     if (targetClass) {
       if (isClassLocked(targetClass.classItem, targetClass.module, isProMember)) {
-        setPreviewLockedClass({ course, module: targetClass.module, classItem: targetClass.classItem });
+        setUpgradeReasonText(`Class #${targetClass.classItem.classNumber}: "${targetClass.classItem.title}" is a Pro class. Subscribe to JOXIQ AI Learning Academy Pro ($14.99/mo) to unlock all classes!`);
+        setIsUpgradeModalOpen(true);
       } else {
         setActiveClassView(targetClass);
       }
     }
   };
 
-  // Calculate Overall Platform Stats
-  const enrolledCourses = COURSES_CATALOG.filter((c) => !!userProgressMap[c.id]);
-  const totalClassesCompleted = Object.values(userProgressMap).reduce(
-    (acc, prog) => acc + prog.completedClassIds.length,
-    0
-  );
+  // Calculate Overall Platform Stats (Memoized)
+  const enrolledCourses = useMemo(() => {
+    return coursesList.filter((c) => !!userProgressMap[c.id]);
+  }, [coursesList, userProgressMap]);
 
-  // Filter Catalog Courses
-  const filteredCourses = COURSES_CATALOG.filter((course) => {
-    const matchesCategory = selectedCategory === "All" || course.category === selectedCategory;
-    const matchesLevel = selectedLevelFilter === "All" || course.requiredLevel.includes(selectedLevelFilter);
-    const matchesSearch =
-      searchQuery.trim() === "" ||
-      course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.category.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesLevel && matchesSearch;
-  });
+  const totalClassesCompleted = useMemo(() => {
+    return Object.values(userProgressMap).reduce(
+      (acc, prog) => acc + (prog.completedClassIds?.length || 0),
+      0
+    );
+  }, [userProgressMap]);
+
+  // Filter Catalog Courses (Memoized)
+  const filteredCourses = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return coursesList.filter((course) => {
+      const matchesCategory = selectedCategory === "All" || course.category === selectedCategory;
+      const matchesLevel = selectedLevelFilter === "All" || course.requiredLevel.includes(selectedLevelFilter);
+      const matchesSearch =
+        query === "" ||
+        course.name.toLowerCase().includes(query) ||
+        course.shortDescription.toLowerCase().includes(query) ||
+        course.category.toLowerCase().includes(query);
+      return matchesCategory && matchesLevel && matchesSearch;
+    });
+  }, [coursesList, selectedCategory, selectedLevelFilter, searchQuery]);
 
   // Highlight Last Active Course for "Continue Learning"
-  const lastActiveCourse = enrolledCourses.length > 0 ? enrolledCourses[0] : COURSES_CATALOG[0];
+  const lastActiveCourse = enrolledCourses.length > 0 ? enrolledCourses[0] : coursesList[0];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 space-y-8">
@@ -569,14 +644,21 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
         </div>
 
         {/* Header Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 w-full md:w-auto">
+        <div
+          role="tablist"
+          aria-label="Academy Sections"
+          className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800/80 w-full lg:w-auto overflow-x-auto scrollbar-none touch-pan-x shrink-0"
+        >
           <button
+            role="tab"
+            aria-selected={activeTab === "dashboard" && !selectedCourse}
+            aria-label="Dashboard View"
             onClick={() => {
               setActiveTab("dashboard");
               setSelectedCourse(null);
               setActiveClassView(null);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
               activeTab === "dashboard" && !selectedCourse
                 ? "bg-violet-600 text-white shadow-lg"
                 : "text-slate-400 hover:text-white"
@@ -587,28 +669,34 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeTab === "catalog" && !selectedCourse}
+            aria-label="Course Library"
             onClick={() => {
               setActiveTab("catalog");
               setSelectedCourse(null);
               setActiveClassView(null);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
               activeTab === "catalog" && !selectedCourse
                 ? "bg-violet-600 text-white shadow-lg"
                 : "text-slate-400 hover:text-white"
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            <span>Course Library ({COURSES_CATALOG.length})</span>
+            <span>Course Library ({coursesList.length})</span>
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeTab === "mylearning" && !selectedCourse}
+            aria-label="My Learning Courses"
             onClick={() => {
               setActiveTab("mylearning");
               setSelectedCourse(null);
               setActiveClassView(null);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
               activeTab === "mylearning" && !selectedCourse
                 ? "bg-violet-600 text-white shadow-lg"
                 : "text-slate-400 hover:text-white"
@@ -619,12 +707,15 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeTab === "planner" && !selectedCourse}
+            aria-label="Curriculum Planner"
             onClick={() => {
               setActiveTab("planner");
               setSelectedCourse(null);
               setActiveClassView(null);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
               activeTab === "planner" && !selectedCourse
                 ? "bg-violet-600 text-white shadow-lg"
                 : "text-slate-400 hover:text-white"
@@ -635,12 +726,15 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeTab === "codestudio" && !selectedCourse}
+            aria-label="AI Code Studio"
             onClick={() => {
               setActiveTab("codestudio");
               setSelectedCourse(null);
               setActiveClassView(null);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
               activeTab === "codestudio" && !selectedCourse
                 ? "bg-blue-600 text-white shadow-lg"
                 : "text-slate-400 hover:text-white"
@@ -651,12 +745,15 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeTab === "projectbuilder" && !selectedCourse}
+            aria-label="AI Project Builder"
             onClick={() => {
               setActiveTab("projectbuilder");
               setSelectedCourse(null);
               setActiveClassView(null);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
               activeTab === "projectbuilder" && !selectedCourse
                 ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg"
                 : "text-slate-400 hover:text-white"
@@ -667,12 +764,15 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeTab === "recommendations" && !selectedCourse}
+            aria-label="AI Recommendations"
             onClick={() => {
               setActiveTab("recommendations");
               setSelectedCourse(null);
               setActiveClassView(null);
             }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
               activeTab === "recommendations" && !selectedCourse
                 ? "bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-lg"
                 : "text-slate-400 hover:text-white"
@@ -680,6 +780,25 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
           >
             <Compass className="w-4 h-4 text-amber-300" />
             <span>AI Recommendations</span>
+          </button>
+
+          <button
+            role="tab"
+            aria-selected={activeTab === "studyassistant" && !selectedCourse}
+            aria-label="AI Study Assistant"
+            onClick={() => {
+              setActiveTab("studyassistant");
+              setSelectedCourse(null);
+              setActiveClassView(null);
+            }}
+            className={`flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
+              activeTab === "studyassistant" && !selectedCourse
+                ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-amber-500 text-white shadow-lg"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Brain className="w-4 h-4 text-amber-400 animate-pulse" />
+            <span>AI Study Assistant</span>
           </button>
         </div>
       </div>
@@ -940,84 +1059,144 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
       ) : activeTab === "codestudio" ? (
         
         /* 4. PROGRAMMING CODE LEARNING ENVIRONMENT & AI TEACHER STUDIO */
-        <CodeLearningEnvironment
-          course={selectedCourse}
-          currentClass={activeClassView?.classItem}
-          userProgressMap={userProgressMap}
-          onUpdateProgress={(courseId, classId) => handleToggleClassCompleted(classId)}
-        />
+        <AcademyErrorBoundary>
+          <Suspense fallback={<AcademyLoadingFallback />}>
+            <CodeLearningEnvironment
+              course={selectedCourse}
+              currentClass={activeClassView?.classItem}
+              userProgressMap={userProgressMap}
+              onUpdateProgress={(courseId, classId) => handleToggleClassCompleted(classId)}
+            />
+          </Suspense>
+        </AcademyErrorBoundary>
       ) : activeTab === "projectbuilder" ? (
 
         /* 5. JOXIQ AI PRACTICAL PROJECT BUILDER & PORTFOLIO STUDIO */
-        <ProjectBuilder
-          course={selectedCourse}
-          currentClass={activeClassView?.classItem}
-          onNavigateToCourse={(courseId) => {
-            const matched = COURSES_CATALOG.find((c) => c.id === courseId);
-            if (matched) {
-              setSelectedCourse(matched);
-              setActiveTab("catalog");
-            }
-          }}
-          onSaveProjectCompletion={handleSaveProjectCompletion}
-        />
+        <AcademyErrorBoundary>
+          <Suspense fallback={<AcademyLoadingFallback />}>
+            <ProjectBuilder
+              course={selectedCourse}
+              currentClass={activeClassView?.classItem}
+              projects={projectsList}
+              onNavigateToCourse={(courseId) => {
+                const matched = coursesList.find((c) => c.id === courseId);
+                if (matched) {
+                  setSelectedCourse(matched);
+                  setActiveTab("catalog");
+                }
+              }}
+              onSaveProjectCompletion={handleSaveProjectCompletion}
+            />
+          </Suspense>
+        </AcademyErrorBoundary>
       ) : activeTab === "recommendations" ? (
 
         /* 6. JOXIQ AI PERSONALIZED LEARNING RECOMMENDATION SYSTEM */
-        <AIRecommendationHub
-          userProgressMap={userProgressMap}
-          allCourses={COURSES_CATALOG}
-          languagePreference="English"
-          onNavigateToCourseClass={(courseId, classId) => {
-            const matchedCourse = COURSES_CATALOG.find((c) => c.id === courseId);
-            if (matchedCourse) {
-              setSelectedCourse(matchedCourse);
-              if (classId) {
-                for (const mod of matchedCourse.modules) {
-                  const cl = mod.classes.find((item) => item.id === classId);
-                  if (cl) {
-                    setActiveClassView({ module: mod, classItem: cl });
-                    break;
+        <AcademyErrorBoundary>
+          <Suspense fallback={<AcademyLoadingFallback />}>
+            <AIRecommendationHub
+              userProgressMap={userProgressMap}
+              allCourses={coursesList}
+              languagePreference="English"
+              onNavigateToCourseClass={(courseId, classId) => {
+                const matchedCourse = coursesList.find((c) => c.id === courseId);
+                if (matchedCourse) {
+                  setSelectedCourse(matchedCourse);
+                  if (classId) {
+                    for (const mod of matchedCourse.modules) {
+                      const cl = mod.classes.find((item) => item.id === classId);
+                      if (cl) {
+                        setActiveClassView({ module: mod, classItem: cl });
+                        break;
+                      }
+                    }
+                  } else {
+                    setActiveTab("catalog");
                   }
                 }
-              } else {
-                setActiveTab("catalog");
-              }
-            }
-          }}
-          onOpenProjectBuilder={() => {
-            setActiveTab("projectbuilder");
-            setSelectedCourse(null);
-            setActiveClassView(null);
-          }}
-          onOpenCodeStudio={() => {
-            setActiveTab("codestudio");
-            setSelectedCourse(null);
-            setActiveClassView(null);
-          }}
-        />
+              }}
+              onOpenProjectBuilder={() => {
+                setActiveTab("projectbuilder");
+                setSelectedCourse(null);
+                setActiveClassView(null);
+              }}
+              onOpenCodeStudio={() => {
+                setActiveTab("codestudio");
+                setSelectedCourse(null);
+                setActiveClassView(null);
+              }}
+            />
+          </Suspense>
+        </AcademyErrorBoundary>
+      ) : activeTab === "studyassistant" ? (
+        
+        /* DEDICATED AI STUDY ASSISTANT HUB VIEW */
+        <AcademyErrorBoundary>
+          <Suspense fallback={<AcademyLoadingFallback />}>
+            <AIStudyAssistant
+              courses={coursesList}
+              onSelectCourseClass={(course, module, cls) => {
+                setSelectedCourse(course);
+                setActiveClassView({ module, classItem: cls });
+              }}
+              onOpenCodeStudio={() => {
+                setActiveTab("codestudio");
+                setSelectedCourse(null);
+                setActiveClassView(null);
+              }}
+              onOpenProjectBuilder={() => {
+                setActiveTab("projectbuilder");
+                setSelectedCourse(null);
+                setActiveClassView(null);
+              }}
+            />
+          </Suspense>
+        </AcademyErrorBoundary>
+      ) : activeTab === "subscription" ? (
+        
+        /* DEDICATED ACADEMY PRO SUBSCRIPTION & BILLING MANAGEMENT */
+        <AcademyErrorBoundary>
+          <Suspense fallback={<AcademyLoadingFallback />}>
+            <AcademySubscriptionPanel
+              userEmail={userProfile?.email}
+              userName={userProfile?.name}
+              onOpenCheckoutModal={() => {
+                setUpgradeReasonText("Subscribe to JOXIQ AI Learning Academy Pro ($14.99/month) for complete 100 classes access & certificates.");
+                setIsUpgradeModalOpen(true);
+              }}
+            />
+          </Suspense>
+        </AcademyErrorBoundary>
       ) : activeTab === "planner" ? (
         
         /* 5. AI COURSE CURRICULUM PLANNING SYSTEM VIEW */
-        <CurriculumPlanner
-          courses={COURSES_CATALOG}
-          onSelectCourseToStart={(course) => {
-            setSelectedCourse(course);
-          }}
-        />
+        <AcademyErrorBoundary>
+          <Suspense fallback={<AcademyLoadingFallback />}>
+            <CurriculumPlanner
+              courses={coursesList}
+              onSelectCourseToStart={(course) => {
+                setSelectedCourse(course);
+              }}
+            />
+          </Suspense>
+        </AcademyErrorBoundary>
       ) : activeTab === "dashboard" ? (
         
         /* 4. STUDENT PROGRESS & EVALUATION DASHBOARD VIEW */
-        <StudentProgressDashboard
-          courses={COURSES_CATALOG}
-          userProgressMap={userProgressMap}
-          onSelectCourse={handleSelectCourse}
-          onOpenCertificate={(cert) => {
-            setSelectedCertificate(cert);
-            setIsCertificateModalOpen(true);
-          }}
-          userName={userProfile?.name || "JOXIQ Scholar"}
-        />
+        <AcademyErrorBoundary>
+          <Suspense fallback={<AcademyLoadingFallback />}>
+            <StudentProgressDashboard
+              courses={coursesList}
+              userProgressMap={userProgressMap}
+              onSelectCourse={handleSelectCourse}
+              onOpenCertificate={(cert) => {
+                setSelectedCertificate(cert);
+                setIsCertificateModalOpen(true);
+              }}
+              userName={userProfile?.name || "JOXIQ Scholar"}
+            />
+          </Suspense>
+        </AcademyErrorBoundary>
       ) : (
 
         /* 5. MAIN CATALOG / MY LEARNING VIEW */
@@ -1204,66 +1383,74 @@ export const LearningAcademy: React.FC<LearningAcademyProps> = ({
         </div>
       )}
 
-      {/* Pro Upgrade Modal */}
-      <ProUpgradeModal
-        isOpen={isUpgradeModalOpen}
-        onClose={() => setIsUpgradeModalOpen(false)}
-        onUpgradeSuccess={() => {
-          setIsProMember(true);
-          if (typeof window !== "undefined") {
-            localStorage.setItem("joxiq_pro_access", "true");
-          }
-        }}
-        reasonText={upgradeReasonText}
-      />
+      {/* Modals wrapped in Suspense */}
+      <Suspense fallback={null}>
+        {/* Pro Upgrade Modal */}
+        <ProUpgradeModal
+          isOpen={isUpgradeModalOpen}
+          onClose={() => setIsUpgradeModalOpen(false)}
+          userEmail={userProfile?.email}
+          onUpgradeSuccess={() => {
+            setIsProMember(true);
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.setItem("joxiq_pro_access", "true");
+              } catch (e) {
+                console.error("Failed saving pro access state:", e);
+              }
+            }
+          }}
+          reasonText={upgradeReasonText}
+        />
 
-      {/* Locked Class Preview Modal */}
-      {previewLockedClass && (
-        <LockedClassPreviewModal
-          isOpen={!!previewLockedClass}
-          course={previewLockedClass.course}
-          module={previewLockedClass.module}
-          classItem={previewLockedClass.classItem}
-          onClose={() => setPreviewLockedClass(null)}
-          onOpenUpgradeModal={() => {
-            setUpgradeReasonText(`Unlock Class #${previewLockedClass.classItem.classNumber}: "${previewLockedClass.classItem.title}" with JOXIQ Pro!`);
-            setIsUpgradeModalOpen(true);
+        {/* Locked Class Preview Modal */}
+        {previewLockedClass && (
+          <LockedClassPreviewModal
+            isOpen={!!previewLockedClass}
+            course={previewLockedClass.course}
+            module={previewLockedClass.module}
+            classItem={previewLockedClass.classItem}
+            onClose={() => setPreviewLockedClass(null)}
+            onOpenUpgradeModal={() => {
+              setUpgradeReasonText(`Unlock Class #${previewLockedClass.classItem.classNumber}: "${previewLockedClass.classItem.title}" with JOXIQ Pro!`);
+              setIsUpgradeModalOpen(true);
+            }}
+          />
+        )}
+
+        {/* Course Completion Verified Certificate Modal */}
+        {selectedCertificate && (
+          <CertificateModal
+            isOpen={isCertificateModalOpen}
+            certificate={selectedCertificate}
+            onClose={() => setIsCertificateModalOpen(false)}
+          />
+        )}
+
+        {/* AI Performance Evaluation & Diagnostic Feedback Modal */}
+        {activeEvaluation && evaluationClass && evaluationModule && (
+          <AIEvaluationModal
+            isOpen={isEvaluationModalOpen}
+            currentClass={evaluationClass}
+            currentModule={evaluationModule}
+            evaluation={activeEvaluation}
+            quizScorePercentage={evaluationQuizScore}
+            onClose={() => setIsEvaluationModalOpen(false)}
+          />
+        )}
+
+        {/* Motivational Reward & Milestone Notification Modal */}
+        <RewardNotificationModal
+          isOpen={isRewardModalOpen}
+          reward={activeReward}
+          onClose={() => setIsRewardModalOpen(false)}
+          onViewAchievements={() => {
+            setActiveTab("dashboard");
+            setSelectedCourse(null);
+            setActiveClassView(null);
           }}
         />
-      )}
-
-      {/* Course Completion Verified Certificate Modal */}
-      {selectedCertificate && (
-        <CertificateModal
-          isOpen={isCertificateModalOpen}
-          certificate={selectedCertificate}
-          onClose={() => setIsCertificateModalOpen(false)}
-        />
-      )}
-
-      {/* AI Performance Evaluation & Diagnostic Feedback Modal */}
-      {activeEvaluation && evaluationClass && evaluationModule && (
-        <AIEvaluationModal
-          isOpen={isEvaluationModalOpen}
-          currentClass={evaluationClass}
-          currentModule={evaluationModule}
-          evaluation={activeEvaluation}
-          quizScorePercentage={evaluationQuizScore}
-          onClose={() => setIsEvaluationModalOpen(false)}
-        />
-      )}
-
-      {/* Motivational Reward & Milestone Notification Modal */}
-      <RewardNotificationModal
-        isOpen={isRewardModalOpen}
-        reward={activeReward}
-        onClose={() => setIsRewardModalOpen(false)}
-        onViewAchievements={() => {
-          setActiveTab("dashboard");
-          setSelectedCourse(null);
-          setActiveClassView(null);
-        }}
-      />
+      </Suspense>
 
     </div>
   );

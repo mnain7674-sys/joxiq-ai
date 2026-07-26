@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Course, CourseModule, ClassItem, UserCourseProgress } from "../../types/learning";
 import { AITeacherClassroom } from "./AITeacherClassroom";
+import { LessonStudyAssistantWidget } from "./LessonStudyAssistantWidget";
 import { isClassLocked } from "../../lib/learningAccess";
 import {
   ArrowLeft,
@@ -248,6 +249,16 @@ export const ClassViewer: React.FC<ClassViewerProps> = ({
         
         {/* Left Column (8 cols): Rich Class Content */}
         <div className="lg:col-span-8 space-y-6">
+          {/* AI Study Assistant Interactive Widget */}
+          <LessonStudyAssistantWidget
+            course={course}
+            currentModule={currentModule}
+            currentClass={currentClass}
+            onCompleteClass={() => onToggleClassCompleted(currentClass.id)}
+            onOpenCodeStudio={onOpenCodeStudio}
+            onOpenProjectBuilder={onOpenProjectBuilder}
+          />
+
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-8 shadow-xl">
             
             {/* 1. Header & Class Meta */}

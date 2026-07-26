@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Course, UserCourseProgress } from "../../types/learning";
 import {
   BookOpen,
@@ -19,7 +19,7 @@ interface CourseCardProps {
   onContinueCourse?: (course: Course) => void;
 }
 
-export const CourseCard: React.FC<CourseCardProps> = ({
+export const CourseCard: React.FC<CourseCardProps> = memo(({
   course,
   userProgress,
   onSelectCourse,
@@ -34,7 +34,7 @@ export const CourseCard: React.FC<CourseCardProps> = ({
   return (
     <div
       onClick={() => onSelectCourse(course)}
-      className="group relative bg-slate-900/90 hover:bg-slate-900 border border-slate-800/80 hover:border-violet-500/40 rounded-3xl p-5 shadow-xl transition-all duration-300 hover:shadow-2xl hover:shadow-violet-500/10 flex flex-col justify-between cursor-pointer overflow-hidden"
+      className="group relative bg-slate-900/90 hover:bg-slate-900 border border-slate-800/80 hover:border-violet-500/40 rounded-3xl p-5 shadow-xl transition-all duration-300 hover:shadow-2xl hover:shadow-violet-500/10 flex flex-col justify-between cursor-pointer overflow-hidden active:scale-[0.99]"
     >
       {/* Background Subtle Gradient Accent */}
       <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${course.gradientColor} opacity-10 blur-2xl group-hover:opacity-25 transition-opacity duration-500 pointer-events-none`} />
@@ -131,4 +131,5 @@ export const CourseCard: React.FC<CourseCardProps> = ({
       </div>
     </div>
   );
-};
+});
+

@@ -50,6 +50,7 @@ import {
 interface ProjectBuilderProps {
   course?: Course | null;
   currentClass?: ClassItem | null;
+  projects?: ProjectRequirement[];
   languagePreference?: "English" | "Bangla";
   onNavigateToCourse?: (courseId: string) => void;
   onSaveProjectCompletion?: (projectId: string, projectTitle: string) => void;
@@ -58,10 +59,13 @@ interface ProjectBuilderProps {
 export const ProjectBuilder: React.FC<ProjectBuilderProps> = ({
   course,
   currentClass,
+  projects,
   languagePreference = "English",
   onNavigateToCourse,
   onSaveProjectCompletion
 }) => {
+  const allProjects = projects && projects.length > 0 ? projects : SAMPLE_BUILDER_PROJECTS;
+
   // 1. Navigation Mode: 'builder' | 'portfolio'
   const [mainMode, setMainMode] = useState<"builder" | "portfolio">("builder");
 
@@ -72,12 +76,12 @@ export const ProjectBuilder: React.FC<ProjectBuilderProps> = ({
   // 3. Selected Project & Workflow Step (1 to 7)
   const [activeProject, setActiveProject] = useState<ProjectRequirement>(() => {
     if (course) {
-      const matched = SAMPLE_BUILDER_PROJECTS.find(
+      const matched = allProjects.find(
         (p) => p.courseId === course.id || p.category.toLowerCase().includes(course.category.toLowerCase().split(" ")[0])
       );
       if (matched) return matched;
     }
-    return SAMPLE_BUILDER_PROJECTS[0];
+    return allProjects[0];
   });
 
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -430,7 +434,7 @@ export const ProjectBuilder: React.FC<ProjectBuilderProps> = ({
 
               {/* Projects Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {SAMPLE_BUILDER_PROJECTS.filter(
+                {allProjects.filter(
                   (p) =>
                     (selectedCategory === "All" || p.category === selectedCategory) &&
                     (selectedDifficulty === "All" || p.difficulty === selectedDifficulty)

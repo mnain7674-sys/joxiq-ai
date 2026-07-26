@@ -2069,7 +2069,11 @@ export default function App() {
           </div>
         ) : activeView === "learning-academy" ? (
           <div className="flex-1 overflow-y-auto">
-            <LearningAcademy theme={theme} userProfile={userProfile} />
+            <LearningAcademy 
+              theme={theme} 
+              userProfile={userProfile} 
+              onOpenAdmin={() => setActiveView("admin")}
+            />
           </div>
         ) : activeView === "education" ? (
           <div className="flex-1 overflow-y-auto">

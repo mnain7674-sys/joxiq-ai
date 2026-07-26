@@ -103,9 +103,30 @@ export const AITeacherClassroom: React.FC<AITeacherClassroomProps> = ({
   const [quizSubmitted, setQuizSubmitted] = useState<Record<string, boolean>>({});
 
   const isCompleted = userProgress?.completedClassIds.includes(currentClass.id);
+  const [micNotice, setMicNotice] = useState<string | null>(null);
 
   // Voice Speech Synthesis Handler using browser Web Speech API
   const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
+
+  // Cleanup speech synthesis & recognition on unmount to prevent memory leaks and speech overlaps
+  useEffect(() => {
+    return () => {
+      if (synth) {
+        try {
+          synth.cancel();
+        } catch (e) {
+          // ignore
+        }
+      }
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
+  }, []);
 
   // Voice Speech Function
   const speakText = (text: string) => {
@@ -199,7 +220,8 @@ export const AITeacherClassroom: React.FC<AITeacherClassroomProps> = ({
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Microphone voice input is not supported in this browser. Please type your question.");
+      setMicNotice("Microphone voice input is not supported in this browser. Please type your question.");
+      setTimeout(() => setMicNotice(null), 4000);
       return;
     }
 
@@ -954,6 +976,12 @@ Execution status: 0 (Success).`);
                   <span>{isListeningMic ? (language === "Bangla" ? "শুনছি..." : "Listening...") : (language === "Bangla" ? "মাইক্রোফোন" : "Voice Mic")}</span>
                 </button>
               </div>
+
+              {micNotice && (
+                <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-[11px] text-amber-300 font-medium animate-fadeIn">
+                  {micNotice}
+                </div>
+              )}
 
               <textarea
                 rows={3}

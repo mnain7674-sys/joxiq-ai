@@ -17,6 +17,7 @@ import {
   Database,
   Cpu,
   BarChart2,
+  BarChart3,
   UserCheck,
   ShieldAlert,
   ArrowUpRight,
@@ -32,11 +33,18 @@ import {
   PieChart,
   Zap,
   Scissors,
-  Lightbulb
+  Lightbulb,
+  GraduationCap
 } from "lucide-react";
 import { motion } from "motion/react";
 import { db, getUsageMetricsFromFirestore } from "../lib/firebase";
 import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { Course } from "../types/learning";
+import { COURSES_CATALOG } from "../data/learningData";
+import { ProjectRequirement } from "../types/projectBuilder";
+import { SAMPLE_BUILDER_PROJECTS } from "../data/projectBuilderData";
+import { AdminCourseManager } from "./learning/AdminCourseManager";
+import { AdminAnalyticsDashboard } from "./learning/AdminAnalyticsDashboard";
 
 interface AdminDashboardProps {
   theme: "dark" | "light" | "midnight" | "emerald" | "amber" | "rose";
@@ -63,13 +71,73 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   useSearch = false,
   onUseSearchChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats" | "theme" | "analytics" | "cost-agent">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "security" | "logs" | "models" | "chats" | "theme" | "analytics" | "cost-agent" | "courses" | "learning-analytics">("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [systemStatus, setSystemStatus] = useState<"optimal" | "warning">("optimal");
   const [auditMessage, setAuditMessage] = useState<string | null>(null);
   const [themeSuccessMsg, setThemeSuccessMsg] = useState<string | null>(null);
   const [adminGlobalSearch, setAdminGlobalSearch] = useState(useSearch);
   const [searchSuccessMsg, setSearchSuccessMsg] = useState<string | null>(null);
+
+  // User Learning Progress State for Admin Analytics
+  const [userProgressMap, setUserProgressMap] = useState<Record<string, any>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("joxiq_user_learning_progress_v2");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed loading user learning progress for admin analytics:", e);
+      }
+    }
+    return {};
+  });
+
+  // Admin Courses Catalog & Projects State (Persisted in localStorage)
+  const [adminCourses, setAdminCourses] = useState<Course[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("joxiq_admin_courses_v2");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed loading admin courses:", e);
+      }
+    }
+    return COURSES_CATALOG;
+  });
+
+  const handleSaveAdminCourses = (updatedCourses: Course[]) => {
+    setAdminCourses(updatedCourses);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("joxiq_admin_courses_v2", JSON.stringify(updatedCourses));
+      } catch (e) {
+        console.error("Failed saving admin courses:", e);
+      }
+    }
+  };
+
+  const [adminProjects, setAdminProjects] = useState<ProjectRequirement[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("joxiq_admin_projects_v1");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed loading admin projects:", e);
+      }
+    }
+    return SAMPLE_BUILDER_PROJECTS;
+  });
+
+  const handleSaveAdminProjects = (updatedProjects: ProjectRequirement[]) => {
+    setAdminProjects(updatedProjects);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("joxiq_admin_projects_v1", JSON.stringify(updatedProjects));
+      } catch (e) {
+        console.error("Failed saving admin projects:", e);
+      }
+    }
+  };
 
   // Cost Optimization Agent Prompt Compressor State
   const [testPrompt, setTestPrompt] = useState("Hello JOXIQ AI! Could you please kindly help me write a Python script to filter prime numbers from a list? Thank you so much in advance for your assistance!");
@@ -404,6 +472,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             { id: "overview", label: "System Overview", icon: Activity },
             { id: "analytics", label: "Token & Cost Analytics", icon: DollarSign },
             { id: "cost-agent", label: "Cost Agent & Optimizer", icon: Zap },
+            { id: "learning-analytics", label: "Academy Student Analytics", icon: BarChart3 },
+            { id: "courses", label: "Academy & Course Manager", icon: GraduationCap },
             { id: "users", label: "User Access & Roles", icon: Users },
             { id: "chats", label: "AI Chat History", icon: MessageSquare },
             { id: "security", label: "Security & RBAC", icon: Lock },
@@ -429,6 +499,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             );
           })}
         </div>
+
+        {/* Tab: Academy Student Analytics */}
+        {activeTab === "learning-analytics" && (
+          <div className="space-y-6">
+            <AdminAnalyticsDashboard
+              courses={adminCourses}
+              userProgressMap={userProgressMap}
+              userEmail={userProfile?.email}
+              userName={userProfile?.name}
+              onNavigateToCourse={(courseId) => {
+                onBackToChat();
+              }}
+            />
+          </div>
+        )}
+
+        {/* Tab: Academy & Course Manager */}
+        {activeTab === "courses" && (
+          <div className="space-y-6">
+            <AdminCourseManager
+              courses={adminCourses}
+              projects={adminProjects}
+              onSaveCourses={handleSaveAdminCourses}
+              onSaveProjects={handleSaveAdminProjects}
+              onNavigateToCourse={(courseId) => {
+                onBackToChat();
+              }}
+              isProMember={true}
+            />
+          </div>
+        )}
 
         {/* Tab: Token & Cost Analytics */}
         {activeTab === "analytics" && (
