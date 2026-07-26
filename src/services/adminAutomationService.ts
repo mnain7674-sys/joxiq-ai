@@ -145,14 +145,28 @@ export class JOXIQDataEngine {
 }
 
 export const ADMIN_ASSISTANT_SYSTEM_PROMPT = `You are the Official JOXIQ AI Admin Assistant. 
-Your target is to assist platform administrators using natural language (English and Bangla).
+Your target is to assist platform administrators using natural language in English and Bangla.
+
+PLATFORM FEATURES & STRUCTURE MAP (JOXIQ AI-এর ফিচার ম্যাপ):
+1. Main AI Chat Engine: Multi-model support (Gemini, Claude, GPT, DeepSeek, Llama), code & image generation, document analysis, web search. Located at main Chat view.
+2. JOXIQ Learning Academy: Programming courses, live code editor, interactive quizzes, student progress tracking, certificates. Located at "Academy" / "Courses".
+3. AI Master Voice Teacher: Real-time speech-to-speech interaction, language practice, accent training. Located at Voice Mode toggle.
+4. Project Builder: Full-stack web application builder with live preview and GitHub/ZIP export. Located at "Project Builder".
+5. Admin Dashboard:
+   - System Overview (Real-time Firestore user counts, active stats)
+   - Admin Assistant AI (Natural language diagnostics in English & Bangla)
+   - Token & Cost Analytics (Model token usage tracking)
+   - Cost Optimization Agent (Automatic AI budget control)
+   - Student Analytics & Course Manager (Academy administration)
+6. Smart Utilities: Auto summary generator, flashcard generator, code formatter, prompt enhancer.
 
 STRICT RULES:
 1. NEVER generate or guess imaginary statistics, numbers, or metrics.
 2. ONLY rely on verified backend system function calls/tool responses.
-3. If data is missing or unavailable from backend tools, explicitly respond with: "Data is currently unavailable."
-4. Maintain a highly professional, accurate, real-time, and well-formatted output using clear bullet points and emojis.
-5. Adhere strictly to administrator safety guidelines and data protection policies.`;
+3. If metric data is missing or unavailable, explicitly respond with: "Data is currently unavailable."
+4. When asked about platform features or navigation ("কোথায় কী আছে?", "হাউ টু ইউজ"), explain clearly in English or Bangla using bullet points and emojis.
+5. Maintain a highly professional, accurate, real-time, and well-formatted output.
+6. Adhere strictly to administrator safety guidelines and data protection policies.`;
 
 export async function processAdminQuery(
   query: string,
@@ -223,7 +237,51 @@ export async function processAdminQuery(
     };
   }
 
-  // 3. Check for Feature analytics queries
+  // 3. Check for Platform Navigation / Feature Locations queries
+  if (
+    q.includes("kothai") ||
+    q.includes("কোথায়") ||
+    q.includes("কি আছে") ||
+    q.includes("কী আছে") ||
+    q.includes("feature map") ||
+    q.includes("guide") ||
+    q.includes("navigation") ||
+    q.includes("মডিউল") ||
+    q.includes("ফিচার সমূহ") ||
+    q.includes("কি কি আছে")
+  ) {
+    const executionTimeMs = Date.now() - startTime;
+    return {
+      status: "success",
+      source: "JOXIQ Platform Architecture Map",
+      response: `🗺️ **JOXIQ AI Platform Structure & Feature Guide (প্ল্যাটফর্ম ম্যাপ)**\n\n` +
+        `**১. Main AI Chat Engine & Assistant (প্রধান চ্যাট মডিউল)**\n` +
+        `• **অবস্থান:** বামপাশের নেভিগেশন বারের "Chat" বা হোম পেজ।\n` +
+        `• **কাজ:** Multi-model AI (Gemini, Claude, GPT, DeepSeek, Llama), টেক্সট, কোড জেনারেশন, ইমেজ অ্যানালাইসিস, ডকুমেন্ট রিডিং, অডিও প্রোসেসিং ও ওয়েব সার্চ।\n\n` +
+        `**২. JOXIQ Learning Academy (লার্নিং একাডেমি)**\n` +
+        `• **অবস্থান:** "Academy" / "Courses" ট্যাবে।\n` +
+        `• **কাজ:** প্রোগ্রামিং কোর্স, রিয়েল-টাইম কোড এডিটর, ইন্টারঅ্যাক্টিভ কুইজ, স্টুডেন্ট প্রোগ্রেস ট্র্যাকিং ও সার্টিফিকেট জেনারেটর।\n\n` +
+        `**৩. AI Master Voice Teacher (ভয়েস টিচার & স্পিচ হাব)**\n` +
+        `• **অবস্থান:** চ্যাট বারের "Voice Mode" অথবা "Voice Companion" বাটনে।\n` +
+        `• **কাজ:** রিয়েল-টাইম ভয়েস কনভারসেশন, ল্যাঙ্গুয়েজ লার্নিং, উচ্চারণ অনুশীলন ও স্পিচ-টু-স্পিচ কথোপকথন।\n\n` +
+        `**৪. Project Builder & Live Playground (প্রজেক্ট বিল্ডার)**\n` +
+        `• **অবস্থান:** "Project Builder" সেকশনে।\n` +
+        `• **কাজ:** ফুলস্ট্যাক ওয়েব অ্যাপ্লিকেশন তৈরি, লাইভ প্রিভিউ, রানটাইম প্লেগ্রাউন্ড এবং ZIP/GitHub এক্সপোর্ট।\n\n` +
+        `**৫. Admin Dashboard & Assistant (এডমিন ড্যাশবোর্ড)**\n` +
+        `• **অবস্থান:** "Admin Panel" ট্যাবে (x-admin-token অথবা Admin Role সুরক্ষিত)।\n` +
+        `• **কাজ:**\n` +
+        `  - **System Overview:** রিয়েল-টাইম ফায়ারস্টোর ইউজার ও অ্যাক্টিভিটি।\n` +
+        `  - **Admin Assistant AI:** প্রাকৃতিক ভাষায় (বাংলা ও ইংরেজি) সিস্টেম ডায়াগনস্টিকস ও অটোমেশন চ্যাট।\n` +
+        `  - **Token & Cost Analytics:** মডেল ভিত্তিক টোকেন খরচের হিসাব।\n` +
+        `  - **Cost Optimization Agent:** বাজেট কন্ট্রোল ও অটোমেটিক এআই মডেল খরচ কমানোর এজেন্ট।\n` +
+        `  - **Student Analytics & Course Manager:** লার্নিং একাডেমির স্টুডেন্ট ও কোর্স কন্ট্রোল।\n\n` +
+        `**৬. Smart Utilities (স্মার্ট টুলস)**\n` +
+        `• **কাজ:** অটো সামারি জেনারেটর, ফ্ল্যাশকার্ড মেকার, কোড ফরম্যাটার, প্রম্পট এনহ্যান্সার।`,
+      execution_time_ms: executionTimeMs
+    };
+  }
+
+  // 4. Check for Feature analytics queries
   if (q.includes("feature") || q.includes("ফিচার")) {
     const data = await JOXIQDataEngine.fetchFeatureAnalytics();
     const executionTimeMs = Date.now() - startTime;
