@@ -7,7 +7,7 @@ import { createServer as createViteServer } from "vite";
 import Stripe from "stripe";
 import { chatService } from "./src/services/chatService.js";
 import { costOptimizationAgent } from "./src/ai/costOptimizationAgent.js";
-import { processAdminQuery } from "./src/services/adminAutomationService.js";
+import { processAdminQuery, handleAdminAction, SecurityAutomationEngine, SelfHealingEngine, AutomationLogger } from "./src/services/adminAutomationService.js";
 
 // Load environment variables
 dotenv.config();
@@ -62,6 +62,17 @@ function saveAdminSettings() {
 // Increase body limit for base64 image uploads
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: true }));
+
+// Security Guard & Anti-DDoS Middleware
+app.use((req, res, next) => {
+  const forwarded = req.headers["x-forwarded-for"];
+  const clientIP = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : (req.ip || req.socket.remoteAddress || "127.0.0.1");
+  const securityCheck = SecurityAutomationEngine.checkRateLimit(clientIP);
+  if (!securityCheck.allowed) {
+    return res.status(429).json({ error: securityCheck.reason });
+  }
+  next();
+});
 
 // Explicit endpoint for image assets (logo, mobile app assets) to guarantee access across environments
 app.get([
@@ -218,6 +229,75 @@ app.post("/api/admin/chat", verifyAdminAccess, async (req, res) => {
       response: "🚨 Internal system error while fetching backend metrics.",
       error: error.message || "Internal server error"
     });
+  }
+});
+
+/**
+ * JOXIQ AI Master Admin Action Executor API
+ * Executes backend actions (clear_cache, set_user_status/block_user, backup_db)
+ */
+app.post("/api/admin/execute", verifyAdminAccess, async (req, res) => {
+  try {
+    const { actionName, command, payload } = req.body;
+    const actionToRun = actionName || command;
+
+    if (!actionToRun) {
+      return res.status(400).json({ status: "error", error: "actionName or command parameter is required." });
+    }
+
+    const result = await handleAdminAction(actionToRun, payload || {});
+    return res.json({
+      success: result.status === "success",
+      response: result.message,
+      data: result
+    });
+  } catch (error: any) {
+    console.error("Admin action execute error:", error);
+    return res.status(500).json({
+      status: "error",
+      response: "Failed to execute administrative action.",
+      error: error.message || "Internal server error"
+    });
+  }
+});
+
+/**
+ * JOXIQ AI Self-Healing System API
+ * Auto-inspects RAM, CPU load, performs Garbage Collection & memory sweep when needed
+ */
+app.get(["/api/system/self-heal", "/api/system/heal"], (req, res) => {
+  try {
+    const report = SelfHealingEngine.inspectAndFixSystem();
+    return res.json(report);
+  } catch (error: any) {
+    console.error("Self healing engine error:", error);
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+/**
+ * JOXIQ Security Automation & DDoS Shield Status API
+ */
+app.get("/api/system/security", verifyAdminAccess, (req, res) => {
+  try {
+    const securityStatus = SecurityAutomationEngine.getSecurityStatus();
+    return res.json({ success: true, security: securityStatus });
+  } catch (error: any) {
+    console.error("Security automation endpoint error:", error);
+    return res.status(500).json({ status: "error", message: error.message });
+  }
+});
+
+/**
+ * JOXIQ Automation Activity Logs API
+ */
+app.get("/api/admin/automation-logs", (req, res) => {
+  try {
+    const logs = AutomationLogger.getLogs();
+    return res.json({ status: "success", logs });
+  } catch (error: any) {
+    console.error("Automation logs endpoint error:", error);
+    return res.status(500).json({ status: "error", logs: [], message: error.message });
   }
 });
 

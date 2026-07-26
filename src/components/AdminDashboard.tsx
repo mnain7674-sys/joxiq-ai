@@ -47,6 +47,7 @@ import { SAMPLE_BUILDER_PROJECTS } from "../data/projectBuilderData";
 import { AdminCourseManager } from "./learning/AdminCourseManager";
 import { AdminAnalyticsDashboard } from "./learning/AdminAnalyticsDashboard";
 import { AdminAssistantChat } from "./AdminAssistantChat";
+import { AutomationActivityFeed } from "./AutomationActivityFeed";
 
 interface AdminDashboardProps {
   theme: "dark" | "light" | "midnight" | "emerald" | "amber" | "rose";
@@ -1010,6 +1011,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span>Run Security Audit</span>
               </button>
             </div>
+
+            {/* AI Automation Activity Feed Component */}
+            <AutomationActivityFeed maxHeight="360px" />
           </div>
         )}
 
@@ -1370,7 +1374,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Tab 5: Audit Logs */}
         {activeTab === "logs" && (
-          <div className={`rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} overflow-hidden`}>
+          <div className="space-y-6">
+            <AutomationActivityFeed maxHeight="400px" />
+
+            <div className={`rounded-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200 shadow-sm"} overflow-hidden`}>
             <div className="p-5 border-b border-slate-500/10 flex items-center justify-between">
               <div>
                 <h2 className="font-bold text-sm">System Telemetry & Audit Logs</h2>
@@ -1421,6 +1428,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </table>
             </div>
           </div>
+        </div>
         )}
 
         {/* Tab 6: AI Quotas & Models */}

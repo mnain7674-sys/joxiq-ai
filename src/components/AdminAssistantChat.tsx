@@ -14,6 +14,7 @@ import {
   Check 
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { AutomationActivityFeed } from "./AutomationActivityFeed";
 
 interface AdminAssistantChatProps {
   isDark?: boolean;
@@ -43,6 +44,7 @@ export const AdminAssistantChat: React.FC<AdminAssistantChatProps> = ({ isDark =
   const [inputQuery, setInputQuery] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showActivityFeed, setShowActivityFeed] = useState(true);
 
   const handleSendQuery = async (queryToSend?: string) => {
     const q = (queryToSend || inputQuery).trim();
@@ -128,12 +130,30 @@ export const AdminAssistantChat: React.FC<AdminAssistantChatProps> = ({ isDark =
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowActivityFeed(!showActivityFeed)}
+            className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer flex items-center gap-1.5 ${
+              showActivityFeed
+                ? "bg-blue-500/20 text-blue-400 border-blue-500/40"
+                : "bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200"
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5 animate-pulse" />
+            <span>{showActivityFeed ? "Hide Feed" : "Live Feed"}</span>
+          </button>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>x-admin-token Secured</span>
           </span>
         </div>
       </div>
+
+      {/* Live Automation Activity Feed Drawer/Card */}
+      {showActivityFeed && (
+        <div className="p-4 border-b border-slate-800 bg-slate-950/60">
+          <AutomationActivityFeed maxHeight="220px" />
+        </div>
+      )}
 
       {/* Quick Prompts Bar */}
       <div className={`px-6 py-2.5 border-b flex items-center gap-2 overflow-x-auto text-xs ${isDark ? "bg-slate-950/40 border-slate-800/60" : "bg-slate-100/50 border-slate-200"}`}>
@@ -161,6 +181,41 @@ export const AdminAssistantChat: React.FC<AdminAssistantChatProps> = ({ isDark =
           className="px-3 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 transition-all font-medium whitespace-nowrap cursor-pointer"
         >
           📈 Feature Analytics
+        </button>
+        <button
+          onClick={() => handleSendQuery("Clear cache")}
+          disabled={isSending}
+          className="px-3 py-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 transition-all font-medium whitespace-nowrap cursor-pointer"
+        >
+          🧹 Clear Cache
+        </button>
+        <button
+          onClick={() => handleSendQuery("Backup database")}
+          disabled={isSending}
+          className="px-3 py-1 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 transition-all font-medium whitespace-nowrap cursor-pointer"
+        >
+          💾 DB Backup
+        </button>
+        <button
+          onClick={() => handleSendQuery("Run self-heal inspection")}
+          disabled={isSending}
+          className="px-3 py-1 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-all font-medium whitespace-nowrap cursor-pointer"
+        >
+          🩺 Self-Heal System
+        </button>
+        <button
+          onClick={() => handleSendQuery("Check security status")}
+          disabled={isSending}
+          className="px-3 py-1 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-all font-medium whitespace-nowrap cursor-pointer"
+        >
+          🛡️ Security Shield
+        </button>
+        <button
+          onClick={() => handleSendQuery("Automation logs")}
+          disabled={isSending}
+          className="px-3 py-1 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 transition-all font-medium whitespace-nowrap cursor-pointer"
+        >
+          📜 Activity Logs
         </button>
         <button
           onClick={() => handleSendQuery("আজকের সামারি ও সার্ভার স্ট্যাটাস দেখাও")}
