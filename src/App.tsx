@@ -369,9 +369,12 @@ export default function App() {
   useEffect(() => {
     const checkAdminSearch = () => {
       fetch("/api/admin/web-search")
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) return null;
+          return res.json();
+        })
         .then(data => {
-          if (typeof data.useSearch === "boolean") {
+          if (data && typeof data.useSearch === "boolean") {
             if (data.useSearch) {
               setUseSearch(true);
               localStorage.setItem("gemini_use_search", "true");
@@ -381,11 +384,13 @@ export default function App() {
             }
           }
         })
-        .catch(err => console.error("Failed to load admin web search", err));
+        .catch(() => {
+          // Ignore network errors during dev restarts
+        });
     };
 
     checkAdminSearch();
-    const interval = setInterval(checkAdminSearch, 5000);
+    const interval = setInterval(checkAdminSearch, 15000);
 
     const saved = localStorage.getItem("gemini_conversations");
     const active = localStorage.getItem("gemini_active_conv_id");
@@ -428,6 +433,7 @@ export default function App() {
     } else {
       createNewChat();
     }
+    return () => clearInterval(interval);
   }, []);
 
   // Firebase Auth state listener

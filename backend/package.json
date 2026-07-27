@@ -1,0 +1,15 @@
+{
+  "name": "joxiq-ai-admin-assistant-backend",
+  "version": "1.0.0",
+  "description": "JOXIQ AI - AI Admin Assistant backend",
+  "main": "src/app.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  }
+}

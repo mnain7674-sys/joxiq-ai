@@ -184,14 +184,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   React.useEffect(() => {
     fetch("/api/admin/web-search")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) return null;
+        return res.json();
+      })
       .then(data => {
-        if (typeof data.useSearch === "boolean") {
+        if (data && typeof data.useSearch === "boolean") {
           setAdminGlobalSearch(data.useSearch);
           if (onUseSearchChange) onUseSearchChange(data.useSearch);
         }
       })
-      .catch(err => console.error("Failed to load global web search", err));
+      .catch(() => {
+        // Ignore network hiccups during dev restarts
+      });
   }, []);
 
   // Chat Themes management state
