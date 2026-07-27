@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { CourseContentManagementSystem } from "./CourseContentManagementSystem";
 import {
   Course,
   CourseCategory,
@@ -8,6 +9,7 @@ import {
   ClassQuizQuestion,
   ClassExample
 } from "../../types/learning";
+import { build100ClassCurriculum, saveCourseCurriculumToFirestore } from "../../services/courseCurriculumService";
 import { ProjectRequirement } from "../../types/projectBuilder";
 import {
   ShieldCheck,
@@ -42,7 +44,8 @@ import {
   BrainCircuit,
   Globe,
   Smartphone,
-  Briefcase
+  Briefcase,
+  Database
 } from "lucide-react";
 
 interface AdminCourseManagerProps {
@@ -55,6 +58,7 @@ interface AdminCourseManagerProps {
 }
 
 type AdminTab =
+  | "cms"
   | "courses"
   | "curriculum"
   | "classes"
@@ -67,7 +71,8 @@ export const AdminCourseManager: React.FC<AdminCourseManagerProps> = ({
   projects,
   onSaveCourses,
   onSaveProjects,
-  onNavigateToCourse
+  onNavigateToCourse,
+  isProMember = false
 }) => {
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>("courses");
   const [searchQuery, setSearchQuery] = useState("");
@@ -216,6 +221,36 @@ export const AdminCourseManager: React.FC<AdminCourseManagerProps> = ({
         setSelectedCourseId(updated[0].id);
       }
       showToast("Course deleted.");
+    }
+  };
+
+  const handleGenerate100ClassCurriculumForCourse = async (targetCourse: Course) => {
+    try {
+      const full100Course = build100ClassCurriculum(
+        targetCourse.id,
+        targetCourse.name,
+        targetCourse.category,
+        targetCourse.courseGoal,
+        targetCourse.shortDescription
+      );
+
+      const updatedList = courses.map((c) => (c.id === targetCourse.id ? full100Course : c));
+      onSaveCourses(updatedList);
+
+      // Save to Firebase
+      await saveCourseCurriculumToFirestore(full100Course);
+      showToast(`Generated and saved complete 100-class curriculum for '${targetCourse.name}' to Firebase!`);
+    } catch (err: any) {
+      showToast(`Error generating curriculum: ${err.message}`);
+    }
+  };
+
+  const handleSaveCurriculumToFirebase = async (targetCourse: Course) => {
+    try {
+      await saveCourseCurriculumToFirestore(targetCourse);
+      showToast(`100-Class Curriculum for '${targetCourse.name}' saved to Firebase Firestore!`);
+    } catch (err: any) {
+      showToast(`Firebase save failed: ${err.message}`);
     }
   };
 
@@ -742,6 +777,18 @@ export const AdminCourseManager: React.FC<AdminCourseManagerProps> = ({
       {/* Admin Horizontal Management Tabs */}
       <div className="flex flex-wrap items-center gap-2 bg-slate-950 p-2 rounded-2xl border border-slate-800">
         <button
+          onClick={() => setActiveAdminTab("cms")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+            activeAdminTab === "cms"
+              ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/40 border border-indigo-400/50"
+              : "bg-indigo-950/40 border border-indigo-800/60 text-indigo-300 hover:bg-indigo-900/50"
+          }`}
+        >
+          <Database className="w-4 h-4 shrink-0 text-indigo-400" />
+          <span>Course Content Management System (CMS)</span>
+        </button>
+
+        <button
           onClick={() => setActiveAdminTab("courses")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
             activeAdminTab === "courses"
@@ -813,6 +860,14 @@ export const AdminCourseManager: React.FC<AdminCourseManagerProps> = ({
           <span>AI Course Generator</span>
         </button>
       </div>
+
+      {/* TAB 0: CMS COURSE CONTENT MANAGEMENT SYSTEM */}
+      {activeAdminTab === "cms" && (
+        <CourseContentManagementSystem
+          courses={courses}
+          isProMember={isProMember}
+        />
+      )}
 
       {/* TAB 1: COURSES MANAGEMENT */}
       {activeAdminTab === "courses" && (
@@ -910,7 +965,7 @@ export const AdminCourseManager: React.FC<AdminCourseManagerProps> = ({
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-900 flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-slate-900 flex flex-col gap-2">
                   <button
                     onClick={() => {
                       setSelectedCourseId(c.id);
@@ -919,7 +974,15 @@ export const AdminCourseManager: React.FC<AdminCourseManagerProps> = ({
                     className="w-full py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Layers className="w-3.5 h-3.5 text-violet-400" />
-                    <span>Manage Syllabus</span>
+                    <span>Manage Syllabus ({c.totalClasses} Classes)</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleGenerate100ClassCurriculumForCourse(c)}
+                    className="w-full py-1.5 bg-slate-950 hover:bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Save className="w-3 h-3 text-emerald-400" />
+                    <span>Sync 100-Class Curriculum to Firebase</span>
                   </button>
                 </div>
               </div>
@@ -931,7 +994,7 @@ export const AdminCourseManager: React.FC<AdminCourseManagerProps> = ({
       {/* TAB 2: CURRICULUM & MODULE MANAGEMENT */}
       {activeAdminTab === "curriculum" && currentCourse && (
         <div className="space-y-6">
-          {/* Course Selector Bar */}
+          {/* Course Selector & 100-Class Sync Bar */}
           <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-slate-400 shrink-0">Selected Course:</span>
@@ -945,19 +1008,37 @@ export const AdminCourseManager: React.FC<AdminCourseManagerProps> = ({
               >
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name} ({c.modules.length} Modules)
+                    {c.name} ({c.totalClasses} Classes, {c.modules.length} Modules)
                   </option>
                 ))}
               </select>
             </div>
 
-            <button
-              onClick={handleOpenNewModule}
-              className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-extrabold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Module</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => handleSaveCurriculumToFirebase(currentCourse)}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save 100-Class Curriculum to Firebase</span>
+              </button>
+
+              <button
+                onClick={() => handleGenerate100ClassCurriculumForCourse(currentCourse)}
+                className="px-3 py-2 bg-violet-600/80 hover:bg-violet-600 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Rocket className="w-3.5 h-3.5" />
+                <span>Re-build 100-Class Roadmap</span>
+              </button>
+
+              <button
+                onClick={handleOpenNewModule}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Module</span>
+              </button>
+            </div>
           </div>
 
           {/* Modules List for Selected Course */}

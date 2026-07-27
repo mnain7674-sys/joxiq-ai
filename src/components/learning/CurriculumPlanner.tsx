@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Course, CourseCategory, CourseModule, ClassItem } from "../../types/learning";
 import { CATEGORIES } from "../../data/learningData";
+import { build100ClassCurriculum, saveCourseCurriculumToFirestore } from "../../services/courseCurriculumService";
 import {
   BrainCircuit,
   Sparkles,
@@ -21,19 +22,27 @@ import {
   Wand2,
   ArrowRight,
   ShieldAlert,
-  ListOrdered
+  ListOrdered,
+  Save,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Edit3
 } from "lucide-react";
 
 interface CurriculumPlannerProps {
   courses: Course[];
   onSelectCourseToStart: (course: Course) => void;
   onSelectSpecificClass?: (course: Course, moduleItem: CourseModule, classItem: ClassItem) => void;
+  onCustomCurriculumGenerated?: (course: Course) => void;
 }
 
 export const CurriculumPlanner: React.FC<CurriculumPlannerProps> = ({
   courses,
   onSelectCourseToStart,
-  onSelectSpecificClass
+  onSelectSpecificClass,
+  onCustomCurriculumGenerated
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<CourseCategory | "All">("All");
   const [selectedCourseId, setSelectedCourseId] = useState<string>(courses[0]?.id || "");
@@ -63,51 +72,50 @@ export const CurriculumPlanner: React.FC<CurriculumPlannerProps> = ({
   );
 
   // Generate custom curriculum handler
-  const handleGenerateCustomCurriculum = () => {
+  const handleGenerateCustomCurriculum = async () => {
     if (!customTopicInput.trim()) return;
     setIsGeneratingCustom(true);
 
-    setTimeout(() => {
+    try {
       const topicName = customTopicInput.trim();
-      const mockCustomCourse: Course = {
-        id: `custom-curr-${Date.now()}`,
-        name: `AI Planned Curriculum: ${topicName}`,
-        category: "AI Engineering",
-        courseGoal: `Master ${topicName} through a structured 100-class progression from basic fundamentals to enterprise applications.`,
-        shortDescription: `Comprehensive, intentionally designed roadmap for ${topicName}.`,
-        fullDescription: `This course has been custom planned by JOXIQ AI Engine. It covers prerequisites, 4-tier module breakdowns, practical challenges, and capstone projects for ${topicName}.`,
-        requiredLevel: "All Levels",
-        targetStudentLevel: "Beginner to Enterprise",
-        requiredSkills: [
-          "Basic logical reasoning & computer access",
-          `Core interest in learning ${topicName}`,
-          "Commitment to completing hands-on exercises"
-        ],
-        learningOutcomes: [
-          `Architect and deploy ${topicName} solutions from scratch`,
-          `Solve real-world industry problems using ${topicName}`,
-          `Master advanced edge-cases, optimization, and debugging`,
-          `Build a portfolio-ready capstone project in ${topicName}`
-        ],
-        curriculumRoadmap: {
-          beginnerGoals: [`${topicName} Fundamentals & Setup`, "Syntax & Core Structures", "Basic Problem Solving"],
-          intermediateGoals: [`Intermediate ${topicName} Patterns`, "Real-World Projects", "Async & State Design"],
-          advancedGoals: [`Enterprise ${topicName} Architecture`, "Performance Tuning", "Security & Scaling"],
-          extraCareerGoals: [`${topicName} Portfolio Capstone`, "Technical Interview Prep", "Industry Secrets"]
-        },
-        icon: "BrainCircuit",
-        gradientColor: "from-purple-600 to-pink-600",
-        rating: 4.98,
-        enrolledCount: 1,
-        estimatedHours: 42,
-        totalClasses: 100,
-        modules: activeCourse?.modules || []
-      };
+      const generatedCourse = build100ClassCurriculum(
+        `custom-curr-${Date.now()}`,
+        `AI Master Curriculum: ${topicName}`,
+        "AI Engineering",
+        `Master ${topicName} through a structured 100-class progression from basic fundamentals to enterprise applications.`,
+        `Comprehensive, intentionally designed 100-class roadmap for ${topicName}.`
+      );
 
-      setCustomGeneratedCourse(mockCustomCourse);
+      setCustomGeneratedCourse(generatedCourse);
+
+      // Save to Firebase
+      await saveCourseCurriculumToFirestore(generatedCourse);
+
+      if (onCustomCurriculumGenerated) {
+        onCustomCurriculumGenerated(generatedCourse);
+      }
+    } catch (err) {
+      console.error("Error generating custom 100-class curriculum:", err);
+    } finally {
       setIsGeneratingCustom(false);
       setCustomTopicInput("");
-    }, 1000);
+    }
+  };
+
+  const [isSavingFirebase, setIsSavingFirebase] = useState(false);
+  const [saveToast, setSaveToast] = useState<string | null>(null);
+
+  const handleSaveActiveCurriculumToFirebase = async () => {
+    if (!activeCourse) return;
+    setIsSavingFirebase(true);
+    const res = await saveCourseCurriculumToFirestore(activeCourse);
+    setIsSavingFirebase(false);
+    if (res.success) {
+      setSaveToast("100-Class Curriculum saved to Firebase successfully!");
+    } else {
+      setSaveToast(`Error saving to Firebase: ${res.error || "Unknown error"}`);
+    }
+    setTimeout(() => setSaveToast(null), 3500);
   };
 
   return (
@@ -233,14 +241,32 @@ export const CurriculumPlanner: React.FC<CurriculumPlannerProps> = ({
                 <p className="text-xs text-slate-300 max-w-2xl">{activeCourse.fullDescription}</p>
               </div>
 
-              <button
-                onClick={() => onSelectCourseToStart(activeCourse)}
-                className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-xs rounded-2xl transition-all shadow-lg shadow-violet-600/30 flex items-center gap-2 cursor-pointer shrink-0"
-              >
-                <Play className="w-4 h-4 fill-white" />
-                <span>Start Learning This Course</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button
+                  onClick={handleSaveActiveCurriculumToFirebase}
+                  disabled={isSavingFirebase}
+                  className="px-4 py-3 bg-slate-950 border border-emerald-500/40 hover:bg-emerald-950/40 text-emerald-400 font-bold text-xs rounded-2xl transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Save className="w-4 h-4 text-emerald-400" />
+                  <span>{isSavingFirebase ? "Saving to Firestore..." : "Save 100-Class Curriculum to Firebase"}</span>
+                </button>
+
+                <button
+                  onClick={() => onSelectCourseToStart(activeCourse)}
+                  className="px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-xs rounded-2xl transition-all shadow-lg shadow-violet-600/30 flex items-center gap-2 cursor-pointer shrink-0"
+                >
+                  <Play className="w-4 h-4 fill-white" />
+                  <span>Start Learning This Course</span>
+                </button>
+              </div>
             </div>
+
+            {saveToast && (
+              <div className="bg-emerald-950 border border-emerald-500 text-emerald-200 text-xs font-bold px-4 py-3 rounded-2xl animate-fade-in flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{saveToast}</span>
+              </div>
+            )}
 
             {/* Curriculum Meta Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">

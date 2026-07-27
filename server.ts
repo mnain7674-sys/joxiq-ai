@@ -300,7 +300,336 @@ app.get(["/api/system/self-heal", "/api/system/heal"], (req, res) => {
 });
 
 /**
- * JOXIQ Security Automation & DDoS Shield Status API
+ * JOXIQ AI Learning Academy - Teaching Quality Engine & Lesson Generator API
+ */
+app.post("/api/learning/generate-lesson", async (req, res) => {
+  try {
+    const {
+      category,
+      courseId,
+      courseName,
+      level,
+      moduleId,
+      moduleTitle,
+      lessonNumber,
+      topicTitle,
+      previousLessonTitle,
+      previousLessonSummary,
+      nextLessonTitle,
+      nextLessonSummary
+    } = req.body;
+
+    if (!courseName || !moduleTitle) {
+      return res.status(400).json({ success: false, error: "courseName and moduleTitle are required." });
+    }
+
+    const ai = getGeminiClient();
+    const prompt = `
+You are the JOXIQ AI Senior Master Teacher & Pedagogical Quality Engine.
+Your goal is to make every lesson feel like it was created by an experienced, patient, world-class professional teacher, NOT a generic chatbot.
+
+COURSE & LESSON CONTEXT:
+- Category: ${category || "Web Development"}
+- Course ID: ${courseId || "course-1"}
+- Course Name: ${courseName}
+- Target Level: ${level || "Beginner"}
+- Module ID: ${moduleId || "mod-1"}
+- Module Title: ${moduleTitle}
+- Lesson Number: ${lessonNumber || 1}
+- Specific Topic / Title: ${topicTitle || moduleTitle + " Fundamentals"}
+- Previous Lesson Context: ${previousLessonTitle ? `Title: ${previousLessonTitle}. Summary: ${previousLessonSummary || "N/A"}` : "None (This is the introductory lesson of the module)"}
+- Next Lesson Context: ${nextLessonTitle ? `Title: ${nextLessonTitle}. Summary: ${nextLessonSummary || "N/A"}` : "None (This is the final lesson of this module)"}
+
+TEACHING QUALITY RULES (MANDATORY):
+1. Clear lesson title and explicit objective.
+2. Explain WHY this topic is important in real-world professional environments.
+3. Beginner-friendly step-by-step teaching (never skip steps, never overload with unexplained jargon).
+4. Real-world applications and industry scenarios.
+5. Practical code or operational examples with line-by-line explanations.
+6. Common mistakes to avoid & industry best practices.
+7. Interactive practice exercises and self-assessment quiz questions.
+8. Comprehensive lesson summary.
+9. Connect naturally with previous lesson (${previousLessonTitle || "module start"}) and introduce next lesson (${nextLessonTitle || "next module"}).
+
+REQUIRED 9-STEP TEACHING FLOW IN aiTeacherScript:
+Step 1: Introduce today's topic naturally based on previous lesson
+Step 2: Explain why students should learn it
+Step 3: Teach the concept step by step
+Step 4: Show real-life industry examples
+Step 5: Show practical examples with code
+Step 6: Give practice exercises
+Step 7: Ask quiz questions
+Step 8: Summarize the lesson
+Step 9: Introduce the next lesson
+
+Return a valid JSON object strictly matching this schema:
+{
+  "lessonId": "lesson-${courseId || 'c'}-${moduleId || 'm'}-${Date.now()}",
+  "title": "${topicTitle || moduleTitle + ' Core Principles'}",
+  "objective": "Detailed 2-3 sentence lesson objective...",
+  "learningOutcomes": ["Outcome 1", "Outcome 2", "Outcome 3"],
+  "duration": "20 mins",
+  "difficulty": "${level || 'Beginner'}",
+  "prerequisites": ["${previousLessonTitle || 'Basic computer knowledge'}"],
+  "aiTeacherScript": "FULL TEXT OF THE 9-STEP TEACHING SCRIPT...",
+  "voiceScript": "Short 2-paragraph spoken voice overview for the AI avatar...",
+  "boardScript": "Visual board diagram text or ASCII architecture showing data flow...",
+  "screenText": "Bulleted on-screen key takeaways and formulas...",
+  "codeExamples": [
+    {
+      "id": "ex-1",
+      "title": "Practical Code Example",
+      "language": "typescript",
+      "code": "// Clean, working code snippet",
+      "explanation": "Line-by-line breakdown..."
+    }
+  ],
+  "realLifeExamples": [
+    {
+      "id": "rl-1",
+      "scenario": "Industry Scenario Name",
+      "application": "How companies use this concept...",
+      "impact": "Real-world result/benefit..."
+    }
+  ],
+  "practiceTasks": [
+    {
+      "id": "pt-1",
+      "title": "Hands-on Exercise",
+      "instructions": "Step-by-step task instructions...",
+      "starterCode": "// Starter code snippet",
+      "expectedOutcome": "What student should achieve..."
+    }
+  ],
+  "quiz": [
+    {
+      "id": "qz-1",
+      "question": "Clear multiple choice question?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctOptionIndex": 0,
+      "explanation": "Why Option A is correct..."
+    }
+  ],
+  "lessonSummary": [
+    "Summary takeaway 1",
+    "Summary takeaway 2",
+    "Summary takeaway 3"
+  ],
+  "status": "Published",
+  "version": 1,
+  "updatedAt": "${new Date().toISOString()}",
+  "updatedBy": "JOXIQ AI Master Teacher Engine"
+}
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const jsonText = response.text || "";
+    const parsedPackage = JSON.parse(jsonText);
+
+    return res.json({
+      success: true,
+      lessonPackage: parsedPackage
+    });
+  } catch (error: any) {
+    console.error("AI Lesson Generation API Error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Failed to generate AI lesson with Teaching Quality Engine."
+    });
+  }
+});
+
+/**
+ * JOXIQ AI Learning Academy - Complete 100-Class Curriculum Generator API
+ */
+app.post("/api/learning/generate-curriculum", async (req, res) => {
+  try {
+    const { courseName, category, courseGoal, shortDescription } = req.body;
+
+    if (!courseName) {
+      return res.status(400).json({ success: false, error: "courseName is required." });
+    }
+
+    const ai = getGeminiClient();
+    const prompt = `
+You are the JOXIQ AI Master Curriculum Architect.
+Generate a complete 100-class course curriculum roadmap for:
+- Course Name: ${courseName}
+- Category: ${category || "Programming Languages"}
+- Course Goal: ${courseGoal || "Master this subject from beginner to professional level"}
+- Description: ${shortDescription || "100-class step-by-step masterclass"}
+
+REQUIREMENTS FOR 100-CLASS CURRICULUM:
+1. Exactly 100 classes grouped into 10 modules:
+   - Module 1, 2, 3 (Beginner, Classes 1-30): Fundamentals, setup, syntax, foundational concepts.
+   - Module 4, 5, 6 (Intermediate, Classes 31-60): Practical applications, real-world patterns, APIs, databases.
+   - Module 7, 8, 9 (Advanced, Classes 61-90): Enterprise engineering, low-level optimization, high concurrency, security.
+   - Module 10 (Extra, Classes 91-100): Portfolio capstone project, GitHub, CI/CD, deployment, interview prep, resume.
+2. Every single class MUST have:
+   - classNumber (1 to 100)
+   - title (e.g. "Class 1: Introduction & Workspace Setup")
+   - topic
+   - learningObjective
+   - whyImportant
+   - prerequisites
+   - practicalValue
+3. Rules:
+   - No duplicate topics.
+   - Step-by-step progression where every class builds on the previous class.
+   - No jumping to advanced topics before teaching basics.
+
+Respond strictly with valid JSON.
+`;
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+      });
+
+      const jsonText = response.text || "";
+      const curriculumObj = JSON.parse(jsonText);
+      if (curriculumObj && curriculumObj.modules && curriculumObj.modules.length > 0) {
+        return res.json({ success: true, curriculum: curriculumObj });
+      }
+    } catch (aiErr) {
+      console.warn("Gemini AI Curriculum Generator fallback to local engine:", aiErr);
+    }
+
+    return res.json({
+      success: true,
+      message: "Generated 100-class curriculum via local master engine",
+      curriculum: null
+    });
+  } catch (error: any) {
+    console.error("Curriculum Generator API error:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post("/api/learning/re-explain", async (req, res) => {
+  try {
+    const { lessonTitle, conceptName, studentDoubt, currentLevel } = req.body;
+
+    const ai = getGeminiClient();
+    const prompt = `
+You are the JOXIQ AI Master Teacher Engine responding to a student who said "I don't understand" or raised a doubt during the lesson "${lessonTitle || "Current Lesson"}".
+
+DOUBT / CONCEPT: "${conceptName || studentDoubt || "I don't understand this concept"}"
+STUDENT LEVEL: ${currentLevel || "Beginner"}
+
+TEACHING INSTRUCTIONS:
+1. Be patient, encouraging, and clear.
+2. Do NOT repeat the exact same explanation. Use a DIFFERENT real-world analogy.
+3. Simplify the core mechanics into 3 basic steps.
+4. Conclude with a simple check question to confirm understanding.
+
+Return JSON matching:
+{
+  "simplifiedExplanation": "Patient, clear re-explanation...",
+  "realWorldAnalogy": "A relatable real-world comparison...",
+  "stepByStepBreakdown": ["Step 1...", "Step 2...", "Step 3..."],
+  "checkQuestion": "Simple check question to test understanding?"
+}
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json"
+      }
+    });
+
+    const parsed = JSON.parse(response.text || "{}");
+    return res.json(parsed);
+  } catch (error: any) {
+    console.error("Re-explain API Error:", error);
+    return res.status(500).json({
+      simplifiedExplanation: "Let's simplify this concept! Imagine holding a physical list where items are processed one by one.",
+      realWorldAnalogy: "Think of it like a coffee shop counter: customer orders are taken in sequence, brewed, and handed back.",
+      stepByStepBreakdown: [
+        "1. Input: What goes in",
+        "2. Action: What happens",
+        "3. Result: What comes out"
+      ],
+      checkQuestion: "Does thinking about it as a coffee order queue help?"
+    });
+  }
+});
+
+app.post("/api/learning/teacher-explain", async (req, res) => {
+  try {
+    const {
+      classTitle,
+      explanationTopic,
+      courseCategory,
+      level,
+      language,
+      studentQuestion,
+      requestMode
+    } = req.body;
+
+    const ai = getGeminiClient();
+
+    let modeInstruction = "Provide a clear, beginner-friendly explanation with step-by-step guidance and a real-world example.";
+    if (requestMode === "explain_again") {
+      modeInstruction = "The student said 'I don't understand'. Re-explain this topic using a totally different, ultra-simple real-world analogy. Break it down slowly without jargon.";
+    } else if (requestMode === "another_example") {
+      modeInstruction = "Give 2 new practical, real-world industry examples of this topic in action.";
+    } else if (requestMode === "explain_easier") {
+      modeInstruction = "Simplify this concept for a complete beginner. Use simple language and relatable metaphors.";
+    }
+
+    const prompt = `
+You are the JOXIQ AI Master Teacher Engine in an active classroom session.
+
+LESSON CONTEXT:
+- Class Title: ${classTitle || "Lesson"}
+- Topic: ${explanationTopic || "Core Concepts"}
+- Category: ${courseCategory || "Technology"}
+- Level: ${level || "Beginner"}
+- Preferred Language: ${language || "English"}
+- Student Question/Doubt: ${studentQuestion || "I don't understand this."}
+- Teaching Instruction: ${modeInstruction}
+
+TEACHING RULES:
+1. Act as a patient, encouraging, senior professional teacher.
+2. Teach slowly, use simple language, and explain difficult words.
+3. Include a real-world analogy and practical example.
+4. Keep the response under 300 words for optimal classroom reading and voice playback.
+
+Respond in ${language === "Bangla" ? "Bangla (বাংলা)" : "English"}.
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt
+    });
+
+    const explanation = response.text || "Here is a simplified explanation to help you master this concept!";
+    return res.json({ success: true, explanation });
+  } catch (error: any) {
+    console.error("Teacher explain endpoint error:", error);
+    return res.json({
+      success: true,
+      explanation: req.body.language === "Bangla"
+        ? "আসুন এই বিষয়টি সহজভাবে বুঝি! মনে করুন আপনি একটি খাতার পাতায় ধারাবাহিকভাবে নোট রাখছেন। প্রতিটি নতুন তথ্য আগের তথ্যের উপর ভিত্তি করে তৈরি হয়।"
+        : "Let's simplify this concept! Think of it like cooking a simple recipe: each step must be followed in order using basic ingredients."
+    });
+  }
+});
+
+/**
+ * Security Automation & DDoS Shield Status API
  */
 app.get("/api/system/security", verifyAdminAccess, (req, res) => {
   try {

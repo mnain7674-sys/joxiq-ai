@@ -63,6 +63,13 @@ export interface CourseModule {
   description: string;
   classes: ClassItem[];
   isProOnly?: boolean;
+  miniProject?: {
+    id: string;
+    title: string;
+    description: string;
+    specifications: string[];
+    starterCode?: string;
+  };
 }
 
 export interface Course {
@@ -85,6 +92,19 @@ export interface Course {
   totalClasses: number; // Exactly 100 classes per course
   modules: CourseModule[];
   freeClassesCount?: number; // Number of free trial classes (e.g. 5)
+  levelProjects?: {
+    level: CourseLevel;
+    title: string;
+    description: string;
+    specifications: string[];
+  }[];
+  portfolioProject?: {
+    title: string;
+    description: string;
+    specifications: string[];
+    starterCode?: string;
+    sampleSolution?: string;
+  };
 }
 
 export interface QuizAttempt {
