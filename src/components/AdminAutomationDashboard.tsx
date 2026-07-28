@@ -250,8 +250,8 @@ export function AdminAutomationDashboard({ backendUrl = "" }: AdminAutomationDas
     <div style={styles.page}>
       {/* Cards Row */}
       <div style={styles.cardsRow}>
-        <StatCard label="Total Users" value={controlCenter?.dashboard?.users?.totalUsers ?? "4,280"} />
-        <StatCard label="AI Requests Today" value={controlCenter?.dashboard?.ai?.requestsToday ?? "14,820"} />
+        <StatCard label="Total Users" value={controlCenter?.dashboard?.users?.totalUsers ?? "0"} />
+        <StatCard label="AI Requests Today" value={controlCenter?.dashboard?.ai?.requestsToday ?? "0"} />
         <StatCard label="Errors Today" value={controlCenter?.dashboard?.errorsToday ?? "0"} />
         <StatCard label="Performance Score" value={controlCenter?.performanceScore?.score ?? "98"} />
       </div>
@@ -548,38 +548,6 @@ export function AdminAutomationDashboard({ backendUrl = "" }: AdminAutomationDas
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
-
-      {/* AI Admin Assistant Chat Widget */}
-      <div style={styles.chatContainer}>
-        <div style={styles.chatHeader}>
-          <div style={styles.headerDot} />
-          <span style={styles.headerTitle}>AI Admin Assistant (100 Features Integrated)</span>
-        </div>
-        <div style={styles.messages} ref={scrollRef}>
-          {messages.map((m, i) => (
-            <div key={i} style={{ ...styles.bubbleRow, justifyContent: m.role === "admin" ? "flex-end" : "flex-start" }}>
-              <div style={m.role === "admin" ? styles.bubbleAdmin : styles.bubbleAssistant}>{m.text}</div>
-            </div>
-          ))}
-          {loading && (
-            <div style={styles.bubbleRow}>
-              <div style={styles.bubbleAssistant}>Analyzing backend metrics…</div>
-            </div>
-          )}
-        </div>
-        <div style={styles.inputRow}>
-          <input
-            style={styles.input}
-            value={input}
-            placeholder="Ask about users, AI usage, security, maintenance..."
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          />
-          <button style={styles.sendButton} onClick={sendMessage} disabled={loading}>
-            Send
-          </button>
         </div>
       </div>
     </div>

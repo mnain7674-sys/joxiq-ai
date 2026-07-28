@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   Sparkles,
+  Bot,
   Code,
   Code2,
   PenTool,
@@ -76,13 +77,11 @@ import {
 import { MarkdownMessage } from "./components/MarkdownMessage";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { EducationalSuite } from "./components/EducationalSuite";
-import { AboutPage } from "./components/AboutPage";
 import { ToolsPage } from "./components/ToolsPage";
 import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { LanguageCoach } from "./components/LanguageCoach";
-import { LearningAcademy } from "./components/learning/LearningAcademy";
 import { JoxiqLogo } from "./components/JoxiqLogo";
 
 const joxiqLogo = "/logo.png";
@@ -130,7 +129,7 @@ export default function App() {
   }, []);
 
   // --- Active main layout view ---
-  const [activeView, setActiveView] = useState<"chat" | "education" | "about" | "tools" | "admin" | "language-coach" | "learning-academy">("chat");
+  const [activeView, setActiveView] = useState<"chat" | "education" | "tools" | "admin" | "language-coach">("chat");
 
   // --- Conversations and active state ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -1678,19 +1677,6 @@ export default function App() {
           </button>
 
           <button
-            onClick={() => setActiveView("learning-academy")}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              activeView === "learning-academy"
-                ? (theme === "dark" ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold")
-                : "border-transparent text-slate-500 hover:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <GraduationCap size={14} className="text-violet-500" />
-            <span className="flex-1 text-left">Learning Academy</span>
-            <span className="text-[9px] uppercase font-extrabold tracking-widest bg-violet-500/10 text-violet-500 px-1.5 py-0.5 rounded-md">New</span>
-          </button>
-
-          <button
             onClick={() => setActiveView("language-coach")}
             className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
               activeView === "language-coach"
@@ -1717,18 +1703,6 @@ export default function App() {
               <span className="text-[9px] uppercase font-extrabold tracking-widest bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded-md">Owner</span>
             </button>
           )}
-
-          <button
-            onClick={() => setActiveView("about")}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              activeView === "about"
-                ? (theme === "dark" ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold")
-                : "border-transparent text-slate-500 hover:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <Info size={14} className="text-amber-500" />
-            <span className="flex-1 text-left">About JOXIQ AI</span>
-          </button>
         </div>
 
 
@@ -2073,14 +2047,6 @@ export default function App() {
               onUseSearchChange={setUseSearch}
             />
           </div>
-        ) : activeView === "learning-academy" ? (
-          <div className="flex-1 overflow-y-auto">
-            <LearningAcademy 
-              theme={theme} 
-              userProfile={userProfile} 
-              onOpenAdmin={() => setActiveView("admin")}
-            />
-          </div>
         ) : activeView === "education" ? (
           <div className="flex-1 overflow-y-auto">
             <EducationalSuite theme={theme === "light" ? "light" : "dark"} userProfile={userProfile} />
@@ -2130,10 +2096,6 @@ CRITICAL PEDAGOGICAL TEACHING RULES:
                 setActiveId(newChat.id);
               }}
             />
-          </div>
-        ) : activeView === "about" ? (
-          <div className="flex-1 overflow-y-auto">
-            <AboutPage theme={theme === "light" ? "light" : "dark"} />
           </div>
         ) : activeView === "tools" ? (
           <div className="flex-1 overflow-y-auto">

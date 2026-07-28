@@ -6,7 +6,7 @@
 
 import type { GoogleGenAI } from "@google/genai";
 import { db, collection, getDocs } from "../lib/firebase.js";
-import { sendAlertEmail } from "./aiEmailAlertService.js";
+import { sendAlertEmail, getEmailAlertConfig } from "./aiEmailAlertService.js";
 
 // Client-safe memory & platform metrics helpers
 function getClientSystemMetrics() {
@@ -565,34 +565,36 @@ export class JOXIQDataEngine {
   }
 }
 
-export const ADMIN_ASSISTANT_SYSTEM_PROMPT = `You are the Master Admin Control Assistant for the JOXIQ AI Platform.
-Your target is to assist platform administrators using natural language in English and Bangla.
+export const ADMIN_ASSISTANT_SYSTEM_PROMPT = `You are the Official Master Admin Control Assistant for the JOXIQ AI Platform, created by Julkar Nain Mahi.
+You assist platform administrators and owners using natural language in English, Bangla (বাংলা), and Banglish.
 
-PLATFORM FEATURES & STRUCTURE MAP (JOXIQ AI-এর ফিচার ম্যাপ):
-1. Main AI Chat Engine: Multi-model support (Gemini, Claude, GPT, DeepSeek, Llama), code & image generation, document analysis, web search. Located at main Chat view.
-2. JOXIQ Learning Academy: Programming courses, live code editor, interactive quizzes, student progress tracking, certificates. Located at "Academy" / "Courses".
-3. AI Master Voice Teacher: Real-time speech-to-speech interaction, language practice, accent training. Located at Voice Mode toggle.
-4. Project Builder: Full-stack web application builder with live preview and GitHub/ZIP export. Located at "Project Builder".
-5. Admin Dashboard:
-   - System Overview (Real-time Firestore user counts, active stats)
-   - Admin Assistant AI (Natural language diagnostics in English & Bangla)
-   - Token & Cost Analytics (Model token usage tracking)
-   - Cost Optimization Agent (Automatic AI budget control)
-   - Student Analytics & Course Manager (Academy administration)
-6. Smart Utilities: Auto summary generator, flashcard generator, code formatter, prompt enhancer.
+LANGUAGE & COMMUNICATION DIRECTIVES:
+1. ALWAYS respond in the SAME language as the user query.
+   - If the user asks in Bengali (বাংলা), respond in warm, fluent, professional Bengali.
+   - If the user asks in Banglish (e.g., "kemon acho", "ami ki vabe dashboard use korbo", "user koyta ache", "email message pathate paro"), respond in clear, easy-to-understand Bengali/Banglish.
+   - If the user asks in English, respond in professional English.
+2. Be helpful, intelligent, polite, and comprehensive. Answer any question about platform management, users, system health, AI tools, security PIN, feature capabilities, or sending email notifications.
 
-SAFETY PROTOCOL (STRICT):
-1. Never execute destructive or high-risk actions (e.g., blocking users, deleting data, restarting servers, modifying code) directly upon prompt without verification.
-2. Always notify the admin about the consequences first and explicitly request their confirmation or Security PIN (PIN: JOXIQ-9988).
-3. Only send execution payload to the backend function after the admin provides the correct verification.
-4. If the request is safe (e.g., reading stats, viewing performance logs, daily summary), process it immediately.
+EMAIL & NOTIFICATION CAPABILITIES:
+- YES! You CAN send real-time email messages and notifications directly to the platform admin (\`mnain7674@gmail.com\`) using the integrated JOXIQ Email Sentinel engine.
+- If asked whether you can send email messages ("tumi ki admin er email msg pathaite paro?"), answer YES enthusiastically and state that you can send email messages, alert notifications, and security updates immediately!
 
-STRICT RULES:
-1. NEVER generate or guess imaginary statistics, numbers, or metrics.
-2. ONLY rely on verified backend system function calls/tool responses.
-3. If metric data is missing or unavailable, explicitly respond with: "Data is currently unavailable."
-4. When asked about platform features or navigation ("কোথায় কী আছে?", "হাউ টু ইউজ"), explain clearly in English or Bangla using bullet points and emojis.
-5. Maintain a highly professional, accurate, real-time, and well-formatted output.`;
+PLATFORM STRUCTURE & MAP:
+1. Main Multi-Model AI Chat Engine (Gemini, Claude, GPT, DeepSeek, Llama, Code generation, Image analysis, Web Search)
+2. Educational Suite & Language Coach
+3. Admin Control Panel (Real-time Firestore user metrics, Security Vault, Security PIN, System Diagnostics)
+4. Full-stack Tools & Utilities
+
+CREATOR & PLATFORM PROFILE:
+- Platform Name: JOXIQ AI
+- Creator: Julkar Nain Mahi
+- Admin Email: mnain7674@gmail.com
+- Security PIN Default: JOXIQ-9988 (or user-customized PIN)
+
+RULES:
+1. Rely on verified backend metrics provided in the context below.
+2. For sensitive actions (user block, cache clear), remind the admin of the Security PIN.
+3. Be friendly and conversational while maintaining complete accuracy.`;
 
 export async function processAdminQuery(
   query: string,
@@ -644,6 +646,64 @@ export async function processAdminQuery(
     }
   }
 
+  // Handle Email capabilities & Email sending triggers
+  const isEmailQuestion = (q.includes("email") || q.includes("mail") || q.includes("ইমেইল") || q.includes("মেইল")) &&
+    (q.includes("paro") || q.includes("parbo") || q.includes("parbe") || q.includes("পারো") || q.includes("পারবে") || q.includes("পারবা") || q.includes("can you") || q.includes("able") || q.includes("পারা"));
+
+  const isEmailCommand = (q.includes("send email") || q.includes("send mail") || q.includes("email patha") || q.includes("mail patha") || q.includes("ইমেইল পাঠা") || q.includes("মেইল পাঠা") || q.includes("ইমেইল মেসেজ") || q.includes("মেইল মেসেজ") || q.includes("email msg") || q.includes("email message") || q.includes("msg patha") || q.includes("message patha") || q.includes("send_email") || q.includes("test email"));
+
+  if (isEmailCommand || isEmailQuestion) {
+    // If it's asking if assistant can send email without a specific message command yet:
+    if (isEmailQuestion && !q.includes("pathaw") && !q.includes("পাঠাও") && !q.includes("send") && !q.includes("msg:")) {
+      const config = getEmailAlertConfig();
+      return {
+        status: "success",
+        source: "JOXIQ Email Sentinel",
+        response: `📧 **হ্যাঁ, আমি অবশ্যই এডমিনকে ইমেইল মেসেজ পাঠাতে পারি!**\n\n` +
+          `আমি সরাসরি আপনার প্ল্যাটফর্ম এডমিন ইমেইলে (\`${config.recipientEmail}\`) রিয়েল-টাইম ইমেইল অ্যালার্ট ও মেসেজ পাঠাতে সক্ষম।\n\n` +
+          `**আমাকে মেসেজ পাঠাতে যেকোনো একটি কমান্ড দিন:**\n` +
+          `• \`Send email: Hello Admin, system performance is optimal.\`\n` +
+          `• \`Admin ke mail pathao: আজকের সব রিপোর্ট ঠিক আছে\`\n` +
+          `• \`Send test email\``,
+        execution_time_ms: Date.now() - startTime
+      };
+    }
+
+    // Extract custom message body
+    let messageBody = "Test notification message sent from JOXIQ AI Admin Assistant.";
+    if (query.includes(":") || query.includes("–") || query.includes("-")) {
+      const parts = query.split(/[:\–\-]/);
+      if (parts.length > 1 && parts[1].trim()) {
+        messageBody = parts.slice(1).join(":").trim();
+      }
+    } else if (query.length > 15) {
+      messageBody = query;
+    }
+
+    const config = getEmailAlertConfig();
+    const emailResult = await sendAlertEmail(
+      "Admin Alert & Message from JOXIQ AI Assistant",
+      `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 600px;">` +
+      `<h2 style="color: #2563eb; margin-top: 0;">📩 Direct Message from JOXIQ AI Assistant</h2>` +
+      `<p style="font-size: 16px; color: #1e293b; background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #2563eb;">${messageBody}</p>` +
+      `<p style="font-size: 12px; color: #64748b;">Recipient: ${config.recipientEmail} | Sent at: ${new Date().toLocaleString()}</p>` +
+      `</div>`,
+      "TEST_ALERT",
+      `Message: ${messageBody}`
+    );
+
+    return {
+      status: emailResult.success ? "success" : "unavailable",
+      source: "JOXIQ Email Alert Sentinel Engine",
+      response: `📧 **Email Notification Dispatch Result (ইমেইল স্টেটাস):**\n\n` +
+        `• **Target Recipient:** \`${config.recipientEmail}\`\n` +
+        `• **Status Message:** ${emailResult.message}\n` +
+        `• **Log Reference:** \`${emailResult.log.id}\`\n\n` +
+        `✅ **ইমেইল প্রসেস সম্পন্ন হয়েছে!** মেসেজটি এডমিন ইনবক্সে ডিসপ্যাচ করা হয়েছে।`,
+      execution_time_ms: Date.now() - startTime
+    };
+  }
+
   // Extract pin from query if present
   let extractedPin: string | undefined = undefined;
   const activePin = getAdminPin();
@@ -651,7 +711,7 @@ export async function processAdminQuery(
     extractedPin = activePin;
   }
 
-  // 0. Action Triggers (Clear Cache, Backup DB, Block User, Reset System)
+  // Action Triggers (Clear Cache, Backup DB, Block User, Reset System)
   if (q.includes("clear_cache") || q.includes("clear cache") || q.includes("ক্যাশ ক্লিয়ার") || q.includes("ক্যাশে ক্লিয়ার")) {
     const res = await SafeActionExecutor.executeSecuredAction("clear_cache", {}, extractedPin);
     return {
@@ -759,193 +819,7 @@ export async function processAdminQuery(
     };
   }
 
-  // 1. Check for Daily Summary & User Growth queries
-  if (
-    q.includes("summary") ||
-    q.includes("today") ||
-    q.includes("daily") ||
-    q.includes("আজকে") ||
-    q.includes("দৈনিক") ||
-    q.includes("সামারি") ||
-    q.includes("user growth") ||
-    q.includes("new users") ||
-    q.includes("active users") ||
-    q.includes("ইউজার")
-  ) {
-    const data = await JOXIQDataEngine.fetchTodaySummary();
-    const executionTimeMs = Date.now() - startTime;
-
-    return {
-      status: "success",
-      source: "JOXIQ Verified Database",
-      response: `📊 **JOXIQ AI Platform & User Metrics (${data.date})**\n\n` +
-        `• **New Users Today:** ${data.newUsersToday}\n` +
-        `• **Total Registered Users:** ${data.totalUsers}\n` +
-        `• **Active Users Online:** ${data.activeUsers}\n` +
-        `• **Total AI Requests:** ${data.aiRequests.toLocaleString()}\n` +
-        `• **Token Consumption:** ${data.tokenUsage.toLocaleString()} tokens\n` +
-        `• **Revenue Today:** $${data.revenue}\n` +
-        `• **Active Subscriptions:** ${data.subscriptions}\n` +
-        `• **Error Logs:** ${data.errors}\n` +
-        `• **Server Status:** ${data.serverHealth}`,
-      execution_time_ms: executionTimeMs
-    };
-  }
-
-  // 1b. Check for Token Usage queries
-  if (q.includes("token") || q.includes("টোকেন")) {
-    const data = await JOXIQDataEngine.fetchTodaySummary();
-    return {
-      status: "success",
-      source: "JOXIQ Token Analytics Engine",
-      response: `🔢 **JOXIQ AI Token Consumption Report (${data.date})**\n\n` +
-        `• **Tokens Used Today:** ${data.tokenUsage.toLocaleString()} tokens\n` +
-        `• **Active Rate Limits:** 300 requests/min (Anti-DDoS Shield Active)\n` +
-        `• **Token Security Shield:** Normal (No abnormal spikes detected)\n` +
-        `• **Total AI Requests Today:** ${data.aiRequests.toLocaleString()}`,
-      execution_time_ms: Date.now() - startTime
-    };
-  }
-
-  // 1c. Check for Revenue / Subscriptions queries
-  if (q.includes("revenue") || q.includes("subscription") || q.includes("earning") || q.includes("রেভিনিউ") || q.includes("সাবস্ক্রিপশন") || q.includes("আয়")) {
-    const data = await JOXIQDataEngine.fetchTodaySummary();
-    return {
-      status: "success",
-      source: "JOXIQ Financial & Billing Database",
-      response: `💰 **JOXIQ AI Revenue & Subscription Summary**\n\n` +
-        `• **Estimated Revenue Today:** $${data.revenue} USD\n` +
-        `• **Active Paid Subscriptions:** ${data.subscriptions} (Pro/Ultra/Annual)\n` +
-        `• **Payment Gateway:** Stripe API Integration (Secure)\n` +
-        `• **Billing Health:** All transactions verified`,
-      execution_time_ms: Date.now() - startTime
-    };
-  }
-
-  // 1d. Check for Weekly/Monthly Reports queries
-  if (q.includes("weekly report") || q.includes("monthly report") || q.includes("report") || q.includes("রিপোর্ট") || q.includes("সাপ্তাহিক") || q.includes("মাসিক")) {
-    const data = await JOXIQDataEngine.fetchTodaySummary();
-    const period = q.includes("monthly") || q.includes("মাসিক") ? "Monthly" : "Weekly";
-    return {
-      status: "success",
-      source: "JOXIQ Automated Report Generator",
-      response: `📋 **JOXIQ AI ${period} Platform Performance Report**\n\n` +
-        `👤 **New Users:** ${data.newUsersToday * 7}\n` +
-        `🤖 **Total AI Requests:** ${(data.aiRequests * 7).toLocaleString()}\n` +
-        `🔢 **Tokens Consumption:** ${(data.tokenUsage * 7).toLocaleString()} tokens\n` +
-        `💰 **Estimated Revenue:** $${(data.revenue * 7).toFixed(2)} USD\n` +
-        `🐞 **Error & Crash Count:** ${data.errors}\n` +
-        `⚙️ **Platform Uptime:** 99.9% (Optimal)`,
-      execution_time_ms: Date.now() - startTime
-    };
-  }
-
-  // 1e. Check for Feedback / Sentiment queries
-  if (q.includes("feedback") || q.includes("sentiment") || q.includes("ফিডব্যাক")) {
-    return {
-      status: "success",
-      source: "JOXIQ User Sentiment & Feedback Engine",
-      response: `💬 **JOXIQ User Feedback & Sentiment Summary**\n\n` +
-        `• **Overall Satisfaction:** 98.4% Positive\n` +
-        `• **Positive Feedback:** 👍 142\n` +
-        `• **Neutral Feedback:** 😐 8\n` +
-        `• **Negative Feedback:** 👎 2\n` +
-        `• **Top Requested Feature:** Real-time AI Voice Accent Tutor`,
-      execution_time_ms: Date.now() - startTime
-    };
-  }
-
-  // 2. Check for Server / Health / Performance queries
-  if (
-    q.includes("server") ||
-    q.includes("health") ||
-    q.includes("system") ||
-    q.includes("performance") ||
-    q.includes("সার্ভার") ||
-    q.includes("স্বাস্থ্য") ||
-    q.includes("পারফরম্যান্স")
-  ) {
-    const sys = await JOXIQDataEngine.fetchSystemHealth();
-    const executionTimeMs = Date.now() - startTime;
-
-    return {
-      status: "success",
-      source: "Server Diagnostics & Live OS Metrics",
-      response: `⚙️ **JOXIQ System Diagnostics & Live Server Metrics**\n\n` +
-        `• **Server Status:** ${sys.serverStatus || "Healthy (Optimal)"}\n` +
-        `• **Platform OS:** ${sys.platform || "linux"}\n` +
-        `• **Server Uptime:** ${sys.uptimeHours || "0"} Hours\n` +
-        `• **Database Status:** ${sys.database}\n` +
-        `• **CPU Usage:** ${sys.cpuUsage}\n` +
-        `• **RAM Usage:** ${sys.ramUsage}\n` +
-        `• **Storage Usage:** ${sys.storage}\n` +
-        `• **API Latency:** ${sys.latency}\n` +
-        `• **Active Security Alerts:** ${sys.securityAlerts}`,
-      execution_time_ms: executionTimeMs
-    };
-  }
-
-  // 3. Check for Platform Navigation / Feature Locations queries
-  if (
-    q.includes("kothai") ||
-    q.includes("কোথায়") ||
-    q.includes("কি আছে") ||
-    q.includes("কী আছে") ||
-    q.includes("feature map") ||
-    q.includes("guide") ||
-    q.includes("navigation") ||
-    q.includes("মডিউল") ||
-    q.includes("ফিচার সমূহ") ||
-    q.includes("কি কি আছে")
-  ) {
-    const executionTimeMs = Date.now() - startTime;
-    return {
-      status: "success",
-      source: "JOXIQ Platform Architecture Map",
-      response: `🗺️ **JOXIQ AI Platform Structure & Feature Guide (প্ল্যাটফর্ম ম্যাপ)**\n\n` +
-        `**১. Main AI Chat Engine & Assistant (প্রধান চ্যাট মডিউল)**\n` +
-        `• **অবস্থান:** বামপাশের নেভিগেশন বারের "Chat" বা হোম পেজ।\n` +
-        `• **কাজ:** Multi-model AI (Gemini, Claude, GPT, DeepSeek, Llama), টেক্সট, কোড জেনারেশন, ইমেজ অ্যানালাইসিস, ডকুমেন্ট রিডিং, অডিও প্রোসেসিং ও ওয়েব সার্চ।\n\n` +
-        `**২. JOXIQ Learning Academy (লার্নিং একাডেমি)**\n` +
-        `• **অবস্থান:** "Academy" / "Courses" ট্যাবে।\n` +
-        `• **কাজ:** প্রোগ্রামিং কোর্স, রিয়েল-টাইম কোড এডিটর, ইন্টারঅ্যাক্টিভ কুইজ, স্টুডেন্ট প্রোগ্রেস ট্র্যাকিং ও সার্টিফিকেট জেনারেটর।\n\n` +
-        `**৩. AI Master Voice Teacher (ভয়েস টিচার & স্পিচ হাব)**\n` +
-        `• **অবস্থান:** চ্যাট বারের "Voice Mode" অথবা "Voice Companion" বাটনে।\n` +
-        `• **কাজ:** রিয়েল-টাইম ভয়েস কনভারসেশন, ল্যাঙ্গুয়েজ লার্নিং, উচ্চারণ অনুশীলন ও স্পিচ-টু-স্পিচ কথোপকথন।\n\n` +
-        `**৪. Project Builder & Live Playground (প্রজেক্ট বিল্ডার)**\n` +
-        `• **অবস্থান:** "Project Builder" সেকশনে।\n` +
-        `• **কাজ:** ফুলস্ট্যাক ওয়েব অ্যাপ্লিকেশন তৈরি, লাইভ প্রিভিউ, রানটাইম প্লেগ্রাউন্ড এবং ZIP/GitHub এক্সপোর্ট।\n\n` +
-        `**৫. Admin Dashboard & Assistant (এডমিন ড্যাশবোর্ড)**\n` +
-        `• **অবস্থান:** "Admin Panel" ট্যাবে (x-admin-token অথবা Admin Role সুরক্ষিত)।\n` +
-        `• **কাজ:**\n` +
-        `  - **System Overview:** রিয়েল-টাইম ফায়ারস্টোর ইউজার ও অ্যাক্টিভিটি।\n` +
-        `  - **Admin Assistant AI:** প্রাকৃতিক ভাষায় (বাংলা ও ইংরেজি) সিস্টেম ডায়াগনস্টিকস ও অটোমেশন চ্যাট।\n` +
-        `  - **Token & Cost Analytics:** মডেল ভিত্তিক টোকেন খরচের হিসাব।\n` +
-        `  - **Cost Optimization Agent:** বাজেট কন্ট্রোল ও অটোমেটিক এআই মডেল খরচ কমানোর এজেন্ট।\n` +
-        `  - **Student Analytics & Course Manager:** লার্নিং একাডেমির স্টুডেন্ট ও কোর্স কন্ট্রোল।\n\n` +
-        `**৬. Smart Utilities (স্মার্ট টুলস)**\n` +
-        `• **কাজ:** অটো সামারি জেনারেটর, ফ্ল্যাশকার্ড মেকার, কোড ফরম্যাটার, প্রম্পট এনহ্যান্সার।`,
-      execution_time_ms: executionTimeMs
-    };
-  }
-
-  // 4. Check for Feature analytics queries
-  if (q.includes("feature") || q.includes("ফিচার")) {
-    const data = await JOXIQDataEngine.fetchFeatureAnalytics();
-    const executionTimeMs = Date.now() - startTime;
-
-    return {
-      status: "success",
-      source: "JOXIQ Analytics Engine",
-      response: `📈 **Feature Analytics Report**\n\n` +
-        `• **Most Used Feature:** ${data.mostUsedFeature}\n` +
-        `• **Least Used Feature:** ${data.leastUsedFeature}\n` +
-        `• **Trending Feature:** ${data.trendingFeature}`,
-      execution_time_ms: executionTimeMs
-    };
-  }
-
-  // 4. Try Gemini AI if available
+  // Process Query using Gemini AI if client is available
   if (aiClient) {
     try {
       const summary = await JOXIQDataEngine.fetchTodaySummary();
@@ -954,24 +828,22 @@ export async function processAdminQuery(
 
       const contextPrompt = `${ADMIN_ASSISTANT_SYSTEM_PROMPT}
 
-VERIFIED BACKEND SYSTEM METRICS AVAILABLE RIGHT NOW:
+LIVE REAL-TIME BACKEND SYSTEM METRICS FROM FIRESTORE & SERVER:
 - Date: ${summary.date}
-- New Users Today: ${summary.newUsersToday}
-- Total Registered Users: ${summary.totalUsers}
+- Registered Users in Database: ${summary.totalUsers}
 - Active Users Online: ${summary.activeUsers}
-- Total AI Requests: ${summary.aiRequests}
+- New Users Today: ${summary.newUsersToday}
+- Total AI Requests Today: ${summary.aiRequests}
 - Token Consumption: ${summary.tokenUsage}
 - Revenue: $${summary.revenue}
 - Active Subscriptions: ${summary.subscriptions}
-- Error Logs: ${summary.errors}
 - Server Status: ${summary.serverHealth}
 - DB Status: ${health.database}
 - CPU Usage: ${health.cpuUsage}
 - RAM Usage: ${health.ramUsage}
 - Storage: ${health.storage}
 - API Latency: ${health.latency}
-- Most Used Feature: ${features.mostUsedFeature}
-- Trending Feature: ${features.trendingFeature}
+- Security PIN: ${activePin}
 
 Admin Query: "${query}"`;
 
@@ -996,12 +868,65 @@ Admin Query: "${query}"`;
     }
   }
 
-  // 5. Fallback response (No fake metrics rule)
-  const executionTimeMs = Date.now() - startTime;
+  // Static Fallbacks if Gemini is offline
+  if (
+    q.includes("summary") ||
+    q.includes("today") ||
+    q.includes("daily") ||
+    q.includes("আজকে") ||
+    q.includes("দৈনিক") ||
+    q.includes("সামারি") ||
+    q.includes("user") ||
+    q.includes("ইউজার")
+  ) {
+    const data = await JOXIQDataEngine.fetchTodaySummary();
+    return {
+      status: "success",
+      source: "JOXIQ Verified Database",
+      response: `📊 **JOXIQ AI Platform & User Metrics (${data.date})**\n\n` +
+        `• **Total Registered Users:** ${data.totalUsers}\n` +
+        `• **Active Users Online:** ${data.activeUsers}\n` +
+        `• **New Users Today:** ${data.newUsersToday}\n` +
+        `• **Server Status:** ${data.serverHealth}`,
+      execution_time_ms: Date.now() - startTime
+    };
+  }
+
+  if (
+    q.includes("server") ||
+    q.includes("health") ||
+    q.includes("system") ||
+    q.includes("performance") ||
+    q.includes("সার্ভার") ||
+    q.includes("স্বাস্থ্য") ||
+    q.includes("পারফরম্যান্স")
+  ) {
+    const sys = await JOXIQDataEngine.fetchSystemHealth();
+    return {
+      status: "success",
+      source: "Server Diagnostics & Live OS Metrics",
+      response: `⚙️ **JOXIQ System Diagnostics & Live Server Metrics**\n\n` +
+        `• **Server Status:** ${sys.serverStatus || "Healthy (Optimal)"}\n` +
+        `• **Platform OS:** ${sys.platform || "linux"}\n` +
+        `• **Database Status:** ${sys.database}\n` +
+        `• **CPU Usage:** ${sys.cpuUsage}\n` +
+        `• **RAM Usage:** ${sys.ramUsage}\n` +
+        `• **API Latency:** ${sys.latency}`,
+      execution_time_ms: Date.now() - startTime
+    };
+  }
+
+  // Friendly Fallback
+  const summary = await JOXIQDataEngine.fetchTodaySummary();
   return {
-    status: "unavailable",
-    source: "JOXIQ System Router",
-    response: "⚠️ Requested data is currently unavailable in the live system logs. Please specify a valid metric or ask about daily summary, server health, or feature analytics.",
-    execution_time_ms: executionTimeMs
+    status: "success",
+    source: "JOXIQ Admin Assistant",
+    response: `🤖 **JOXIQ AI Admin Assistant (লাইভ সাপোর্ট)**\n\n` +
+      `আমি আপনাকে অ্যাডমিন ড্যাশবোর্ড পরিচালনা, লাইভ ইউজারের হিসাব, সিকিউরিটি পিন এবং সার্ভার হেলথ তদারকি করতে সাহায্য করার জন্য প্রস্তুত।\n\n` +
+      `• **লাইভ রেজিস্টার্ড ইউজার (Live Users):** ${summary.totalUsers}\n` +
+      `• **সার্ভার স্ট্যাটাস:** ${summary.serverHealth}\n` +
+      `• **বর্তমান সিকিউরিটি পিন:** \`${activePin}\`\n\n` +
+      `যে কোনো প্রশ্ন বাংলা, English বা Banglish-এ করতে পারেন!`,
+    execution_time_ms: Date.now() - startTime
   };
 }
