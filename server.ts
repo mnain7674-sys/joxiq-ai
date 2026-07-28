@@ -8,6 +8,7 @@ import Stripe from "stripe";
 import { chatService } from "./src/services/chatService.js";
 import { costOptimizationAgent } from "./src/ai/costOptimizationAgent.js";
 import { processAdminQuery, handleAdminAction, SecurityAutomationEngine, SelfHealingEngine, AutomationLogger } from "./src/services/adminAutomationService.js";
+import adminV2Routes from "./src/routes/adminV2Routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -243,6 +244,9 @@ const handleAdminChatRoute = async (req: express.Request, res: express.Response)
 };
 
 app.post("/api/admin/chat", verifyAdminAccess, handleAdminChatRoute);
+
+// Mount Admin Automation V2 Router (95 routes, 100 features)
+app.use("/api/admin-v2", adminV2Routes);
 
 // JOXIQ Admin Assistant Modular Backend Router Mount
 try {

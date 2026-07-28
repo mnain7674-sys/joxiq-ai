@@ -47,6 +47,7 @@ import { SAMPLE_BUILDER_PROJECTS } from "../data/projectBuilderData";
 import { AdminCourseManager } from "./learning/AdminCourseManager";
 import { AdminAnalyticsDashboard } from "./learning/AdminAnalyticsDashboard";
 import { AdminAssistantChat } from "./AdminAssistantChat";
+import { AdminAutomationDashboard } from "./AdminAutomationDashboard";
 import { AutomationActivityFeed } from "./AutomationActivityFeed";
 
 interface AdminDashboardProps {
@@ -512,6 +513,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Tab: JOXIQ AI Admin Assistant AI */}
         {activeTab === "admin-assistant" && (
           <div className="space-y-6">
+            <AdminAutomationDashboard />
             <AdminAssistantChat isDark={isDark} />
           </div>
         )}
