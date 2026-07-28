@@ -22,6 +22,7 @@ import { ClaudeProvider } from "./claude.js";
 import { aiDecisionEngine } from "./decisionEngine.js";
 import { tokenOptimizer } from "./tokenOptimizer.js";
 import { costOptimizationAgent } from "./costOptimizationAgent.js";
+import { checkAndTriggerAiAnomalyAlert } from "../services/aiEmailAlertService.js";
 import {
   IAIProvider,
   AIProviderId,
@@ -207,12 +208,27 @@ export class AIRouter {
     };
 
     let fullGeneratedText = "";
+    const startTime = Date.now();
 
-    for await (const chunk of provider.generateStream(optimizedMessages, effectiveOptions)) {
-      if (chunk.text) {
-        fullGeneratedText += chunk.text;
+    try {
+      for await (const chunk of provider.generateStream(optimizedMessages, effectiveOptions)) {
+        if (chunk.text) {
+          fullGeneratedText += chunk.text;
+        }
+        yield chunk;
       }
-      yield chunk;
+
+      const durationMs = Date.now() - startTime;
+      checkAndTriggerAiAnomalyAlert({
+        latencyMs: durationMs,
+        model: modelToUse
+      }).catch(err => console.error("Anomaly check error:", err));
+    } catch (err: any) {
+      checkAndTriggerAiAnomalyAlert({
+        error: err.message || String(err),
+        model: modelToUse
+      }).catch(e => console.error("Anomaly error alert check error:", e));
+      throw err;
     }
 
     // Calculate final Token Usage Record for tracking
@@ -255,7 +271,22 @@ export class AIRouter {
       maxTokens: routeDecision.maxOutputTokens,
     };
 
-    return await provider.generateContent(optimizedMessages, effectiveOptions);
+    const startTime = Date.now();
+    try {
+      const res = await provider.generateContent(optimizedMessages, effectiveOptions);
+      const durationMs = Date.now() - startTime;
+      checkAndTriggerAiAnomalyAlert({
+        latencyMs: durationMs,
+        model: modelToUse
+      }).catch(err => console.error("Anomaly check error:", err));
+      return res;
+    } catch (err: any) {
+      checkAndTriggerAiAnomalyAlert({
+        error: err.message || String(err),
+        model: modelToUse
+      }).catch(e => console.error("Anomaly error alert check error:", e));
+      throw err;
+    }
   }
 }
 

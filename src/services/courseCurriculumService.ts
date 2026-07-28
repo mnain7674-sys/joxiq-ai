@@ -8,7 +8,7 @@ import {
   ClassExample,
   ClassQuizQuestion
 } from "../types/learning";
-import { AutomationLogger } from "./adminAutomationService";
+import { AutomationLogger } from "../lib/automationLogger";
 
 const COURSES_COLLECTION = "courses";
 const CURRICULUMS_COLLECTION = "course_curriculums";

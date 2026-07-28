@@ -4,8 +4,9 @@
  * security authentication (x-admin-token), audit logging, and real-time backend diagnostics.
  */
 
-import { GoogleGenAI } from "@google/genai";
+import type { GoogleGenAI } from "@google/genai";
 import { db, collection, getDocs } from "../lib/firebase.js";
+import { sendAlertEmail } from "./aiEmailAlertService.js";
 
 // Client-safe memory & platform metrics helpers
 function getClientSystemMetrics() {
@@ -205,6 +206,14 @@ export class SecurityAutomationEngine {
       if (this.securityLogs.length > 50) this.securityLogs.pop();
       AutomationLogger.logActivity("Security Guard", `IP ${clientIp} blocked due to DDoS attempt.`);
 
+      // Dispatch automated real email alert
+      sendAlertEmail(
+        `Anti-DDoS Shield Triggered: IP ${clientIp} Blocked`,
+        `<h3>🚨 Anti-DDoS Security Alert</h3><p>IP address <strong>${clientIp}</strong> exceeded rate limits with ${requests.length} requests/min and has been auto-blocked.</p>`,
+        "SUSPICIOUS_ACTIVITY",
+        `DDoS IP: ${clientIp}`
+      ).catch(e => console.error("Security email alert failed:", e));
+
       // Auto unblock after 3 minutes cooldown
       setTimeout(() => {
         this.blockedIPs.delete(clientIp);
@@ -232,6 +241,15 @@ export class SecurityAutomationEngine {
       this.securityLogs.unshift(log);
       if (this.securityLogs.length > 50) this.securityLogs.pop();
       AutomationLogger.logActivity("Security Defender", `User ${userId} paused due to excessive token consumption (${currentUsage} tokens).`);
+
+      // Dispatch automated email alert
+      sendAlertEmail(
+        `Token Usage Defender Triggered: User ${userId} Auto-Paused`,
+        `<h3>⚠️ Token Consumption Security Alert</h3><p>User account <strong>${userId}</strong> consumed <strong>${currentUsage} tokens</strong> (threshold: ${hourlyLimit}) and has been automatically paused.</p>`,
+        "QUOTA_EXCEEDED",
+        `User ID: ${userId}`
+      ).catch(e => console.error("Token usage email alert failed:", e));
+
       return { allowed: false, reason: "Suspicious token consumption detected. Account auto-paused." };
     }
 

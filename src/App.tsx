@@ -61,7 +61,7 @@ import {
   Calculator
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { Analytics } from "@vercel/analytics/react";
+const Analytics = () => null;
 
 import {
   Message,

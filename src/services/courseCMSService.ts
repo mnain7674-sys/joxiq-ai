@@ -5,7 +5,7 @@ import {
   CMSContentStatus
 } from "../types/courseCMS";
 import { CourseCategory, CourseLevel } from "../types/learning";
-import { AutomationLogger } from "./adminAutomationService";
+import { AutomationLogger } from "../lib/automationLogger";
 
 const FIRESTORE_COLLECTION = "course_lessons";
 const LOCAL_STORAGE_KEY = "joxiq_cms_lessons_cache";
