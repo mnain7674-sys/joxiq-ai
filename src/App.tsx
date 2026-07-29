@@ -55,7 +55,6 @@ import {
   LogIn,
   UserPlus,
   User,
-  LayoutGrid,
   Wrench,
   Crown,
   MoreVertical,
@@ -77,11 +76,9 @@ import {
 import { MarkdownMessage } from "./components/MarkdownMessage";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { EducationalSuite } from "./components/EducationalSuite";
-import { ToolsPage } from "./components/ToolsPage";
 import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
-import { LanguageCoach } from "./components/LanguageCoach";
 import { JoxiqLogo } from "./components/JoxiqLogo";
 
 const joxiqLogo = "/logo.png";
@@ -129,7 +126,7 @@ export default function App() {
   }, []);
 
   // --- Active main layout view ---
-  const [activeView, setActiveView] = useState<"chat" | "education" | "tools" | "admin" | "language-coach">("chat");
+  const [activeView, setActiveView] = useState<"chat" | "education" | "admin">("chat");
 
   // --- Conversations and active state ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -683,37 +680,6 @@ export default function App() {
       textareaRef.current.focus();
     }
     return newChat;
-  };
-
-  const startToolSession = (
-    toolName: string,
-    personaId: string,
-    systemInstruction: string,
-    initialPrompt: string,
-    initialImage?: AttachedImage,
-    initialDocument?: AttachedDocument
-  ) => {
-    setActiveView("chat");
-    setSelectedPersonaId(personaId);
-    
-    const newChat: Conversation = {
-      id: Math.random().toString(36).substring(2, 11),
-      title: `${toolName}: ${initialPrompt.length > 20 ? initialPrompt.substring(0, 20) + "..." : initialPrompt}`,
-      messages: [],
-      model: "gemini-2.5-flash",
-      systemInstruction: systemInstruction,
-      temperature: 0.7,
-      useSearch: false,
-      timestamp: Date.now(),
-    };
-
-    setConversations((prev) => [newChat, ...prev]);
-    setActiveId(newChat.id);
-    setInputText("");
-    
-    setTimeout(() => {
-      handleSendMessage(initialPrompt, newChat, initialImage, initialDocument);
-    }, 150);
   };
 
   // Delete conversation
@@ -1650,46 +1616,8 @@ export default function App() {
         </div>
 
         {/* Workspace Mode Selection */}
-        <div className="px-4 pb-4 border-b border-slate-500/10 flex flex-col gap-1.5">
-          <button
-            onClick={() => setActiveView("chat")}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              activeView === "chat"
-                ? (theme === "dark" ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold")
-                : "border-transparent text-slate-500 hover:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <MessageSquare size={14} className="text-indigo-500" />
-            <span>JOXIQ AI Chat Hub</span>
-          </button>
-
-          <button
-            onClick={() => setActiveView("tools")}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              activeView === "tools"
-                ? (theme === "dark" ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold")
-                : "border-transparent text-slate-500 hover:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <LayoutGrid size={14} className="text-violet-500" />
-            <span className="flex-1 text-left">Workspace Tools</span>
-            <span className="text-[9px] uppercase font-extrabold tracking-widest bg-violet-500/10 text-violet-500 px-1.5 py-0.5 rounded-md">New</span>
-          </button>
-
-          <button
-            onClick={() => setActiveView("language-coach")}
-            className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-              activeView === "language-coach"
-                ? (theme === "dark" ? "bg-indigo-600/10 border-indigo-500/30 text-indigo-400" : "bg-indigo-50 border-indigo-200 text-indigo-700 font-extrabold")
-                : "border-transparent text-slate-500 hover:text-slate-400 dark:hover:text-slate-200"
-            }`}
-          >
-            <Languages size={14} className="text-pink-500" />
-            <span className="flex-1 text-left">Language Coach</span>
-            <span className="text-[9px] uppercase font-extrabold tracking-widest bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded-md border border-amber-500/20">PRO</span>
-          </button>
-
-          {userProfile?.email?.toLowerCase() === "mnain7674@gmail.com" && (
+        {userProfile?.email?.toLowerCase() === "mnain7674@gmail.com" && (
+          <div className="px-4 pb-4 border-b border-slate-500/10 flex flex-col gap-1.5">
             <button
               onClick={() => setActiveView("admin")}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
@@ -1702,8 +1630,8 @@ export default function App() {
               <span className="flex-1 text-left">Admin Portal 👑</span>
               <span className="text-[9px] uppercase font-extrabold tracking-widest bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded-md">Owner</span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
 
 
@@ -2050,63 +1978,6 @@ export default function App() {
         ) : activeView === "education" ? (
           <div className="flex-1 overflow-y-auto">
             <EducationalSuite theme={theme === "light" ? "light" : "dark"} userProfile={userProfile} />
-          </div>
-        ) : activeView === "language-coach" ? (
-          <div className="flex-1 overflow-y-auto">
-            <LanguageCoach 
-              theme={theme === "light" ? "light" : "dark"} 
-              userProfile={userProfile} 
-              isProUser={isProUser}
-              onUpgrade={() => setProModalOpen(true)}
-              onStartLanguageChat={(lang, level, feature) => {
-                setActiveView("chat");
-                setSelectedPersonaId("translator");
-                const newChat: Conversation = {
-                  id: Math.random().toString(36).substring(2, 11),
-                  title: `${lang} Coach (${level})`,
-                  messages: [
-                    {
-                      id: Math.random().toString(36).substring(2, 11),
-                      role: "assistant",
-                      content: `Hello! I am your AI Language Coach for **${lang}** at a **${level}** level. We are focusing on **${feature}**.\n\nHow would you like to begin today? We can practice conversation, review grammar, or build vocabulary!`,
-                      timestamp: Date.now()
-                    }
-                  ],
-                  model: "gemini-2.5-flash",
-                  systemInstruction: `You are an expert, highly experienced professional AI Language Coach (not a chatbot) teaching ${lang} at a ${level} level. Focus on ${feature}. 
-
-CRITICAL PEDAGOGICAL TEACHING RULES:
-1. Never start a lesson or introduce a new topic with examples.
-2. Always begin by explaining the core concept first in simple, beginner-friendly language, assuming zero prior knowledge.
-3. Before giving any example, ensure the learner fully understands: What the topic is, Why it exists, Why it is important, Where/When it is used, and How it works.
-4. Explain everything using simple, beginner-friendly language. Never assume the learner already knows anything.
-5. After the learner understands the concept, gradually introduce examples starting with exactly one very simple example.
-6. Explain that example step step and line by line.
-7. Only after the learner understands the first example, introduce more examples with increasing difficulty. Never overload the learner with many examples at once.
-8. Focus on understanding before memorization.
-9. Continuously evaluate the learner's understanding through thoughtful questions and interactive checkpoints. If understanding is weak, STOP moving forward and spend more time explaining the concepts in different ways instead of rushing to complete the syllabus.
-10. Never give information just to finish a lesson. Teach until the learner genuinely and deeply understands. The learner's success is far more important than completing the syllabus.
-11. If the learner seems confused, stop introducing new content. Instead explain again in different words, use a clear analogy or real-life scenario, and ask for confirmation before proceeding.
-12. Treat this like an interactive premium classroom session. Never rush.`,
-                  temperature: 0.7,
-                  useSearch: true,
-                  timestamp: Date.now()
-                };
-                setConversations(prev => [newChat, ...prev]);
-                setActiveId(newChat.id);
-              }}
-            />
-          </div>
-        ) : activeView === "tools" ? (
-          <div className="flex-1 overflow-y-auto">
-            <ToolsPage 
-              theme={theme === "light" ? "light" : "dark"} 
-              onStartToolSession={startToolSession} 
-              onNavigateToChat={() => {
-                setActiveView("chat");
-                setSelectedPersonaId("general");
-              }}
-            />
           </div>
         ) : (
           <>
