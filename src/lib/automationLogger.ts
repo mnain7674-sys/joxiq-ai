@@ -38,4 +38,18 @@ export class AutomationLogger {
     }
     return logEntry;
   }
+
+  public static getLogs(): LogEntry[] {
+    if (typeof window !== "undefined" && window.localStorage) {
+      try {
+        const stored = localStorage.getItem(AUTOMATION_LOGS_KEY);
+        if (stored) {
+          return JSON.parse(stored);
+        }
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  }
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Activity, RefreshCw, ShieldAlert, Cpu, Key, CheckCircle2, Clock } from "lucide-react";
+import { AutomationLogger } from "../lib/automationLogger";
 
 export interface LogEntry {
   timestamp: string;
@@ -25,19 +26,24 @@ export const AutomationActivityFeed: React.FC<AutomationActivityFeedProps> = ({
     try {
       setError(null);
       const res = await fetch("/api/admin/automation-logs");
-      if (!res.ok) {
-        throw new Error(`Server returned status ${res.status}`);
-      }
-      const data = await res.json();
-      if (data.status === "success" && Array.isArray(data.logs)) {
-        setLogs(data.logs);
+      const contentType = res.headers.get("content-type") || "";
+
+      if (res.ok && contentType.includes("application/json")) {
+        const data = await res.json();
+        if (data.status === "success" && Array.isArray(data.logs)) {
+          setLogs(data.logs);
+        } else {
+          setLogs(AutomationLogger.getLogs());
+        }
       } else {
-        setLogs([]);
+        // Fallback to local storage logs
+        setLogs(AutomationLogger.getLogs());
       }
       setLastRefreshed(new Date().toLocaleTimeString());
     } catch (err: any) {
-      console.error("Error fetching automation logs:", err);
-      setError("Failed to load activity logs.");
+      // Fallback to local storage logs gracefully
+      setLogs(AutomationLogger.getLogs());
+      setLastRefreshed(new Date().toLocaleTimeString());
     } finally {
       setIsLoading(false);
     }
