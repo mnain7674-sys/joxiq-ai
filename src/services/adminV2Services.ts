@@ -33,7 +33,7 @@ async function getRealUsersFromFirestore(): Promise<any[]> {
       plan: "ultra",
       createdAt: new Date().toISOString().split("T")[0],
       lastLogin: new Date().toISOString(),
-      monthlyTokenLimit: 6000000,
+      monthlyTokenLimit: 1000000,
       tokensUsed: 12500,
     }
   ];

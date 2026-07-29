@@ -396,7 +396,7 @@ export class SafeActionExecutor {
     }
 
     if (actionName === "block_user" || actionName === "set_user_status") {
-      const userId = payload.userId || payload.user_id || "demo_user";
+      const userId = payload.userId || payload.user_id || "mnain7674@gmail.com";
       const userStatus = payload.status || "blocked";
       const res = await JOXIQActionEngine.setUserStatus(userId, userStatus);
       return { status: "SUCCESS", message: `✅ Authorized (${risk} Risk): ${res.message}` };
@@ -734,7 +734,7 @@ export async function processAdminQuery(
 
   if (q.includes("block user") || q.includes("ব্লক করো") || q.includes("block_user") || q.includes("unblock")) {
     const match = q.match(/(?:user|ইউজার)?\s*([a-zA-Z0-9_-]+)/);
-    const userId = match && match[1] && !["block", "user", "ইউজার", "করো", "9988", "joxiq-9988", "pin"].includes(match[1]) ? match[1] : "user_demo_id";
+    const userId = match && match[1] && !["block", "user", "ইউজার", "করো", "9988", "joxiq-9988", "pin"].includes(match[1]) ? match[1] : "mnain7674@gmail.com";
     const status = q.includes("unblock") || q.includes("আনব্লক") ? "active" : "blocked";
     
     const res = await SafeActionExecutor.executeSecuredAction("block_user", { userId, status }, extractedPin);

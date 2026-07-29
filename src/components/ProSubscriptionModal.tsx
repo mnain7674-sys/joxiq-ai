@@ -206,7 +206,7 @@ export function ProSubscriptionModal({
                 </div>
                 <ul className="text-xs text-slate-300 space-y-2 mt-4 pt-4 border-t border-white/10">
                   <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> All Pro & Annual Features</li>
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Gemini Ultra / Advanced AI</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Advanced AI Engine & Priority Processing</li>
                   <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Dedicated VIP Agent Node</li>
                 </ul>
               </div>

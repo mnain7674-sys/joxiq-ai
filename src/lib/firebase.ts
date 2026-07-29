@@ -28,7 +28,7 @@ export async function syncUserToFirestore(user: { uid?: string; email: string; d
 
     const defaultPlan = user.email === "mnain7674@gmail.com" ? "ultra" : user.plan || (user.isPro ? "pro" : "free");
     const nextResetDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    const planLimits: Record<string, number> = { free: 100000, pro: 1500000, annual: 1500000, ultra: 6000000 };
+    const planLimits: Record<string, number> = { free: 25000, pro: 300000, annual: 300000, ultra: 1000000 };
 
     if (!snap.exists()) {
       await setDoc(userRef, {
@@ -42,7 +42,7 @@ export async function syncUserToFirestore(user: { uid?: string; email: string; d
         lastLogin: new Date().toISOString(),
         plan: defaultPlan,
         subscriptionStatus: "active",
-        monthlyTokenLimit: planLimits[defaultPlan] || 100000,
+        monthlyTokenLimit: planLimits[defaultPlan] || 25000,
         tokensUsed: 0,
         resetDate: nextResetDate,
       });
@@ -59,13 +59,13 @@ export async function syncUserToFirestore(user: { uid?: string; email: string; d
 export async function updateUserSubscriptionPlan(email: string, newPlan: "free" | "pro" | "annual" | "ultra") {
   try {
     const userRef = doc(db, "users", email);
-    const planLimits: Record<string, number> = { free: 100000, pro: 1500000, annual: 1500000, ultra: 6000000 };
+    const planLimits: Record<string, number> = { free: 25000, pro: 300000, annual: 300000, ultra: 1000000 };
     const nextResetDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     await updateDoc(userRef, {
       plan: newPlan,
       subscriptionStatus: "active",
-      monthlyTokenLimit: planLimits[newPlan] || 100000,
+      monthlyTokenLimit: planLimits[newPlan] || 25000,
       resetDate: nextResetDate,
     });
     return { success: true };
@@ -157,10 +157,10 @@ export const DEFAULT_MODEL_BUDGETS: Record<string, number> = {
 };
 
 export const DEFAULT_PLAN_LIMITS: Record<string, { monthlyTokenLimit: number; dailyTokenLimit: number }> = {
-  free: { monthlyTokenLimit: 100000, dailyTokenLimit: 5000 },
-  pro: { monthlyTokenLimit: 1500000, dailyTokenLimit: 50000 },
-  annual: { monthlyTokenLimit: 1500000, dailyTokenLimit: 50000 },
-  ultra: { monthlyTokenLimit: 6000000, dailyTokenLimit: 200000 },
+  free: { monthlyTokenLimit: 25000, dailyTokenLimit: 1000 },
+  pro: { monthlyTokenLimit: 300000, dailyTokenLimit: 15000 },
+  annual: { monthlyTokenLimit: 300000, dailyTokenLimit: 15000 },
+  ultra: { monthlyTokenLimit: 1000000, dailyTokenLimit: 50000 },
 };
 
 export async function getModelBudgetsFromFirestore(): Promise<Record<string, number>> {

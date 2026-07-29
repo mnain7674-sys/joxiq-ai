@@ -54,14 +54,10 @@ const DEFAULT_GOALS: LearningGoal[] = [
 const DEFAULT_MEMORY: AIMemoryProfile = {
   completedLessonsCount: 0,
   completedLessonIds: [],
-  weakTopics: ["Async JavaScript & Promises", "Neural Network Loss Functions"],
-  strongTopics: ["HTML Syntax", "Python Variables", "React Components"],
-  pastMistakes: [
-    "Forgot return statement in array map function",
-    "Confused state immutability in React useEffect hook",
-    "Missing learning rate tuning in gradient descent"
-  ],
-  totalStudyTimeMinutes: 45,
+  weakTopics: [],
+  strongTopics: [],
+  pastMistakes: [],
+  totalStudyTimeMinutes: 0,
   savedNotesCount: 0,
   lastActiveDate: new Date().toISOString().split("T")[0],
 };
@@ -78,10 +74,10 @@ export function getSmartNotes(): SmartNote[] {
   if (typeof window === "undefined") return [];
   try {
     const data = localStorage.getItem(STORAGE_KEYS.NOTES);
-    if (!data) return getInitialDemoNotes();
+    if (!data) return [];
     return JSON.parse(data);
   } catch {
-    return getInitialDemoNotes();
+    return [];
   }
 }
 
@@ -230,52 +226,4 @@ export function saveLessonSummary(classId: string, summary: AfterClassSummary) {
   emitStorageEvent();
 }
 
-// Demo Notes seed
-function getInitialDemoNotes(): SmartNote[] {
-  return [
-    {
-      id: "demo-note-1",
-      title: "React State vs Props Fundamental Rules",
-      content: "State represents internal mutable component state managed via `useState`. Props are read-only external inputs passed down from parent components.",
-      category: "Web Development Notes",
-      courseName: "Full-Stack Web Development",
-      className: "React State & Props Deep Dive",
-      createdAt: new Date().toISOString(),
-      tags: ["React", "Frontend", "State Management"],
-      codeSnippet: "const [count, setCount] = useState<number>(0);\nconst increment = () => setCount(prev => prev + 1);",
-      keyTakeaways: [
-        "Never mutate state directly — always use the setter function.",
-        "Props should be treated as immutable within child components."
-      ]
-    },
-    {
-      id: "demo-note-2",
-      title: "Loss Functions & Optimization in Deep Learning",
-      content: "Cross-Entropy Loss measures performance of classification models. Optimizer algorithms like Adam compute adaptive learning rates for each parameter.",
-      category: "AI Engineering Notes",
-      courseName: "Generative AI & Machine Learning Masterclass",
-      className: "Neural Networks & Loss Functions",
-      createdAt: new Date().toISOString(),
-      tags: ["AI", "Neural Networks", "PyTorch"],
-      codeSnippet: "import torch.nn as nn\ncriterion = nn.CrossEntropyLoss()\noptimizer = torch.optim.Adam(model.parameters(), lr=0.001)",
-      keyTakeaways: [
-        "Cross entropy penalizes wrong confident predictions exponentially.",
-        "Adam optimizer combines Momentum and RMSprop."
-      ]
-    },
-    {
-      id: "demo-note-3",
-      title: "SaaS Subscription Metrics & Retention Strategy",
-      content: "MRR (Monthly Recurring Revenue), Churn Rate, and LTV/CAC ratio are the core health metrics for any tech product launch.",
-      category: "Business Notes",
-      courseName: "Startup Product & AI Business",
-      className: "Product Analytics & Growth Metrics",
-      createdAt: new Date().toISOString(),
-      tags: ["Business", "SaaS", "Metrics"],
-      keyTakeaways: [
-        "Healthy LTV to CAC ratio is 3:1 or higher.",
-        "Monthly churn below 2% is ideal for B2B SaaS."
-      ]
-    }
-  ];
-}
+

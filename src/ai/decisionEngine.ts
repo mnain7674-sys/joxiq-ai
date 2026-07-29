@@ -21,8 +21,8 @@ import {
 export const PLAN_LIMITS: Record<UserPlanTier, PlanLimits> = {
   free: {
     tier: "free",
-    dailyTokenLimit: 5000,
-    monthlyTokenLimit: 100000,
+    dailyTokenLimit: 1000,
+    monthlyTokenLimit: 25000,
     maxOutputTokens: 800,
     pdfAnalysisAllowed: true,
     advancedReasoningAllowed: false,
@@ -30,8 +30,8 @@ export const PLAN_LIMITS: Record<UserPlanTier, PlanLimits> = {
   },
   pro: {
     tier: "pro",
-    dailyTokenLimit: 50000,
-    monthlyTokenLimit: 1500000,
+    dailyTokenLimit: 15000,
+    monthlyTokenLimit: 300000,
     maxOutputTokens: 2048,
     pdfAnalysisAllowed: true,
     advancedReasoningAllowed: true,
@@ -39,8 +39,8 @@ export const PLAN_LIMITS: Record<UserPlanTier, PlanLimits> = {
   },
   annual: {
     tier: "annual",
-    dailyTokenLimit: 50000,
-    monthlyTokenLimit: 1500000,
+    dailyTokenLimit: 15000,
+    monthlyTokenLimit: 300000,
     maxOutputTokens: 2048,
     pdfAnalysisAllowed: true,
     advancedReasoningAllowed: true,
@@ -48,8 +48,8 @@ export const PLAN_LIMITS: Record<UserPlanTier, PlanLimits> = {
   },
   ultra: {
     tier: "ultra",
-    dailyTokenLimit: 200000,
-    monthlyTokenLimit: 6000000,
+    dailyTokenLimit: 50000,
+    monthlyTokenLimit: 1000000,
     maxOutputTokens: 4096,
     pdfAnalysisAllowed: true,
     advancedReasoningAllowed: true,
@@ -57,8 +57,8 @@ export const PLAN_LIMITS: Record<UserPlanTier, PlanLimits> = {
   },
   premium: {
     tier: "premium",
-    dailyTokenLimit: 50000,
-    monthlyTokenLimit: 1500000,
+    dailyTokenLimit: 15000,
+    monthlyTokenLimit: 300000,
     maxOutputTokens: 2048,
     pdfAnalysisAllowed: true,
     advancedReasoningAllowed: true,
