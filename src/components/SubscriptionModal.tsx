@@ -102,13 +102,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           <div className="text-center space-y-2 mb-8">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
               <Sparkles size={14} className="animate-spin-slow text-indigo-400" />
-              <span>JOXIQ AI Premium Subscriptions</span>
+              <span>JOXIQ AI Enterprise Subscriptions</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Empower Your Education with Smart AI
+              Enterprise-Grade AI Intelligence & Productivity
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
-              Choose the perfect plan for school, university research, and exam preparation in Qatar. Fair & protected pricing.
+              Select the optimal plan for academic research, heavy software engineering, and multi-model execution.
             </p>
           </div>
 
@@ -195,8 +195,20 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                     <div className="border-b border-slate-500/10 pb-4">
                       <h3 className="font-bold text-base text-slate-100">{plan.name}</h3>
                       <p className="text-[11px] text-slate-400 mt-1 min-h-[32px]">{plan.description}</p>
-                      <div className="mt-3">
-                        <span className="text-2xl font-black text-slate-100 font-mono">{plan.formattedPrice}</span>
+                      <div className="mt-3 flex flex-col gap-1">
+                        <div className="text-xl sm:text-2xl font-black text-slate-100 font-mono">
+                          {plan.priceQAR === 0 ? "Free / $0 USD" : `${plan.priceQAR} QR`}
+                        </div>
+                        {plan.priceQAR > 0 && (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              💵 ${plan.priceUSD.toFixed(2)} USD
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                              🇶🇦 {plan.priceQAR} QAR
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
 

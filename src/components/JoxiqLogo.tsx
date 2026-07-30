@@ -7,7 +7,7 @@ interface JoxiqLogoProps {
 }
 
 export function JoxiqLogo({
-  className = "w-full h-full object-contain rounded-full bg-white p-0.5",
+  className = "w-full h-full object-contain rounded-full",
   alt = "JOXIQ AI Official Logo",
   fallbackText = "JOXIQ"
 }: JoxiqLogoProps) {
@@ -27,7 +27,11 @@ export function JoxiqLogo({
       alt={alt}
       className={className}
       referrerPolicy="no-referrer"
-      onError={() => setHasError(true)}
+      onError={() => {
+        // Fallback gracefully only if image genuinely fails
+        setHasError(true);
+      }}
     />
   );
 }
+

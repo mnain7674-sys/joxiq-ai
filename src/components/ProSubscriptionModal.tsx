@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, Check, Zap, Shield, Crown, X, CreditCard, Lock, Calendar } from "lucide-react";
+import { Sparkles, Check, Zap, Shield, Crown, X, CreditCard, Lock, Calendar, QrCode, Smartphone } from "lucide-react";
 
 interface ProSubscriptionModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export function ProSubscriptionModal({
   userEmail,
 }: ProSubscriptionModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "yearly" | "ultra">("monthly");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"visa" | "mastercard" | "amex" | "apple_pay" | "google_pay" | "paypal">("visa");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"visa" | "mastercard" | "amex" | "apple_pay" | "google_pay" | "paypal" | "qr_code">("visa");
   const [step, setStep] = useState<"select" | "payment">("select");
   const [cardNumber, setCardNumber] = useState("");
   const [cardHolder, setCardHolder] = useState("");
@@ -69,7 +69,7 @@ export function ProSubscriptionModal({
         if (data.url) {
           window.location.href = data.url;
         } else {
-          setSuccessMessage(`🎉 Payment successful via ${selectedPaymentMethod.replace('_', ' ').toUpperCase()}! Welcome to JOXIQ ${selectedPlan === "ultra" ? "Ultra" : "Pro"}.`);
+          setSuccessMessage(`🎉 Payment successful via ${selectedPaymentMethod.replace('_', ' ').toUpperCase()}! Welcome to JOXIQ ${selectedPlan === "ultra" ? "VIP Ultra" : "Pro"}.`);
           setTimeout(() => {
             onUpgradeSuccess();
             onClose();
@@ -89,8 +89,10 @@ export function ProSubscriptionModal({
     }
   };
 
-  const planPrice = selectedPlan === "monthly" ? "36 QR" : selectedPlan === "yearly" ? "300 QR" : "99 QR";
-  const planName = selectedPlan === "monthly" ? "Monthly Pro" : selectedPlan === "yearly" ? "Annual Pro" : "JOXIQ Ultra";
+  const planPriceQAR = selectedPlan === "monthly" ? "36 QR" : selectedPlan === "yearly" ? "300 QR" : "99 QR";
+  const planPriceUSD = selectedPlan === "monthly" ? "$9.90 USD" : selectedPlan === "yearly" ? "$82.50 USD" : "$27.20 USD";
+  const planPriceFull = `${planPriceQAR} (${planPriceUSD})`;
+  const planName = selectedPlan === "monthly" ? "Pro" : selectedPlan === "yearly" ? "Annual Pro" : "Ultra";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md animate-fadeIn">
@@ -115,10 +117,10 @@ export function ProSubscriptionModal({
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto px-2">
             {step === "payment" 
-              ? `Enter your payment card details for ${planName} (${planPrice})` 
+              ? `Select payment method for ${planName} (${planPriceFull})` 
               : isProUser 
-                ? "You are currently enjoying JOXIQ AI privileges!" 
-                : `You have ${Math.max(0, freeMessagesLeft)} free messages remaining. Unlock unlimited AI power and advanced models.`}
+                ? "You are currently enjoying full JOXIQ AI privileges!" 
+                : `You have ${Math.max(0, freeMessagesLeft)} free messages remaining. Unlock high-speed limits, multi-turn reasoning, and top-tier models.`}
           </p>
         </div>
 
@@ -144,16 +146,16 @@ export function ProSubscriptionModal({
               >
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">Monthly Pro</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">Pro</span>
                     {selectedPlan === "monthly" && <Check size={16} className="text-indigo-400" />}
                   </div>
-                  <div className="text-2xl font-black mb-1">36 QR <span className="text-xs font-normal text-slate-400">/ mo</span></div>
-                  <div className="text-xs text-slate-400">~$9.99 USD / month</div>
+                  <div className="text-xl font-black mb-1">36 QR <span className="text-xs font-normal text-slate-400">/ mo</span></div>
+                  <div className="text-xs font-semibold text-emerald-400">💵 $9.90 USD / month</div>
                 </div>
                 <ul className="text-xs text-slate-300 space-y-2 mt-4 pt-4 border-t border-white/10">
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Unlimited AI Messages</li>
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Gemini Pro & Flash models</li>
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Priority Speed & Voice</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> 300,000 Monthly Tokens</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Pro Models & Vision Engine</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Low Latency Priority Speed</li>
                 </ul>
               </div>
 
@@ -174,13 +176,13 @@ export function ProSubscriptionModal({
                     <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Annual Pro</span>
                     {selectedPlan === "yearly" && <Check size={16} className="text-amber-400" />}
                   </div>
-                  <div className="text-2xl font-black mb-1">300 QR <span className="text-xs font-normal text-slate-400">/ yr</span></div>
-                  <div className="text-xs text-slate-400">~$82 USD / year</div>
+                  <div className="text-xl font-black mb-1">300 QR <span className="text-xs font-normal text-slate-400">/ yr</span></div>
+                  <div className="text-xs font-semibold text-emerald-400">💵 $82.50 USD / year</div>
                 </div>
                 <ul className="text-xs text-slate-300 space-y-2 mt-4 pt-4 border-t border-white/10">
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> All Monthly Pro Features</li>
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Custom App Branding</li>
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Priority 24/7 Support</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Save 30% vs Monthly Plan</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Complete Pro Suite Features</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Priority 24/7 Support Channel</li>
                 </ul>
               </div>
 
@@ -194,20 +196,20 @@ export function ProSubscriptionModal({
                 }`}
               >
                 <div className="absolute -top-3 right-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow">
-                  VIP ULTRA
+                  ULTRA
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-violet-400">JOXIQ Ultra</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-violet-400">Ultra</span>
                     {selectedPlan === "ultra" && <Check size={16} className="text-violet-400" />}
                   </div>
-                  <div className="text-2xl font-black mb-1">99 QR <span className="text-xs font-normal text-slate-400">/ mo</span></div>
-                  <div className="text-xs text-slate-400">Maximum Power & Agents</div>
+                  <div className="text-xl font-black mb-1">99 QR <span className="text-xs font-normal text-slate-400">/ mo</span></div>
+                  <div className="text-xs font-semibold text-emerald-400">💵 $27.20 USD / month</div>
                 </div>
                 <ul className="text-xs text-slate-300 space-y-2 mt-4 pt-4 border-t border-white/10">
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> All Pro & Annual Features</li>
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Advanced AI Engine & Priority Processing</li>
-                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Dedicated VIP Agent Node</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> 1,000,000 Monthly Tokens</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Top Models (GPT-4o, Claude 3.5)</li>
+                  <li className="flex items-center gap-1.5"><Check size={12} className="text-emerald-400 shrink-0" /> Dedicated Compute Node</li>
                 </ul>
               </div>
             </div>
@@ -225,7 +227,7 @@ export function ProSubscriptionModal({
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
               >
                 <CreditCard size={16} />
-                Continue to Payment Method ({planPrice})
+                Continue to Payment Method ({planPriceFull})
               </button>
             </div>
           </>
@@ -241,14 +243,15 @@ export function ProSubscriptionModal({
             {/* Payment Method Selector */}
             <div>
               <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Select Payment Method</label>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   { id: "visa", label: "Visa", icon: "💳" },
                   { id: "mastercard", label: "Mastercard", icon: "💳" },
-                  { id: "amex", label: "Amex", icon: "💳" },
+                  { id: "qr_code", label: "Scan QR Code", icon: "📱" },
                   { id: "apple_pay", label: "Apple Pay", icon: "" },
                   { id: "google_pay", label: "Google Pay", icon: "G" },
                   { id: "paypal", label: "PayPal", icon: "P" },
+                  { id: "amex", label: "Amex", icon: "💳" },
                 ].map((method) => (
                   <button
                     key={method.id}
@@ -257,14 +260,14 @@ export function ProSubscriptionModal({
                       setSelectedPaymentMethod(method.id as any);
                       setErrorMsg(null);
                     }}
-                    className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       selectedPaymentMethod === method.id
                         ? "border-indigo-500 bg-indigo-600/20 text-indigo-300 shadow-md ring-2 ring-indigo-500/40"
                         : isDark ? "border-white/10 bg-white/5 hover:border-white/20 text-slate-300" : "border-slate-200 bg-slate-50 hover:border-slate-300 text-slate-700"
                     }`}
                   >
-                    <span className="text-base mb-1">{method.icon}</span>
-                    <span className="text-[10px] truncate max-w-full">{method.label}</span>
+                    <span className="text-base">{method.icon}</span>
+                    <span className="text-[11px] truncate max-w-full">{method.label}</span>
                   </button>
                 ))}
               </div>
@@ -273,10 +276,40 @@ export function ProSubscriptionModal({
             <div className={`p-4 rounded-2xl border ${isDark ? "bg-white/5 border-white/10" : "bg-slate-50 border-slate-200"}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Selected Plan</span>
-                <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full">{planName} — {planPrice}</span>
+                <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full">{planName} — {planPriceQAR} ({planPriceUSD})</span>
               </div>
 
-              {(selectedPaymentMethod === "visa" || selectedPaymentMethod === "mastercard" || selectedPaymentMethod === "amex") ? (
+              {selectedPaymentMethod === "qr_code" ? (
+                /* QR Code Instant Scan Payment Display */
+                <div className="py-4 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="p-3 bg-white rounded-2xl shadow-xl border border-slate-200 inline-block relative group">
+                    {/* Render visual vector QR code */}
+                    <svg className="w-40 h-40 text-slate-900" viewBox="0 0 100 100" fill="currentColor">
+                      <path d="M0,0 h35 v35 h-35 z M5,5 v25 h25 v-25 z M10,10 h15 v15 h-15 z" />
+                      <path d="M65,0 h35 v35 h-35 z M70,5 v25 h25 v-25 z M75,10 h15 v15 h-15 z" />
+                      <path d="M0,65 h35 v35 h-35 z M5,70 v25 h25 v-25 z M10,75 h15 v15 h-15 z" />
+                      <path d="M40,5 h10 v10 h-10 z M50,15 h10 v10 h-10 z M40,25 h10 v10 h-10 z" />
+                      <path d="M65,40 h10 v10 h-10 z M75,50 h10 v10 h-10 z M85,40 h15 v10 h-15 z M65,60 h15 v10 h-15 z" />
+                      <path d="M40,65 h10 v10 h-10 z M50,75 h10 v20 h-10 z M40,85 h20 v10 h-20 z" />
+                      <path d="M65,75 h10 v10 h-10 z M80,75 h20 v20 h-20 z" />
+                      <circle cx="50" cy="50" r="8" fill="#4f46e5" />
+                    </svg>
+                    <div className="mt-2 text-[10px] font-mono font-bold text-slate-800 bg-slate-100 py-1 px-2 rounded">
+                      PAY-REF: JOXIQ-{selectedPlan.toUpperCase()}-2026
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold text-slate-200 flex items-center justify-center gap-1.5">
+                      <Smartphone size={15} className="text-indigo-400" />
+                      Scan QR Code to Pay {planPriceQAR} / {planPriceUSD}
+                    </div>
+                    <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                      Use QNB Mobile, bKash, Nagad, Apple Camera, or any QR reader app. Your account will automatically activate upon confirmation.
+                    </p>
+                  </div>
+                </div>
+              ) : (selectedPaymentMethod === "visa" || selectedPaymentMethod === "mastercard" || selectedPaymentMethod === "amex") ? (
                 <div className="space-y-3">
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Cardholder Name</label>
@@ -349,7 +382,7 @@ export function ProSubscriptionModal({
                     {selectedPaymentMethod === "apple_pay" ? "Apple Pay" : selectedPaymentMethod === "google_pay" ? "Google Pay" : "PayPal"} Checkout
                   </div>
                   <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                    You will be securely redirected to authorize your {selectedPaymentMethod === "apple_pay" ? "Apple Pay" : selectedPaymentMethod === "google_pay" ? "Google Pay" : "PayPal"} payment of <span className="font-bold text-white">{planPrice}</span>.
+                    You will be securely redirected to authorize your {selectedPaymentMethod === "apple_pay" ? "Apple Pay" : selectedPaymentMethod === "google_pay" ? "Google Pay" : "PayPal"} payment of <span className="font-bold text-white">{planPriceFull}</span>.
                   </p>
                 </div>
               )}
@@ -376,10 +409,15 @@ export function ProSubscriptionModal({
                 >
                   {isProcessing ? (
                     <>Processing Secure Payment...</>
+                  ) : selectedPaymentMethod === "qr_code" ? (
+                    <>
+                      <QrCode size={14} />
+                      I Have Scanned & Paid ({planPriceFull})
+                    </>
                   ) : (
                     <>
                       <Lock size={14} />
-                      Pay Securely ({planPrice})
+                      Pay Securely ({planPriceFull})
                     </>
                   )}
                 </button>
