@@ -81,9 +81,10 @@ import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { JoxiqLogo } from "./components/JoxiqLogo";
 
-const joxiqLogo = "/logo.png";
-const joxiqFlowerLogo = "/logo.png";
-const userLogo = "/logo.png";
+const basePrefix = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL.replace(/\/$/, '') : '';
+const joxiqLogo = `${basePrefix}/logo.png`;
+const joxiqFlowerLogo = `${basePrefix}/logo.png`;
+const userLogo = `${basePrefix}/logo.png`;
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);

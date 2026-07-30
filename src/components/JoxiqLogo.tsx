@@ -6,12 +6,16 @@ interface JoxiqLogoProps {
   fallbackText?: string;
 }
 
+const basePrefix = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL.replace(/\/$/, '') : '';
+const logoPath = `${basePrefix}/logo.png`;
+
 export function JoxiqLogo({
   className = "w-full h-full object-contain rounded-full",
   alt = "JOXIQ AI Official Logo",
   fallbackText = "JOXIQ"
 }: JoxiqLogoProps) {
   const [hasError, setHasError] = useState<boolean>(false);
+  const [currentSrc, setCurrentSrc] = useState<string>(logoPath);
 
   if (hasError) {
     return (
@@ -23,13 +27,16 @@ export function JoxiqLogo({
 
   return (
     <img
-      src="/logo.png"
+      src={currentSrc}
       alt={alt}
       className={className}
       referrerPolicy="no-referrer"
       onError={() => {
-        // Fallback gracefully only if image genuinely fails
-        setHasError(true);
+        if (currentSrc !== "/logo.png") {
+          setCurrentSrc("/logo.png");
+        } else {
+          setHasError(true);
+        }
       }}
     />
   );

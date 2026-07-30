@@ -80,10 +80,15 @@ app.use((req, res, next) => {
 app.get([
   "/logo.png",
   "/favicon.ico",
+  "/favicon.png",
   "/logo.jpg",
   "/logo.jpeg",
   "/public/logo.png",
   "/src/logo.png",
+  "/joxiq-ai/logo.png",
+  "/joxiq-ai/favicon.png",
+  "/joxiq-ai/logo.jpg",
+  "/joxiq-ai/logo.jpeg",
   "/mobile-app/assets/:file",
   "/public/*",
   "/assets/*"
