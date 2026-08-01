@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React from "react";
+import { Sparkles, Bot } from "lucide-react";
 
 interface JoxiqLogoProps {
   className?: string;
@@ -6,39 +7,23 @@ interface JoxiqLogoProps {
   fallbackText?: string;
 }
 
-const basePrefix = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL.replace(/\/$/, '') : '';
-const logoPath = `${basePrefix}/logo.png`;
-
 export function JoxiqLogo({
   className = "w-full h-full object-contain rounded-full",
-  alt = "JOXIQ AI Official Logo",
-  fallbackText = "JOXIQ"
+  fallbackText
 }: JoxiqLogoProps) {
-  const [hasError, setHasError] = useState<boolean>(false);
-  const [currentSrc, setCurrentSrc] = useState<string>(logoPath);
-
-  if (hasError) {
+  if (fallbackText && fallbackText !== "JOXIQ" && fallbackText.length <= 2) {
     return (
-      <div className="w-full h-full rounded-full bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 text-white font-black flex items-center justify-center text-xs shadow-inner select-none">
+      <div className={`flex items-center justify-center bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 text-white font-black text-xs rounded-full shadow-sm select-none ${className}`}>
         {fallbackText}
       </div>
     );
   }
 
   return (
-    <img
-      src={currentSrc}
-      alt={alt}
-      className={className}
-      referrerPolicy="no-referrer"
-      onError={() => {
-        if (currentSrc !== "/logo.png") {
-          setCurrentSrc("/logo.png");
-        } else {
-          setHasError(true);
-        }
-      }}
-    />
+    <div className={`flex items-center justify-center bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 text-white rounded-full shadow-inner select-none ${className}`}>
+      <Sparkles className="w-1/2 h-1/2 text-white animate-pulse" />
+    </div>
   );
 }
+
 
