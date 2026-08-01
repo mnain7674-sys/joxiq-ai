@@ -1,5 +1,4 @@
-import React from "react";
-import { Sparkles, Cpu, Bot } from "lucide-react";
+import React, { useState } from "react";
 
 interface JoxiqLogoProps {
   className?: string;
@@ -8,15 +7,33 @@ interface JoxiqLogoProps {
   size?: "sm" | "md" | "lg" | "xl";
 }
 
+const basePrefix = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL.replace(/\/$/, '') : '';
+const logoSrc = `${basePrefix}/logo.png`;
+
 export function JoxiqLogo({
   className = "w-8 h-8",
+  alt = "JOXIQ AI Logo",
   fallbackText
 }: JoxiqLogoProps) {
+  const [imgError, setImgError] = useState<boolean>(false);
+
   if (fallbackText && fallbackText !== "JOXIQ" && fallbackText.length <= 2) {
     return (
       <div className={`flex items-center justify-center bg-gradient-to-tr from-cyan-500 via-indigo-600 to-purple-600 text-white font-black text-xs rounded-xl shadow-md select-none shrink-0 ${className}`}>
         {fallbackText}
       </div>
+    );
+  }
+
+  if (!imgError) {
+    return (
+      <img
+        src={logoSrc}
+        alt={alt}
+        className={`object-contain select-none shrink-0 ${className}`}
+        referrerPolicy="no-referrer"
+        onError={() => setImgError(true)}
+      />
     );
   }
 
@@ -42,3 +59,4 @@ export function JoxiqLogo({
     </div>
   );
 }
+

@@ -1513,8 +1513,8 @@ export default function App() {
             className="flex items-center gap-2 cursor-pointer group"
             title="Return to Home"
           >
-            <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 bg-indigo-500 text-white font-black text-sm group-hover:scale-105 transition-transform">
-              <JoxiqLogo className="w-full h-full object-contain rounded-full bg-white p-1" />
+            <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 group-hover:scale-105 transition-transform shrink-0">
+              <JoxiqLogo className="w-full h-full object-cover rounded-full" />
             </div>
           </div>
           <button
@@ -1772,8 +1772,8 @@ export default function App() {
               className="flex items-center gap-1.5 cursor-pointer group"
               title="JOXIQ AI Home"
             >
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 bg-indigo-500 text-white font-black text-sm sm:text-base group-hover:scale-105 transition-transform shrink-0">
-                <JoxiqLogo className="w-full h-full object-contain rounded-full bg-white p-0.5" />
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full overflow-hidden flex items-center justify-center shadow-sm border border-slate-200/50 group-hover:scale-105 transition-transform shrink-0">
+                <JoxiqLogo className="w-full h-full object-cover rounded-full" />
               </div>
               <span className="font-extrabold text-xs sm:text-sm tracking-tight text-slate-800 dark:text-slate-100">JOXIQ AI</span>
             </div>
