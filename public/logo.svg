@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="joxiqGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="50%" stop-color="#9333ea"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="sparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0e7ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#joxiqGrad)"/>
+  <path d="M256 112 C256 184 184 256 112 256 C184 256 256 328 256 400 C256 328 328 256 400 256 C328 256 256 184 256 112 Z" fill="url(#sparkleGrad)"/>
+  <path d="M368 128 C368 152 344 176 320 176 C344 176 368 200 368 224 C368 200 392 176 416 176 C392 176 368 152 368 128 Z" fill="#ffffff" opacity="0.9"/>
+</svg>
