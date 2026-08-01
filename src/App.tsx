@@ -466,7 +466,6 @@ export default function App() {
         }).catch(err => console.error("Firestore sync auth state error", err));
       } else {
         setUserProfile(null);
-        setShowAuthModal(true);
       }
     });
     return () => unsubscribe();
@@ -2977,9 +2976,7 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => {
-                if (userProfile) setShowAuthModal(false);
-              }}
+              onClick={() => setShowAuthModal(false)}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 cursor-pointer"
             />
 
@@ -3005,14 +3002,13 @@ export default function App() {
                     <p className="text-[10px] text-slate-500 font-medium">JOXIQ AI Platform Access</p>
                   </div>
                 </div>
-                {userProfile && (
-                  <button
-                    onClick={() => setShowAuthModal(false)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                  >
-                    <X size={18} />
-                  </button>
-                )}
+                <button
+                  onClick={() => setShowAuthModal(false)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  title="Close modal"
+                >
+                  <X size={18} />
+                </button>
               </div>
 
               {/* Toggle Mode Tabs */}
