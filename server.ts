@@ -2253,12 +2253,20 @@ const isProduction = process.env.NODE_ENV === "production" || Boolean(process.en
 
 async function startServer() {
   if (isProduction) {
+    app.use("/joxiq-ai", express.static(distPath));
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
     console.log("Production static files server configured (isProduction = true).");
   } else {
+    app.use((req, res, next) => {
+      if (req.url.startsWith("/joxiq-ai/assets")) {
+        req.url = req.url.replace(/^\/joxiq-ai/, "");
+      }
+      next();
+    });
+
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
