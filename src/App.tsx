@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { SubscriptionModal } from "./components/SubscriptionModal";
+import { VoiceModeModal } from "./components/VoiceModeModal";
 import { SubscriptionPlanId } from "./config/subscriptionPlans";
 import { syncUserToFirestore, auth, googleProvider, db, doc, getDoc, updateDoc } from "./lib/firebase";
 import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "firebase/auth";
@@ -117,7 +118,7 @@ function cleanErrorMessage(err: any): string {
 
 export default function App() {
   // --- Launch Splash Screen state ---
-  const [showSplash, setShowSplash] = useState<boolean>(true);
+  const [showSplash, setShowSplash] = useState<boolean>(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -183,8 +184,25 @@ export default function App() {
   const [attachedDocument, setAttachedDocument] = useState<AttachedDocument | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
-  // --- Voice Input state ---
+  // --- Voice Input & ChatGPT Style Voice Mode state ---
   const [isListening, setIsListening] = useState<boolean>(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState<boolean>(false);
+  const [isJarvisMode, setIsJarvisMode] = useState<boolean>(() => {
+    return localStorage.getItem("joxiq_jarvis_mode") === "true";
+  });
+  const [isJarvisSpeaking, setIsJarvisSpeaking] = useState<boolean>(false);
+
+  const isJarvisModeRef = useRef<boolean>(isJarvisMode);
+  const isListeningRef = useRef<boolean>(isListening);
+
+  useEffect(() => {
+    isJarvisModeRef.current = isJarvisMode;
+    localStorage.setItem("joxiq_jarvis_mode", String(isJarvisMode));
+  }, [isJarvisMode]);
+
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
 
   // --- Share Modal state ---
   const [shareModalOpen, setShareModalOpen] = useState<boolean>(false);
@@ -881,6 +899,26 @@ export default function App() {
     }
   };
 
+  // --- JARVIS Voice Mode Handler ---
+  const toggleJarvisMode = () => {
+    const nextMode = !isJarvisMode;
+    setIsJarvisMode(nextMode);
+    if (nextMode) {
+      stopTts();
+      if (!isListening) {
+        toggleListening();
+      }
+    } else {
+      stopTts();
+      if (isListening && recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {}
+        setIsListening(false);
+      }
+    }
+  };
+
   // --- Document File Parser ---
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -1158,6 +1196,11 @@ export default function App() {
         )
       );
 
+      // Trigger JARVIS Auto Voice Response if JARVIS Mode is active
+      if (isJarvisModeRef.current && finalResponseText) {
+        speakJarvisResponse(finalResponseText);
+      }
+
       const tokenCount = Math.max(10, Math.round((textToSend.length + finalResponseText.length) / 4));
       if (userProfile?.email) {
         fetch("/api/user/record-tokens", {
@@ -1190,6 +1233,62 @@ export default function App() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  // --- JARVIS Voice Speech Synthesis ---
+  const speakJarvisResponse = (text: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    stopTts();
+    setIsJarvisSpeaking(true);
+
+    // Clean Markdown, code blocks and links for speech
+    const cleanText = text
+      .replace(/`{3}[\s\S]*?`{3}/g, "Code block output attached.")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/[*_#\-]/g, "")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/https?:\/\/\S+/g, "")
+      .trim();
+
+    if (!cleanText) {
+      setIsJarvisSpeaking(false);
+      return;
+    }
+
+    try {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      utterance.rate = 1.05;
+      utterance.pitch = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(
+        (v) =>
+          v.name.includes("Google") ||
+          v.name.includes("Natural") ||
+          v.name.includes("Samantha") ||
+          v.name.includes("Daniel") ||
+          v.name.includes("Jarvis") ||
+          v.lang.startsWith("en")
+      );
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      utterance.onend = () => {
+        setIsJarvisSpeaking(false);
+      };
+
+      utterance.onerror = (e) => {
+        console.warn("JARVIS Speech error:", e);
+        setIsJarvisSpeaking(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.error("JARVIS speech synthesis failed:", err);
+      setIsJarvisSpeaking(false);
     }
   };
 
@@ -1254,6 +1353,7 @@ export default function App() {
     }
     setActiveSpeechMsgId(null);
     setIsGeneratingTts(false);
+    setIsJarvisSpeaking(false);
   };
 
   // Quick helper to determine active persona meta
@@ -2552,6 +2652,29 @@ export default function App() {
                 </div>
               )}
 
+              {/* Voice Speaking Audio Wave Banner */}
+              {isJarvisSpeaking && (
+                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-900 border border-indigo-500/40 text-white shadow-lg text-xs font-medium mb-1 animate-pulse">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-1 h-4">
+                      <span className="w-1 h-3 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-1 h-4 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-1 h-2 bg-purple-400 rounded-full animate-bounce" />
+                      <span className="w-1 h-3.5 bg-cyan-300 rounded-full animate-bounce [animation-delay:-0.2s]" />
+                    </div>
+                    <span className="font-bold text-cyan-300 tracking-wide">AI Speaking...</span>
+                  </div>
+                  <button
+                    onClick={stopTts}
+                    className="p-1 px-2.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 text-xs font-bold text-rose-200 cursor-pointer transition-colors flex items-center gap-1"
+                    title="Stop AI Voice"
+                  >
+                    <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Stop Voice</span>
+                  </button>
+                </div>
+              )}
+
               {/* Core bar */}
               <div className="flex items-end gap-2">
                 {/* Integrated Attachment Options Menu button */}
@@ -2718,6 +2841,29 @@ export default function App() {
                   title={isListening ? "Stop listening to speech" : "Speak instead of typing"}
                 >
                   {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                </button>
+
+                {/* Voice Chat Mode toggle button (ChatGPT style Voice Mode) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopTts();
+                    setIsVoiceModalOpen(true);
+                  }}
+                  className={`p-2.5 sm:p-3 rounded-xl transition-all cursor-pointer relative shrink-0 flex items-center gap-1.5 text-xs font-bold border ${
+                    isVoiceModalOpen
+                      ? "bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 text-white border-indigo-400/50 shadow-md shadow-indigo-500/30 ring-2 ring-indigo-400/40"
+                      : (theme === "dark"
+                          ? "bg-white/5 border-white/10 text-slate-300 hover:text-indigo-400 hover:bg-white/10"
+                          : "bg-slate-100 border-slate-200 text-slate-700 hover:text-indigo-600 hover:bg-slate-200/80")
+                  }`}
+                  title="Open ChatGPT-style Voice Mode (Speak with AI)"
+                >
+                  <Sparkles className={`w-4 h-4 ${isVoiceModalOpen ? "text-cyan-200 animate-spin" : "text-indigo-500"}`} />
+                  <span className="hidden sm:inline">Voice Mode</span>
+                  {isVoiceModalOpen && (
+                    <span className="w-2 h-2 rounded-full bg-cyan-300 animate-ping" />
+                  )}
                 </button>
 
                 {/* Multiline textarea */}
@@ -3371,6 +3517,17 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* ChatGPT-style Voice Chat Overlay Modal */}
+      <VoiceModeModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onSendMessage={async (speechText: string) => {
+          await handleSendMessage(speechText);
+        }}
+        isStreaming={isStreaming}
+        currentStreamText={currentStreamText}
+      />
 
       <Analytics />
     </div>
