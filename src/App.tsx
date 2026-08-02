@@ -171,7 +171,11 @@ export default function App() {
   // --- Theme Mode state ---
   const [theme, setTheme] = useState<"dark" | "light" | "midnight" | "emerald" | "amber" | "rose">(() => {
     const saved = localStorage.getItem("gemini_theme");
-    return (saved as any) || "dark";
+    if (!saved || saved === "dark") {
+      localStorage.setItem("gemini_theme", "light");
+      return "light";
+    }
+    return (saved as any) || "light";
   });
 
   // --- Input state ---
@@ -416,8 +420,8 @@ export default function App() {
     if (savedTheme) {
       setTheme(savedTheme);
     } else {
-      setTheme("dark");
-      localStorage.setItem("gemini_theme", "dark");
+      setTheme("light");
+      localStorage.setItem("gemini_theme", "light");
     }
 
     if (saved) {
