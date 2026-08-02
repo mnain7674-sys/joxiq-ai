@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { JoxiqLogo } from "./JoxiqLogo";
 import { 
   ShieldCheck, 
   Users, 
@@ -379,8 +378,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Top Admin Navigation Header */}
       <header className={`border-b ${isDark ? "border-slate-800 bg-slate-900/80" : "border-slate-200 bg-white/85"} backdrop-blur-md sticky top-0 z-30 px-6 py-4 flex items-center justify-between`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/10 overflow-hidden p-0.5">
-            <JoxiqLogo className="w-full h-full object-contain rounded-lg bg-white p-0.5" />
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/10">
+            <ShieldCheck className="w-6 h-6 text-amber-500" />
           </div>
           <div>
             <div className="flex items-center gap-2">
