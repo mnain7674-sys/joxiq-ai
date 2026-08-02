@@ -1,7 +1,7 @@
 {
-  "name": "joxiq-ai-admin-assistant-backend",
+  "name": "joxiq-ai-unified-backend",
   "version": "1.0.0",
-  "description": "JOXIQ AI - AI Admin Assistant backend",
+  "description": "JOXIQ AI - Unified automation backend (real database, real auth, real AI assistant)",
   "main": "src/app.js",
   "type": "commonjs",
   "scripts": {
@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "mongoose": "^8.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3"
   }
 }

@@ -253,6 +253,16 @@ const handleAdminChatRoute = async (req: express.Request, res: express.Response)
 
 app.post("/api/admin/chat", verifyAdminAccess, handleAdminChatRoute);
 
+// Mount Unified Backend Auth & Automation Routes
+try {
+  const unifiedAuthRoutes = require("./backend/src/routes/authRoutes");
+  const unifiedAdminRoutes = require("./backend/src/routes/adminRoutes");
+  app.use("/api/auth", unifiedAuthRoutes);
+  app.use("/api/admin", unifiedAdminRoutes);
+} catch (e) {
+  console.error("Error mounting unified backend routes:", e);
+}
+
 // Mount Admin Automation V2 Router (95 routes, 100 features)
 app.use("/api/admin-v2", adminV2Routes);
 
