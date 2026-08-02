@@ -83,9 +83,6 @@ import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { JoxiqLogo } from "./components/JoxiqLogo";
 
 const basePrefix = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL.replace(/\/$/, '') : '';
-const joxiqLogo = `${basePrefix}/logo.png`;
-const joxiqFlowerLogo = `${basePrefix}/logo.png`;
-const userLogo = `${basePrefix}/logo.png`;
 
 function cleanErrorMessage(err: any): string {
   const message = err?.message || String(err);
@@ -2478,8 +2475,12 @@ export default function App() {
                     </div>
 
                     {isUser && (
-                      <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200 shadow-sm overflow-hidden mt-0.5">
-                        <JoxiqLogo className="w-full h-full object-contain rounded-full bg-white p-0.5" alt="User Avatar" fallbackText="U" />
+                      <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-slate-200 dark:border-white/20 shadow-sm overflow-hidden mt-0.5 select-none">
+                        {userProfile?.name ? (
+                          <span>{userProfile.name.charAt(0).toUpperCase()}</span>
+                        ) : (
+                          <User size={16} />
+                        )}
                       </div>
                     )}
                   </div>
