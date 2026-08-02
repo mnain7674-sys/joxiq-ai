@@ -12,10 +12,15 @@ html, body {
   width: 100%;
   margin: 0;
   padding: 0;
-  background-color: #050b18;
-  color: #f8fafc;
   box-sizing: border-box;
   overflow: hidden;
+  background-color: #f4f7fc;
+  color: #0f172a;
+}
+
+html.dark, html.dark body {
+  background-color: #050b18;
+  color: #f8fafc;
 }
 
 #root {
