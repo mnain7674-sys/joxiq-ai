@@ -22,6 +22,16 @@ export interface AttachedDocument {
   content: string; // Extracted text content of the document
 }
 
+export interface SavedPdfDoc {
+  id: string;
+  title: string;
+  timestamp: number;
+  messageId?: string;
+  contentSnippet: string;
+  pdfDataUrl?: string;
+  fileSize?: string;
+}
+
 export interface Message {
   id: string;
   role: "user" | "assistant";
@@ -29,6 +39,7 @@ export interface Message {
   timestamp: number;
   image?: AttachedImage;
   document?: AttachedDocument;
+  pdfExport?: SavedPdfDoc;
   grounding?: GroundingMetadata;
   rating?: "like" | "dislike" | null;
 }
@@ -44,6 +55,7 @@ export interface Conversation {
   timestamp: number;
   isFavorite?: boolean;
   projectId?: string;
+  savedPdfs?: SavedPdfDoc[];
 }
 
 export interface Project {

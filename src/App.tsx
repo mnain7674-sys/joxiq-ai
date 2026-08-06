@@ -69,11 +69,13 @@ import {
   Conversation,
   AttachedImage,
   AttachedDocument,
+  SavedPdfDoc,
   SUGGESTED_STARTERS,
   AVAILABLE_MODELS,
   SYSTEM_PERSONAS,
   Project
 } from "./types";
+import { generateMessagePdf, generateConversationPdf } from "./lib/pdfExporter";
 import { MarkdownMessage } from "./components/MarkdownMessage";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { EducationalSuite } from "./components/EducationalSuite";
@@ -171,11 +173,10 @@ export default function App() {
   // --- Theme Mode state ---
   const [theme, setTheme] = useState<"dark" | "light" | "midnight" | "emerald" | "amber" | "rose">(() => {
     const saved = localStorage.getItem("gemini_theme");
-    if (!saved || saved === "dark") {
-      localStorage.setItem("gemini_theme", "light");
-      return "light";
+    if (saved && ["dark", "light", "midnight", "emerald", "amber", "rose"].includes(saved)) {
+      return saved as any;
     }
-    return (saved as any) || "light";
+    return "dark";
   });
 
   // --- Input state ---
@@ -417,11 +418,11 @@ export default function App() {
 
     if (savedVoice) setSelectedVoice(savedVoice);
     if (savedSearch) setUseSearch(savedSearch === "true");
-    if (savedTheme) {
-      setTheme(savedTheme);
+    if (savedTheme && ["dark", "light", "midnight", "emerald", "amber", "rose"].includes(savedTheme)) {
+      setTheme(savedTheme as any);
     } else {
-      setTheme("light");
-      localStorage.setItem("gemini_theme", "light");
+      setTheme("dark");
+      localStorage.setItem("gemini_theme", "dark");
     }
 
     if (saved) {
@@ -1396,6 +1397,34 @@ export default function App() {
     navigator.clipboard.writeText(transcript);
     setCopiedTranscript(true);
     setTimeout(() => setCopiedTranscript(false), 2000);
+  };
+
+  const handleSavePdfToChat = (chatId: string, pdfDoc: SavedPdfDoc) => {
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.id === chatId) {
+          const existing = c.savedPdfs || [];
+          if (existing.some((p) => p.id === pdfDoc.id || p.title === pdfDoc.title)) {
+            return c;
+          }
+          return {
+            ...c,
+            savedPdfs: [pdfDoc, ...existing],
+          };
+        }
+        return c;
+      })
+    );
+  };
+
+  const handleExportMessagePdf = (msg: Message) => {
+    if (!activeConversation) return;
+    try {
+      const { savedDoc } = generateMessagePdf(msg, activeConversation.title);
+      handleSavePdfToChat(activeConversation.id, savedDoc);
+    } catch (err) {
+      console.error("Failed to generate message PDF:", err);
+    }
   };
 
   const handleRegenerate = async () => {
@@ -2441,6 +2470,17 @@ export default function App() {
                             </button>
                           )}
 
+                          {/* Save / Export as PDF Button */}
+                          <button
+                            onClick={() => handleExportMessagePdf(msg)}
+                            className="p-1.5 rounded-md border bg-indigo-50/80 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 transition-all duration-200 cursor-pointer flex items-center gap-1"
+                            title="Export & Save as PDF Document"
+                            aria-label="Export & Save as PDF Document"
+                          >
+                            <FileText size={13} />
+                            <span className="text-[10px] font-bold">PDF</span>
+                          </button>
+
                           {/* Share Button */}
                           <button
                             onClick={() => shareMessage(msg)}
@@ -3483,6 +3523,7 @@ export default function App() {
         onToggleFavorite={toggleFavorite}
         onClearAll={clearAllChats}
         theme={theme === "light" ? "light" : "dark"}
+        onSavePdfToChat={handleSavePdfToChat}
       />
 
       {/* JOXIQ AI Subscription & Token Quota Modal */}

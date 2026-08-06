@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { MessageSquare, Search, Trash2, Star, Clock, ArrowRight, X, Sparkles, Calendar, Bookmark } from "lucide-react";
-import { Conversation } from "../types";
+import { MessageSquare, Search, Trash2, Star, Clock, ArrowRight, X, Sparkles, FileText, Image, Download, CheckCircle2 } from "lucide-react";
+import { Conversation, SavedPdfDoc } from "../types";
+import { generateConversationPdf } from "../lib/pdfExporter";
 
 interface ChatHistoryModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface ChatHistoryModalProps {
   onToggleFavorite: (id: string, e?: React.MouseEvent) => void;
   onClearAll: () => void;
   theme: "light" | "dark";
+  onSavePdfToChat?: (chatId: string, pdfDoc: SavedPdfDoc) => void;
 }
 
 export function ChatHistoryModal({
@@ -25,22 +27,48 @@ export function ChatHistoryModal({
   onToggleFavorite,
   onClearAll,
   theme,
+  onSavePdfToChat,
 }: ChatHistoryModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "favorites">("all");
+  const [filterType, setFilterType] = useState<"all" | "favorites" | "pdfs" | "images">("all");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [downloadedPdfChatId, setDownloadedPdfChatId] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const filteredConversations = conversations.filter((c) => {
+    const hasImages = c.messages.some((m) => !!m.image);
+    const hasPdfs = (c.savedPdfs && c.savedPdfs.length > 0) || c.messages.some((m) => !!m.pdfExport);
+
     const matchesSearch =
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.messages.some((m) => m.content.toLowerCase().includes(searchQuery.toLowerCase()));
+
     if (filterType === "favorites") {
       return matchesSearch && c.isFavorite;
     }
+    if (filterType === "pdfs") {
+      return matchesSearch && (hasPdfs || c.messages.length > 0);
+    }
+    if (filterType === "images") {
+      return matchesSearch && hasImages;
+    }
     return matchesSearch;
   });
+
+  const handleExportPdfClick = (chat: Conversation, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { savedDoc } = generateConversationPdf(chat);
+      setDownloadedPdfChatId(chat.id);
+      if (onSavePdfToChat) {
+        onSavePdfToChat(chat.id, savedDoc);
+      }
+      setTimeout(() => setDownloadedPdfChatId(null), 3000);
+    } catch (err) {
+      console.error("Failed to export PDF:", err);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -87,47 +115,23 @@ export function ChatHistoryModal({
           </div>
 
           {/* Controls / Search & Filters */}
-          <div className={`p-4 border-b flex flex-col sm:flex-row items-center gap-3 ${
+          <div className={`p-4 border-b flex flex-col gap-3 ${
             theme === "dark" ? "border-white/10 bg-slate-900/50" : "border-slate-100 bg-white"
           }`}>
-            <div className="relative flex-1 w-full">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search chat history, keywords, or topics..."
-                className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-xs border outline-none transition-all ${
-                  theme === "dark"
-                    ? "bg-slate-950 border-white/10 text-slate-200 placeholder-slate-500 focus:border-indigo-500"
-                    : "bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-indigo-500"
-                }`}
-              />
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-              <div className="flex rounded-xl p-1 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/10">
-                <button
-                  onClick={() => setFilterType("all")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    filterType === "all"
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search chat history, keywords, attached images, or PDFs..."
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-xs border outline-none transition-all ${
+                    theme === "dark"
+                      ? "bg-slate-950 border-white/10 text-slate-200 placeholder-slate-500 focus:border-indigo-500"
+                      : "bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-indigo-500"
                   }`}
-                >
-                  All Chats ({conversations.length})
-                </button>
-                <button
-                  onClick={() => setFilterType("favorites")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    filterType === "favorites"
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Star size={13} className={filterType === "favorites" ? "fill-white" : ""} />
-                  <span>Starred</span>
-                </button>
+                />
               </div>
 
               {conversations.length > 0 && (
@@ -155,7 +159,7 @@ export function ChatHistoryModal({
                 ) : (
                   <button
                     onClick={() => setShowClearConfirm(true)}
-                    className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-500/10 border border-rose-500/20 transition-all cursor-pointer flex items-center gap-1"
+                    className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-500/10 border border-rose-500/20 transition-all cursor-pointer flex items-center gap-1 shrink-0"
                     title="Clear all history"
                   >
                     <Trash2 size={14} />
@@ -163,6 +167,53 @@ export function ChatHistoryModal({
                   </button>
                 )
               )}
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <button
+                onClick={() => setFilterType("all")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  filterType === "all"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/10"
+                }`}
+              >
+                All Chats ({conversations.length})
+              </button>
+              <button
+                onClick={() => setFilterType("favorites")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  filterType === "favorites"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/10"
+                }`}
+              >
+                <Star size={13} className={filterType === "favorites" ? "fill-white" : ""} />
+                <span>Starred</span>
+              </button>
+              <button
+                onClick={() => setFilterType("pdfs")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  filterType === "pdfs"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/10"
+                }`}
+              >
+                <FileText size={13} />
+                <span>📄 PDF Export</span>
+              </button>
+              <button
+                onClick={() => setFilterType("images")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  filterType === "images"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/10"
+                }`}
+              >
+                <Image size={13} />
+                <span>📷 Photos & Attachments</span>
+              </button>
             </div>
           </div>
 
@@ -174,12 +225,12 @@ export function ChatHistoryModal({
                   <MessageSquare size={24} />
                 </div>
                 <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">
-                  {searchQuery ? "No matching conversations found" : "No chat history yet"}
+                  {searchQuery ? "No matching conversations found" : "No chat history found"}
                 </p>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
                   {searchQuery
-                    ? "Try adjusting your search terms or filters."
-                    : "Start a new conversation with JOXIQ AI to see your history logged here."}
+                    ? "Try adjusting your search query or filter selection."
+                    : "Start chatting or attach images/PDFs to see your history logged here."}
                 </p>
               </div>
             ) : (
@@ -193,6 +244,10 @@ export function ChatHistoryModal({
                   minute: "2-digit",
                 });
 
+                // Find attached images in this conversation
+                const firstImageMsg = chat.messages.find((m) => !!m.image);
+                const hasPdfs = (chat.savedPdfs && chat.savedPdfs.length > 0) || chat.messages.some((m) => !!m.pdfExport);
+
                 return (
                   <div
                     key={chat.id}
@@ -200,7 +255,7 @@ export function ChatHistoryModal({
                       onSelectConversation(chat.id);
                       onClose();
                     }}
-                    className={`group p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                    className={`group p-4 rounded-xl border transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
                       isSelected
                         ? theme === "dark"
                           ? "bg-indigo-600/15 border-indigo-500/50 shadow-md"
@@ -210,19 +265,20 @@ export function ChatHistoryModal({
                         : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/80"
                     }`}
                   >
-                    <div className="flex items-start gap-3.5 min-w-0 flex-1">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                    <div className="flex items-start gap-3.5 min-w-0 flex-1 w-full">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
                         isSelected
                           ? "bg-indigo-600 text-white"
                           : theme === "dark"
                           ? "bg-white/5 text-indigo-400 border border-white/10"
                           : "bg-slate-100 text-indigo-600 border border-slate-200"
                       }`}>
-                        <MessageSquare size={16} />
+                        <MessageSquare size={18} />
                       </div>
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-bold truncate">
+
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-xs sm:text-sm font-bold truncate max-w-[220px] sm:max-w-[320px]">
                             {chat.title || "Untitled Conversation"}
                           </h4>
                           {isSelected && (
@@ -230,11 +286,41 @@ export function ChatHistoryModal({
                               Active
                             </span>
                           )}
+                          {hasPdfs && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1">
+                              <FileText size={11} />
+                              <span>PDF Ready</span>
+                            </span>
+                          )}
+                          {firstImageMsg && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1">
+                              <Image size={11} />
+                              <span>Photo Attached</span>
+                            </span>
+                          )}
                         </div>
+
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                           {lastMsg ? lastMsg.content : "No messages yet"}
                         </p>
-                        <div className="flex items-center gap-3 text-[10px] text-slate-400 font-mono pt-1">
+
+                        {/* Image Thumbnail Preview in History (like ChatGPT) */}
+                        {firstImageMsg && firstImageMsg.image && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-black/20 shrink-0">
+                              <img
+                                src={`data:${firstImageMsg.image.mimeType};base64,${firstImageMsg.image.data}`}
+                                alt="Attachment preview"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <span className="text-[10px] text-slate-400 font-medium italic">
+                              Image saved in conversation history
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-400 font-mono pt-1">
                           <span className="flex items-center gap-1">
                             <Clock size={11} />
                             {dateStr}
@@ -247,7 +333,33 @@ export function ChatHistoryModal({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Action Toolbar */}
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-white/5">
+                      {/* PDF Export Button */}
+                      <button
+                        onClick={(e) => handleExportPdfClick(chat, e)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                          downloadedPdfChatId === chat.id
+                            ? "bg-emerald-600 text-white"
+                            : theme === "dark"
+                            ? "bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                            : "bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200"
+                        }`}
+                        title="Download/Save Chat as PDF Document"
+                      >
+                        {downloadedPdfChatId === chat.id ? (
+                          <>
+                            <CheckCircle2 size={13} />
+                            <span className="text-[11px]">Downloaded PDF!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download size={13} />
+                            <span className="text-[11px]">PDF</span>
+                          </>
+                        )}
+                      </button>
+
                       <button
                         onClick={(e) => onToggleFavorite(chat.id, e)}
                         className={`p-2 rounded-lg transition-colors cursor-pointer ${
@@ -261,6 +373,7 @@ export function ChatHistoryModal({
                       >
                         <Star size={15} className={chat.isFavorite ? "fill-amber-500" : ""} />
                       </button>
+
                       <button
                         onClick={(e) => onDeleteConversation(chat.id, e)}
                         className={`p-2 rounded-lg transition-colors cursor-pointer ${
@@ -272,6 +385,7 @@ export function ChatHistoryModal({
                       >
                         <Trash2 size={15} />
                       </button>
+
                       <div className={`p-2 rounded-lg ${
                         theme === "dark" ? "text-slate-400 bg-white/5" : "text-slate-600 bg-slate-100"
                       }`}>
