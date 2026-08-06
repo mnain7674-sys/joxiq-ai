@@ -385,22 +385,39 @@ export class ProductionTokenEngine {
       const optDoc = doc(optCol);
       const timestamp = new Date().toISOString();
 
-      await setDoc(optDoc, {
-        ...record,
+      const docData = {
+        userId: record.userId || "anonymous",
+        userEmail: record.userEmail || "anonymous@joxiq.ai",
+        actionType: record.actionType || "llm_call",
+        queryText: record.queryText || "",
+        modelUsed: record.modelUsed || "unknown",
+        inputTokens: record.inputTokens ?? 0,
+        outputTokens: record.outputTokens ?? 0,
+        tokensSaved: record.tokensSaved ?? 0,
+        estimatedCostUSD: record.estimatedCostUSD ?? 0,
+        costSavedUSD: record.costSavedUSD ?? 0,
+        responseTimeMs: record.responseTimeMs ?? 0,
+        complexity: record.complexity || "easy",
         id: optDoc.id,
         timestamp,
         dateKey: timestamp.split("T")[0],
         monthKey: timestamp.slice(0, 7)
-      });
+      };
+
+      await setDoc(optDoc, docData);
 
       // Anomaly Check (Response latency > 4000ms or high token usage > 4000 tokens)
-      if (record.responseTimeMs > 4000 || record.inputTokens + record.outputTokens > 4000) {
+      const input = record.inputTokens ?? 0;
+      const output = record.outputTokens ?? 0;
+      const latency = record.responseTimeMs ?? 0;
+
+      if (latency > 4000 || (input + output) > 4000) {
         const anomalyRef = doc(collection(db, "ai_anomalies"));
         await setDoc(anomalyRef, {
-          type: record.responseTimeMs > 4000 ? "HIGH_LATENCY" : "TOKEN_SPIKE",
-          details: `Model ${record.modelUsed} latency: ${record.responseTimeMs}ms, Tokens: ${record.inputTokens + record.outputTokens}`,
-          modelUsed: record.modelUsed,
-          userEmail: record.userEmail || "anonymous",
+          type: latency > 4000 ? "HIGH_LATENCY" : "TOKEN_SPIKE",
+          details: `Model ${record.modelUsed || "unknown"} latency: ${latency}ms, Tokens: ${input + output}`,
+          modelUsed: record.modelUsed || "unknown",
+          userEmail: record.userEmail || "anonymous@joxiq.ai",
           timestamp
         });
       }

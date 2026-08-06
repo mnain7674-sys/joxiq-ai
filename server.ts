@@ -11,6 +11,7 @@ import { costOptimizationAgent } from "./src/ai/costOptimizationAgent.js";
 import { processAdminQuery, handleAdminAction, SecurityAutomationEngine, SelfHealingEngine, AutomationLogger } from "./src/services/adminAutomationService.js";
 import adminV2Routes from "./src/routes/adminV2Routes.js";
 import { chatMemory, responseCache, vectorStore, checkInputSafety, executeTool } from "./src/ai/ragMemoryEngine.js";
+import { personalizationEngine } from "./src/ai/personalizationEngine.js";
 
 // Load environment variables
 dotenv.config();
@@ -860,7 +861,12 @@ app.post(["/chat", "/api/chat"], async (req, res) => {
       return res.status(400).json({ error: safetyError });
     }
 
-    const systemInstruction = `You are a helpful JOXIQ AI Assistant. Provide accurate, clear responses. Use tools (calculator, knowledge base) when needed.`;
+    // Profile update + personalized instruction generation
+    await personalizationEngine.updateFromMessage(session_id, message);
+    const extraInstruction = await personalizationEngine.buildPersonalizedInstruction(session_id);
+
+    const baseInstruction = `You are a helpful JOXIQ AI Assistant. Provide accurate, clear responses. Use tools (calculator, knowledge base) when needed.`;
+    const systemInstruction = baseInstruction + extraInstruction;
 
     const cached = responseCache.get(message, systemInstruction);
     if (cached && !use_rag) {
@@ -941,6 +947,17 @@ app.post("/api/chat/stream", async (req, res) => {
 
     const effectiveSearch = Boolean(adminGlobalSearch || useSearch);
 
+    // Personalization pattern update for stream chat
+    if (userId && messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg && lastMsg.role === "user" && typeof lastMsg.content === "string") {
+        await personalizationEngine.updateFromMessage(userId, lastMsg.content);
+      }
+    }
+
+    const extraInstruction = userId ? await personalizationEngine.buildPersonalizedInstruction(userId) : "";
+    const effectiveSystemInstruction = (systemInstruction || "") + extraInstruction;
+
     // Set SSE Headers
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -949,7 +966,7 @@ app.post("/api/chat/stream", async (req, res) => {
 
     const stream = chatService.streamChat(messages, {
       model,
-      systemInstruction,
+      systemInstruction: effectiveSystemInstruction,
       temperature,
       useSearch: effectiveSearch,
       userTier: userTier || "free",

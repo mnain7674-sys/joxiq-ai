@@ -25,10 +25,13 @@ export const VoiceModeModal: React.FC<VoiceModeModalProps> = ({
   const [selectedVoiceIndex, setSelectedVoiceIndex] = useState<number>(0);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
+  const [selectedLang, setSelectedLang] = useState<"en-US" | "bn-BD">("en-US");
+
   const recognitionRef = useRef<any>(null);
   const isComponentMounted = useRef<boolean>(true);
   const silenceTimerRef = useRef<any>(null);
   const isMutedRef = useRef<boolean>(isMuted);
+  const lastStreamTextRef = useRef<string>("");
 
   useEffect(() => {
     isMutedRef.current = isMuted;
@@ -60,13 +63,14 @@ export const VoiceModeModal: React.FC<VoiceModeModalProps> = ({
       isComponentMounted.current = false;
       stopAllVoiceActivity();
     };
-  }, [isOpen]);
+  }, [isOpen, selectedLang]);
 
   // Handle SSE streaming text updates
   useEffect(() => {
     if (isStreaming) {
       setModeState("thinking");
       if (currentStreamText) {
+        lastStreamTextRef.current = currentStreamText;
         setAiSpeechText(currentStreamText);
       }
     }
@@ -105,7 +109,7 @@ export const VoiceModeModal: React.FC<VoiceModeModalProps> = ({
       const rec = new SpeechRecognition();
       rec.continuous = true;
       rec.interimResults = true;
-      rec.lang = "en-US";
+      rec.lang = selectedLang;
 
       rec.onstart = () => {
         if (!isMutedRef.current) {
@@ -169,6 +173,7 @@ export const VoiceModeModal: React.FC<VoiceModeModalProps> = ({
     setLastUserSpeech(speechText);
     setTranscript("");
     setModeState("thinking");
+    lastStreamTextRef.current = "";
 
     try {
       await onSendMessage(speechText);
@@ -206,8 +211,25 @@ export const VoiceModeModal: React.FC<VoiceModeModalProps> = ({
       utterance.rate = 1.05;
       utterance.pitch = 1.0;
 
-      if (availableVoices[selectedVoiceIndex]) {
-        utterance.voice = availableVoices[selectedVoiceIndex];
+      // Check for Bengali script or fallback to available voices
+      const containsBangla = /[\u0980-\u09FF]/.test(cleanText);
+      const allVoices = window.speechSynthesis.getVoices();
+      let chosenVoice: SpeechSynthesisVoice | undefined = undefined;
+
+      if (containsBangla) {
+        chosenVoice = allVoices.find((v) => v.lang.startsWith("bn")) || availableVoices.find((v) => v.lang.startsWith("bn"));
+        if (chosenVoice) {
+          utterance.voice = chosenVoice;
+          utterance.lang = chosenVoice.lang;
+        } else {
+          utterance.lang = "bn-BD";
+        }
+      } else {
+        chosenVoice = availableVoices[selectedVoiceIndex] || allVoices.find((v) => v.lang.startsWith("en")) || allVoices[0];
+        if (chosenVoice) {
+          utterance.voice = chosenVoice;
+          utterance.lang = chosenVoice.lang;
+        }
       }
 
       utterance.onend = () => {
@@ -235,8 +257,15 @@ export const VoiceModeModal: React.FC<VoiceModeModalProps> = ({
   // Watch for completed AI response streaming to trigger TTS
   const prevStreamingRef = useRef<boolean>(false);
   useEffect(() => {
-    if (prevStreamingRef.current && !isStreaming && currentStreamText && isOpen) {
-      speakText(currentStreamText);
+    if (prevStreamingRef.current && !isStreaming && isOpen) {
+      const textToSpeak = lastStreamTextRef.current || currentStreamText;
+      if (textToSpeak) {
+        speakText(textToSpeak);
+        lastStreamTextRef.current = "";
+      } else {
+        setModeState("idle");
+        startSpeechRecognition();
+      }
     }
     prevStreamingRef.current = isStreaming;
   }, [isStreaming, currentStreamText, isOpen]);
@@ -292,6 +321,16 @@ export const VoiceModeModal: React.FC<VoiceModeModalProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Language Toggle Button */}
+          <button
+            onClick={() => setSelectedLang((prev) => (prev === "en-US" ? "bn-BD" : "en-US"))}
+            className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-cyan-300 hover:bg-white/10 transition-all cursor-pointer flex items-center gap-1.5"
+            title="Toggle Mic Language (English / Bangla)"
+          >
+            <span>🌐</span>
+            <span>{selectedLang === "en-US" ? "English" : "বাংলা"}</span>
+          </button>
+
           {/* Subtitles toggle */}
           <button
             onClick={() => setShowSubtitles(!showSubtitles)}
