@@ -22,6 +22,7 @@ import { ClaudeProvider } from "./claude.js";
 import { aiDecisionEngine } from "./decisionEngine.js";
 import { tokenOptimizer } from "./tokenOptimizer.js";
 import { costOptimizationAgent } from "./costOptimizationAgent.js";
+import { productionTokenEngine } from "./productionTokenEngine.js";
 import { checkAndTriggerAiAnomalyAlert } from "../services/aiEmailAlertService.js";
 import {
   IAIProvider,
@@ -172,19 +173,124 @@ export class AIRouter {
     messages: ChatMessage[],
     options?: ChatOptions
   ): AsyncGenerator<StreamChunk, void, unknown> {
-    // 1. Optimize input messages context window
-    const windowMessages = tokenOptimizer.optimizeMessages(messages, 10);
+    const startTime = Date.now();
+    const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+    const userQuery = lastUserMsg?.content || "";
 
-    // 2. Automatically compress last user prompt via Cost Optimization Agent to eliminate token fluff
+    // Step A: Check Smart Cache
+    if (userQuery.length > 3) {
+      const cacheResult = await productionTokenEngine.lookupCache(userQuery);
+      if (cacheResult.hit && cacheResult.response) {
+        console.info(`[AIRouter] Smart Cache HIT for query: "${userQuery.slice(0, 30)}..."`);
+        const durationMs = Date.now() - startTime;
+        const savedTokens = productionTokenEngine.estimateTokens(userQuery) + productionTokenEngine.estimateTokens(cacheResult.response);
+        const savedCost = (savedTokens / 1000) * 0.00015;
+
+        // Yield metadata and cached response
+        yield {
+          providerUsed: "gemini",
+          modelUsed: "smart-cache",
+          routeInfo: {
+            providerId: "gemini",
+            model: "smart-cache",
+            reason: "Instant response returned from Production Smart Cache Engine",
+            taskCategory: "simple_text",
+            complexity: "easy",
+            userTier: options?.userTier || "free",
+            estimatedCostPer1k: 0,
+            maxOutputTokens: 1024,
+            isFallback: false
+          }
+        };
+
+        yield { text: cacheResult.response };
+
+        // Log optimization telemetry
+        productionTokenEngine.logOptimization({
+          userId: options?.userId,
+          userEmail: options?.userEmail,
+          actionType: "cache_hit",
+          queryText: userQuery,
+          modelUsed: "smart-cache",
+          inputTokens: 0,
+          outputTokens: 0,
+          tokensSaved: savedTokens,
+          estimatedCostUSD: 0,
+          costSavedUSD: savedCost,
+          responseTimeMs: durationMs,
+          complexity: "easy"
+        }).catch(e => console.error("Cache log error:", e));
+
+        yield {
+          tokenUsage: { inputTokens: 0, outputTokens: 0, totalTokens: 0, estimatedCost: 0 },
+          isDone: true
+        };
+        return;
+      }
+
+      // Step B: Check Knowledge Base
+      const kbResult = await productionTokenEngine.searchKnowledgeBase(userQuery);
+      if (kbResult.match && kbResult.content) {
+        console.info(`[AIRouter] Knowledge Base MATCH (Confidence: ${kbResult.confidenceScore})`);
+        const durationMs = Date.now() - startTime;
+        const savedTokens = productionTokenEngine.estimateTokens(userQuery) + productionTokenEngine.estimateTokens(kbResult.content);
+        const savedCost = (savedTokens / 1000) * 0.00015;
+
+        yield {
+          providerUsed: "gemini",
+          modelUsed: "knowledge-base",
+          routeInfo: {
+            providerId: "gemini",
+            model: "knowledge-base",
+            reason: `Answer retrieved from Verified Knowledge Base (Confidence: ${Math.round((kbResult.confidenceScore || 0.8) * 100)}%)`,
+            taskCategory: "simple_text",
+            complexity: "easy",
+            userTier: options?.userTier || "free",
+            estimatedCostPer1k: 0,
+            maxOutputTokens: 1024,
+            isFallback: false
+          }
+        };
+
+        yield { text: kbResult.content };
+
+        // Automatically store in Smart Cache for future fast hits
+        productionTokenEngine.saveToCache(userQuery, kbResult.content, "simple_text").catch(e => console.error("Cache write error:", e));
+
+        productionTokenEngine.logOptimization({
+          userId: options?.userId,
+          userEmail: options?.userEmail,
+          actionType: "knowledge_hit",
+          queryText: userQuery,
+          modelUsed: "knowledge-base",
+          inputTokens: 0,
+          outputTokens: 0,
+          tokensSaved: savedTokens,
+          estimatedCostUSD: 0,
+          costSavedUSD: savedCost,
+          responseTimeMs: durationMs,
+          complexity: "easy"
+        }).catch(e => console.error("Knowledge log error:", e));
+
+        yield {
+          tokenUsage: { inputTokens: 0, outputTokens: 0, totalTokens: 0, estimatedCost: 0 },
+          isDone: true
+        };
+        return;
+      }
+    }
+
+    // Step C: Conversation History Optimization & Summarization
+    const compressedMessages = await productionTokenEngine.compressConversation(messages);
+    const windowMessages = tokenOptimizer.optimizeMessages(compressedMessages, 10);
+
+    // Step D: Compress prompt fluff
     const optimizedMessages = windowMessages.map((msg, index) => {
       if (index === windowMessages.length - 1 && msg.role === "user" && msg.content) {
         const compressed = costOptimizationAgent.optimizePrompt(msg.content);
         if (compressed.savedTokens > 0) {
-          console.info(`[Cost Optimization Agent] Compressed user prompt: saved ${compressed.savedTokens} tokens (${compressed.savingsPercentage}%)`);
-          return {
-            ...msg,
-            content: compressed.optimizedText,
-          };
+          console.info(`[Cost Optimization Agent] Compressed prompt: saved ${compressed.savedTokens} tokens`);
+          return { ...msg, content: compressed.optimizedText };
         }
       }
       return msg;
@@ -192,9 +298,8 @@ export class AIRouter {
 
     const { provider, modelToUse, routeDecision } = this.selectProvider(optimizedMessages, options);
 
-    console.info(`[Smart AIRouter] Selected ${provider.displayName} (${modelToUse}). Category: ${routeDecision.taskCategory}. Reason: ${routeDecision.reason}`);
+    console.info(`[Smart AIRouter] Selected ${provider.displayName} (${modelToUse}). Category: ${routeDecision.taskCategory}`);
 
-    // Yield initial metadata chunk with route decision
     yield {
       providerUsed: provider.id,
       modelUsed: modelToUse,
@@ -208,7 +313,6 @@ export class AIRouter {
     };
 
     let fullGeneratedText = "";
-    const startTime = Date.now();
 
     try {
       for await (const chunk of provider.generateStream(optimizedMessages, effectiveOptions)) {
@@ -231,7 +335,7 @@ export class AIRouter {
       throw err;
     }
 
-    // Calculate final Token Usage Record for tracking
+    // Calculate Token Usage & Cost
     const inputText = optimizedMessages.map((m) => m.content + (m.document?.content || "")).join(" ");
     const tokenUsage = tokenOptimizer.calculateUsageRecord({
       userId: options?.userId,
@@ -243,6 +347,27 @@ export class AIRouter {
       inputText,
       outputText: fullGeneratedText,
     });
+
+    // Save to Smart Cache if applicable
+    if (userQuery.length > 5 && fullGeneratedText.length > 15 && routeDecision.taskCategory !== "image_multimodal") {
+      productionTokenEngine.saveToCache(userQuery, fullGeneratedText, routeDecision.taskCategory).catch(e => console.error("Cache save error:", e));
+    }
+
+    // Log optimization metrics to Firestore
+    productionTokenEngine.logOptimization({
+      userId: options?.userId,
+      userEmail: options?.userEmail,
+      actionType: "llm_call",
+      queryText: userQuery,
+      modelUsed: modelToUse,
+      inputTokens: tokenUsage.inputTokens,
+      outputTokens: tokenUsage.outputTokens,
+      tokensSaved: 0,
+      estimatedCostUSD: tokenUsage.estimatedCost,
+      costSavedUSD: 0,
+      responseTimeMs: Date.now() - startTime,
+      complexity: routeDecision.complexity
+    }).catch(e => console.error("Optimization log error:", e));
 
     yield {
       tokenUsage: {
@@ -262,7 +387,23 @@ export class AIRouter {
     messages: ChatMessage[],
     options?: ChatOptions
   ): Promise<string> {
-    const optimizedMessages = tokenOptimizer.optimizeMessages(messages, 10);
+    const startTime = Date.now();
+    const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
+    const userQuery = lastUserMsg?.content || "";
+
+    if (userQuery.length > 3) {
+      const cacheResult = await productionTokenEngine.lookupCache(userQuery);
+      if (cacheResult.hit && cacheResult.response) {
+        return cacheResult.response;
+      }
+      const kbResult = await productionTokenEngine.searchKnowledgeBase(userQuery);
+      if (kbResult.match && kbResult.content) {
+        return kbResult.content;
+      }
+    }
+
+    const compressed = await productionTokenEngine.compressConversation(messages);
+    const optimizedMessages = tokenOptimizer.optimizeMessages(compressed, 10);
     const { provider, modelToUse, routeDecision } = this.selectProvider(optimizedMessages, options);
 
     const effectiveOptions: ChatOptions = {
@@ -271,7 +412,6 @@ export class AIRouter {
       maxTokens: routeDecision.maxOutputTokens,
     };
 
-    const startTime = Date.now();
     try {
       const res = await provider.generateContent(optimizedMessages, effectiveOptions);
       const durationMs = Date.now() - startTime;
@@ -279,6 +419,10 @@ export class AIRouter {
         latencyMs: durationMs,
         model: modelToUse
       }).catch(err => console.error("Anomaly check error:", err));
+
+      if (userQuery.length > 5 && res.length > 15) {
+        productionTokenEngine.saveToCache(userQuery, res, routeDecision.taskCategory).catch(e => console.error("Cache save error:", e));
+      }
       return res;
     } catch (err: any) {
       checkAndTriggerAiAnomalyAlert({

@@ -71,5 +71,44 @@ service cloud.firestore {
     match /projects/{projectId} {
       allow read, write: if isAuthenticated();
     }
+
+    // AI Token Optimization Engine Collections
+    match /ai_usage/{id} {
+      allow read, write: if true;
+    }
+
+    match /ai_cache/{id} {
+      allow read, write: if true;
+    }
+
+    match /knowledge_base/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /conversation_summaries/{id} {
+      allow read, write: if true;
+    }
+
+    match /optimization_logs/{id} {
+      allow read, write: if true;
+    }
+
+    match /system_monitoring_logs/{id} {
+      allow read, write: if true;
+    }
+
+    match /ai_anomalies/{id} {
+      allow read, write: if true;
+    }
+
+    match /model_usage_stats/{id} {
+      allow read, write: if true;
+    }
+
+    match /system_config/{id} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }

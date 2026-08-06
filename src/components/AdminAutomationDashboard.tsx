@@ -569,25 +569,25 @@ export function AdminAutomationDashboard({ backendUrl = "" }: AdminAutomationDas
 function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={styles.statCard}>
-      <div style={styles.statValue}>{value}</div>
       <div style={styles.statLabel}>{label}</div>
+      <div style={styles.statValue}>{value}</div>
     </div>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: { fontFamily: "system-ui, sans-serif", padding: "16px", maxWidth: "100%", width: "100%" },
-  cardsRow: { display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" },
-  statCard: { flex: "1 1 180px", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "10px", padding: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" },
-  statValue: { fontSize: "26px", fontWeight: 700, color: "#111827" },
-  statLabel: { fontSize: "12px", color: "#6b7280", marginTop: "4px" },
-  insightsBox: { background: "#fef3c7", border: "1px solid #fde68a", borderRadius: "10px", padding: "14px", marginBottom: "16px" },
-  insightsTitle: { fontWeight: 600, marginBottom: "6px", color: "#92400e" },
-  insightItem: { fontSize: "13px", color: "#78350f", marginBottom: "3px" },
-  launcherBox: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px", marginBottom: "16px" },
-  launcherTitle: { fontWeight: 600, fontSize: "14px", marginBottom: "10px", color: "#0f172a" },
-  launcherButtons: { display: "flex", gap: "8px", flexWrap: "wrap" },
-  actionBtn: { background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "6px 12px", fontSize: "12px", fontWeight: 500, color: "#334155", cursor: "pointer" },
+  page: { fontFamily: "system-ui, sans-serif", padding: "12px", maxWidth: "100%", width: "100%" },
+  cardsRow: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(135px, 1fr))", gap: "8px", marginBottom: "14px" },
+  statCard: { background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "8px 10px", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" },
+  statValue: { fontSize: "12px", fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  statLabel: { fontSize: "10px", fontWeight: 600, color: "#64748b", marginBottom: "2px", textTransform: "uppercase", letterSpacing: "0.02em" },
+  insightsBox: { background: "#fef3c7", border: "1px solid #fde68a", borderRadius: "8px", padding: "10px 12px", marginBottom: "14px" },
+  insightsTitle: { fontWeight: 600, marginBottom: "4px", color: "#92400e", fontSize: "12px" },
+  insightItem: { fontSize: "11px", color: "#78350f", marginBottom: "2px" },
+  launcherBox: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "12px", marginBottom: "14px" },
+  launcherTitle: { fontWeight: 600, fontSize: "12px", marginBottom: "8px", color: "#0f172a" },
+  launcherButtons: { display: "flex", gap: "6px", flexWrap: "wrap" },
+  actionBtn: { background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "4px 8px", fontSize: "11px", fontWeight: 500, color: "#334155", cursor: "pointer" },
   resultJsonBox: { marginTop: "12px", background: "#f1f5f9", padding: "12px", borderRadius: "8px", maxHeight: "200px", overflowY: "auto" },
   chatContainer: { display: "flex", flexDirection: "column", height: "480px", border: "1px solid #e2e2e2", borderRadius: "12px", overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.08)", background: "#ffffff" },
   chatHeader: { display: "flex", alignItems: "center", gap: "8px", padding: "14px 16px", background: "#111827", color: "#ffffff" },

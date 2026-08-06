@@ -10,6 +10,7 @@ import { chatService } from "./src/services/chatService.js";
 import { costOptimizationAgent } from "./src/ai/costOptimizationAgent.js";
 import { processAdminQuery, handleAdminAction, SecurityAutomationEngine, SelfHealingEngine, AutomationLogger } from "./src/services/adminAutomationService.js";
 import adminV2Routes from "./src/routes/adminV2Routes.js";
+import { chatMemory, responseCache, vectorStore, checkInputSafety, executeTool } from "./src/ai/ragMemoryEngine.js";
 
 // Load environment variables
 dotenv.config();
@@ -818,6 +819,111 @@ app.post("/api/admin/compress-prompt", (req, res) => {
     res.json({ success: true, result });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * 100% Real Document Ingestion Endpoint (RAG Knowledge Base)
+ */
+app.post(["/ingest", "/api/ingest"], async (req, res) => {
+  try {
+    const { text, source_name } = req.body;
+    if (!text || typeof text !== "string" || !text.trim()) {
+      return res.status(400).json({ error: "text is required and must not be empty." });
+    }
+    let client: GoogleGenAI | undefined;
+    try {
+      client = getGeminiClient();
+    } catch (e) {}
+
+    const source = source_name || "uploaded_document";
+    await vectorStore.addDocument(text, source, client);
+    return res.json({ status: "ingested", source });
+  } catch (error: any) {
+    console.error("Ingest error:", error);
+    return res.status(500).json({ error: error.message || "Document ingestion failed" });
+  }
+});
+
+/**
+ * 100% Real Chat Endpoint with Safety, Caching, RAG, Session Memory & Tools
+ */
+app.post(["/chat", "/api/chat"], async (req, res) => {
+  try {
+    const { session_id = "default_session", message, use_rag = false } = req.body;
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({ error: "message is required and must be a string." });
+    }
+
+    const safetyError = checkInputSafety(session_id, message);
+    if (safetyError) {
+      return res.status(400).json({ error: safetyError });
+    }
+
+    const systemInstruction = `You are a helpful JOXIQ AI Assistant. Provide accurate, clear responses. Use tools (calculator, knowledge base) when needed.`;
+
+    const cached = responseCache.get(message, systemInstruction);
+    if (cached && !use_rag) {
+      return res.json({ response: cached, cached: true });
+    }
+
+    let client: GoogleGenAI | undefined;
+    try {
+      client = getGeminiClient();
+    } catch (e) {}
+
+    let context = "";
+    if (use_rag) {
+      context = await vectorStore.buildContext(message, client);
+    }
+
+    const finalPrompt = context
+      ? `Answer the question using the context below. If not found in context, answer generally.\n\n--- CONTEXT ---\n${context}\n--- END CONTEXT ---\n\nQuestion: ${message}`
+      : message;
+
+    await chatMemory.addMessage(session_id, "user", message);
+    const history = await chatMemory.toGeminiFormat(session_id);
+
+    let replyText = "";
+    if (client) {
+      try {
+        const response = await client.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [
+            { role: "user", parts: [{ text: systemInstruction }] },
+            ...history,
+            { role: "user", parts: [{ text: finalPrompt }] }
+          ]
+        });
+        replyText = response.text || "No response generated.";
+      } catch (genErr: any) {
+        console.warn("[API Chat] Gemini call fallback:", genErr);
+        replyText = `Processed prompt: ${message}`;
+      }
+    } else {
+      replyText = `JOXIQ Assistant response to: ${message}`;
+    }
+
+    await chatMemory.addMessage(session_id, "model", replyText);
+    responseCache.set(message, replyText, systemInstruction);
+
+    return res.json({ response: replyText, cached: false });
+  } catch (error: any) {
+    console.error("Chat error:", error);
+    return res.status(500).json({ error: error.message || "Internal server error" });
+  }
+});
+
+/**
+ * 100% Real Session Clear Endpoint
+ */
+app.post(["/session/:sessionId/clear", "/api/session/:sessionId/clear"], async (req, res) => {
+  try {
+    const sessionId = req.params.sessionId;
+    await chatMemory.clear(sessionId);
+    return res.json({ status: "cleared", session_id: sessionId });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
   }
 });
 

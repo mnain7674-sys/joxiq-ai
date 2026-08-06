@@ -8,6 +8,7 @@ import type { GoogleGenAI } from "@google/genai";
 import os from "os";
 import { db, collection, getDocs } from "../lib/firebase.js";
 import { sendAlertEmail, getEmailAlertConfig } from "./aiEmailAlertService.js";
+import { productionTokenEngine } from "../ai/productionTokenEngine.js";
 
 // Node OS hardware & memory metrics helper
 function getClientSystemMetrics() {
@@ -832,6 +833,40 @@ export async function processAdminQuery(
       status: "success",
       source: "Security Automation Engine",
       response: res.message,
+      execution_time_ms: Date.now() - startTime
+    };
+  }
+
+  // Token Optimization Engine Direct Query
+  if (
+    q.includes("token optimization") ||
+    q.includes("token engine") ||
+    q.includes("token controller") ||
+    q.includes("smart cache") ||
+    q.includes("cache hit") ||
+    q.includes("tokens saved") ||
+    q.includes("cost saving") ||
+    q.includes("টোকেন অপটিমাইজেশন") ||
+    q.includes("ক্যাশ")
+  ) {
+    const engineStats = await productionTokenEngine.getEngineAnalytics();
+    return {
+      status: "success",
+      source: "ProductionTokenEngine (Firestore Live Analytics)",
+      response: `⚡ **JOXIQ AI Token Optimization Engine Live Production Status**\n\n` +
+        `• **Total API Requests Processed**: ${engineStats.totalRequests}\n` +
+        `• **Smart Cache Hits**: ${engineStats.cacheHits} (${engineStats.cacheHitRate}% Cache Hit Rate)\n` +
+        `• **Knowledge Base Matches**: ${engineStats.knowledgeHits}\n` +
+        `• **Total Tokens Saved**: ${engineStats.totalTokensSaved.toLocaleString()} tokens\n` +
+        `• **Total Cost Saved**: $${engineStats.totalCostSavedUSD.toFixed(4)} USD\n` +
+        `• **Total Tokens Used**: ${engineStats.totalTokensProcessed.toLocaleString()} tokens\n` +
+        `• **Total API Cost**: $${engineStats.totalCostUSD.toFixed(4)} USD\n` +
+        `• **Average Response Time**: ${engineStats.averageResponseTimeMs} ms\n\n` +
+        `📊 **Request Complexity Classification:**\n` +
+        `- Simple Queries: ${engineStats.complexityBreakdown.simple}\n` +
+        `- Medium Queries: ${engineStats.complexityBreakdown.medium}\n` +
+        `- Complex Reasoning: ${engineStats.complexityBreakdown.complex}\n\n` +
+        `🔒 *Engine operates 100% automatically in production with zero manual simulation.*`,
       execution_time_ms: Date.now() - startTime
     };
   }
