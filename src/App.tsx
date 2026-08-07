@@ -82,6 +82,7 @@ import { EducationalSuite } from "./components/EducationalSuite";
 import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
+import { JoxiqLogo } from "./components/JoxiqLogo";
 
 const basePrefix = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL.replace(/\/$/, '') : '';
 
@@ -1572,9 +1573,7 @@ export default function App() {
               transition={{ duration: 0.5, ease: "easeOut" }}
               className="relative flex flex-col items-center justify-center space-y-4 text-center z-10"
             >
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 shadow-2xl shadow-indigo-500/30 flex items-center justify-center text-white">
-                <Sparkles className="w-10 h-10 sm:w-12 sm:h-12" />
-              </div>
+              <JoxiqLogo theme={theme} className="w-28 h-28 sm:w-32 sm:h-32 shadow-2xl shadow-indigo-500/30" />
 
               <div className="space-y-1">
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300">
@@ -1641,9 +1640,7 @@ export default function App() {
             className="flex items-center gap-2 cursor-pointer group"
             title="Return to Home"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform shrink-0">
-              <Sparkles size={18} />
-            </div>
+            <JoxiqLogo theme={theme} className="w-11 h-11 shadow-sm group-hover:scale-105 transition-transform" />
             <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">JOXIQ AI</span>
           </div>
           <button
@@ -1898,12 +1895,10 @@ export default function App() {
                   createNewChat();
                 }
               }}
-              className="flex items-center gap-1.5 cursor-pointer group"
+              className="flex items-center gap-2 cursor-pointer group"
               title="JOXIQ AI Home"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform shrink-0">
-                <Sparkles size={18} />
-              </div>
+              <JoxiqLogo theme={theme} className="w-11 h-11 sm:w-12 sm:h-12 shadow-sm group-hover:scale-105 transition-transform" />
               <span className="font-extrabold text-xs sm:text-sm tracking-tight text-slate-800 dark:text-slate-100">JOXIQ AI</span>
             </div>
 
@@ -2178,9 +2173,7 @@ export default function App() {
                   transition={{ duration: 0.4 }}
                   className="mx-auto flex items-center justify-center mb-2"
                 >
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-500 text-white shadow-xl shadow-indigo-500/20 flex items-center justify-center">
-                    <Sparkles className="w-10 h-10 sm:w-12 sm:h-12" />
-                  </div>
+                  <JoxiqLogo theme={theme} className="w-28 h-28 sm:w-32 sm:h-32 shadow-xl shadow-indigo-500/20" />
                 </motion.div>
                 <h1 className={`text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mt-3 ${
                   theme === "dark" ? "text-white" : "text-slate-900"
