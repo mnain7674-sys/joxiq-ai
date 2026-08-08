@@ -83,6 +83,13 @@ import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { ChatHistoryModal } from "./components/ChatHistoryModal";
 import { JoxiqLogo } from "./components/JoxiqLogo";
+import {
+  saveChatToFirestore,
+  loadUserChatsFromFirestore,
+  deleteChatFromFirestore,
+  renameChatInFirestore,
+} from "./lib/chatHistoryStorage";
+import { generateSmartTopicTitle } from "./utils/titleGenerator";
 
 const basePrefix = import.meta.env.BASE_URL && import.meta.env.BASE_URL !== '/' ? import.meta.env.BASE_URL.replace(/\/$/, '') : '';
 
@@ -106,6 +113,10 @@ function cleanErrorMessage(err: any): string {
     }
   } catch (e) {
     // Ignore JSON parsing errors
+  }
+  
+  if (message.includes("429") || message.includes("RESOURCE_EXHAUSTED") || message.includes("Quota exceeded") || message.includes("Too Many Requests")) {
+    return "Gemini API rate limit exceeded (429). The free tier request quota was temporarily reached. Please wait a few moments and try again.";
   }
   
   if (message.includes("503") || message.includes("UNAVAILABLE") || message.includes("high demand") || message.includes("Service Unavailable")) {
@@ -177,7 +188,7 @@ export default function App() {
     if (saved && ["dark", "light", "midnight", "emerald", "amber", "rose"].includes(saved)) {
       return saved as any;
     }
-    return "dark";
+    return "light";
   });
 
   // --- Input state ---
@@ -215,9 +226,31 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
+  const [activeMoreMenuMsgId, setActiveMoreMenuMsgId] = useState<string | null>(null);
   const [paymentToast, setPaymentToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [userLogoError, setUserLogoError] = useState<boolean>(false);
   const [joxiqLogoError, setJoxiqLogoError] = useState<boolean>(false);
+
+  // --- Sidebar & ChatGPT Style Chat History States ---
+  const [sidebarSearchQuery, setSidebarSearchQuery] = useState<string>("");
+  const [editingSidebarChatId, setEditingSidebarChatId] = useState<string | null>(null);
+  const [editingSidebarTitle, setEditingSidebarTitle] = useState<string>("");
+  const [openMenuChatId, setOpenMenuChatId] = useState<string | null>(null);
+  const [deleteConfirmChatId, setDeleteConfirmChatId] = useState<string | null>(null);
+
+  const renameChat = (id: string, newTitle: string) => {
+    if (!newTitle.trim()) return;
+    const trimmed = newTitle.trim();
+    setConversations((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, title: trimmed, timestamp: Date.now() } : c))
+    );
+    setEditingSidebarChatId(null);
+    setOpenMenuChatId(null);
+    const user = auth.currentUser;
+    if (user && user.uid) {
+      renameChatInFirestore(user.uid, id, trimmed);
+    }
+  };
 
   const toggleSaveMessage = (msgId: string) => {
     setSavedMessageIds((prev) => {
@@ -430,6 +463,21 @@ export default function App() {
       try {
         const parsed: Conversation[] = JSON.parse(saved);
         const validParsed = parsed.filter(c => c.messages && c.messages.length > 0);
+        const sanitizedParsed = validParsed.map((c) => {
+          const isGeneric =
+            !c.title ||
+            ["hi", "hi hi", "hello", "new chat", "untitled chat", "general conversation"].includes(c.title.toLowerCase());
+          if (isGeneric && c.messages && c.messages.length > 0) {
+            const userMsg = c.messages.find((m) => m.role === "user");
+            const aiMsg = c.messages.find((m) => m.role === "assistant");
+            return {
+              ...c,
+              title: generateSmartTopicTitle(userMsg?.content, aiMsg?.content, userMsg?.document?.name),
+            };
+          }
+          return c;
+        });
+
         const defaultPersona = SYSTEM_PERSONAS[0];
         const initialNewChat: Conversation = {
           id: Math.random().toString(36).substring(2, 11),
@@ -441,7 +489,7 @@ export default function App() {
           useSearch,
           timestamp: Date.now(),
         };
-        setConversations([initialNewChat, ...validParsed]);
+        setConversations([initialNewChat, ...sanitizedParsed]);
         setActiveId(initialNewChat.id);
       } catch (e) {
         console.error("Failed to restore history", e);
@@ -462,6 +510,38 @@ export default function App() {
         const profile = { name: displayName, email };
         setUserProfile(profile);
         setShowAuthModal(false);
+
+        // Load user's chat history from Firestore
+        try {
+          const firestoreChats = await loadUserChatsFromFirestore(firebaseUser.uid);
+          if (firestoreChats && firestoreChats.length > 0) {
+            setConversations((prev) => {
+              const firestoreIds = new Set(firestoreChats.map((c) => c.id));
+              const localUnsynced = prev.filter(
+                (c) => !firestoreIds.has(c.id) && c.messages && c.messages.length > 0
+              );
+              localUnsynced.forEach((c) => saveChatToFirestore(firebaseUser.uid, c));
+
+              const merged = [...localUnsynced, ...firestoreChats];
+              merged.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+              return merged;
+            });
+            setActiveId((prevId) => {
+              if (!prevId || prevId === "") {
+                return firestoreChats[0].id;
+              }
+              return prevId;
+            });
+          } else {
+            setConversations((prev) => {
+              const validLocal = prev.filter((c) => c.messages && c.messages.length > 0);
+              validLocal.forEach((c) => saveChatToFirestore(firebaseUser.uid, c));
+              return prev;
+            });
+          }
+        } catch (err) {
+          console.error("Error loading chat history from Firestore:", err);
+        }
 
         // Check Firestore for cross-platform Pro subscription sync (e.g. purchased from mobile app)
         try {
@@ -572,13 +652,20 @@ export default function App() {
     };
   }, [theme]);
 
-  // Sync state changes to localStorage
+  // Sync state changes to localStorage & Firestore
   useEffect(() => {
     const validConvs = conversations.filter(c => c.messages && c.messages.length > 0);
     if (validConvs.length > 0) {
       localStorage.setItem("gemini_conversations", JSON.stringify(validConvs));
     } else {
       localStorage.removeItem("gemini_conversations");
+    }
+
+    const user = auth.currentUser;
+    if (user && user.uid) {
+      validConvs.forEach((c) => {
+        saveChatToFirestore(user.uid, c);
+      });
     }
   }, [conversations]);
 
@@ -615,28 +702,30 @@ export default function App() {
     localStorage.setItem("gemini_use_search", String(useSearch));
   }, [useSearch]);
 
-  useEffect(() => {
-    setConversations((prev) =>
-      prev.map((c) => ({
-        ...c,
-        useSearch: useSearch,
-      }))
-    );
-  }, [useSearch]);
-
   // Handle active conversation settings modification
   useEffect(() => {
     if (!activeId) return;
-    setConversations((prev) =>
-      prev.map((c) => {
+
+    let systemInstruction = "";
+    if (selectedPersonaId === "custom") {
+      systemInstruction = customInstruction;
+    } else {
+      const persona = SYSTEM_PERSONAS.find((p) => p.id === selectedPersonaId);
+      systemInstruction = persona ? persona.systemInstruction : "";
+    }
+
+    setConversations((prev) => {
+      const activeChat = prev.find((c) => c.id === activeId);
+      if (!activeChat) return prev;
+      if (
+        activeChat.temperature === temperature &&
+        activeChat.useSearch === useSearch &&
+        activeChat.systemInstruction === systemInstruction
+      ) {
+        return prev;
+      }
+      return prev.map((c) => {
         if (c.id === activeId) {
-          let systemInstruction = "";
-          if (selectedPersonaId === "custom") {
-            systemInstruction = customInstruction;
-          } else {
-            const persona = SYSTEM_PERSONAS.find((p) => p.id === selectedPersonaId);
-            systemInstruction = persona ? persona.systemInstruction : "";
-          }
           return {
             ...c,
             temperature,
@@ -645,9 +734,9 @@ export default function App() {
           };
         }
         return c;
-      })
-    );
-  }, [selectedPersonaId, customInstruction, temperature, useSearch]);
+      });
+    });
+  }, [activeId, selectedPersonaId, customInstruction, temperature, useSearch]);
 
   // Auto scroll logic
   const scrollToBottom = () => {
@@ -687,7 +776,7 @@ export default function App() {
     const defaultPersona = SYSTEM_PERSONAS.find((p) => p.id === selectedPersonaId) || SYSTEM_PERSONAS[0];
     const newChat: Conversation = {
       id: Math.random().toString(36).substring(2, 11),
-      title: initialPrompt ? (initialPrompt.length > 25 ? initialPrompt.substring(0, 25) + "..." : initialPrompt) : "New Chat",
+      title: initialPrompt ? generateSmartTopicTitle(initialPrompt) : "New Chat",
       messages: [],
       model: "gemini-2.5-flash",
       systemInstruction: selectedPersonaId === "custom" ? customInstruction : defaultPersona.systemInstruction,
@@ -704,10 +793,15 @@ export default function App() {
     return newChat;
   };
 
-  // Delete conversation
-  const deleteChat = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Stop speaking if active speech belongs to deleted chat
+  // Open delete confirmation modal
+  const deleteChat = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setOpenMenuChatId(null);
+    setDeleteConfirmChatId(id);
+  };
+
+  // Perform permanent chat deletion
+  const confirmDeleteChat = (id: string) => {
     if (activeSpeechMsgId) {
       stopTts();
     }
@@ -720,6 +814,11 @@ export default function App() {
         setActiveId("");
       }
     }
+    const user = auth.currentUser;
+    if (user && user.uid) {
+      deleteChatFromFirestore(user.uid, id);
+    }
+    setDeleteConfirmChatId(null);
   };
 
   // Clear all history
@@ -1000,6 +1099,52 @@ export default function App() {
     );
   };
 
+  // --- ChatGPT Style Date Grouping for Sidebar ---
+  const groupSidebarConversations = (convList: Conversation[]) => {
+    const valid = convList.filter((c) => c.messages && c.messages.length > 0);
+    const query = sidebarSearchQuery.toLowerCase().trim();
+    const filtered = query
+      ? valid.filter(
+          (c) =>
+            c.title.toLowerCase().includes(query) ||
+            c.messages.some((m) => m.content.toLowerCase().includes(query))
+        )
+      : valid;
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterdayStart = todayStart - 86400000;
+    const sevenDaysStart = todayStart - 6 * 86400000;
+    const thirtyDaysStart = todayStart - 29 * 86400000;
+
+    const groups: { label: string; items: Conversation[] }[] = [
+      { label: "Today", items: [] },
+      { label: "Yesterday", items: [] },
+      { label: "Previous 7 Days", items: [] },
+      { label: "Previous 30 Days", items: [] },
+      { label: "Older", items: [] },
+    ];
+
+    filtered.forEach((c) => {
+      const time = c.timestamp || Date.now();
+      if (time >= todayStart) {
+        groups[0].items.push(c);
+      } else if (time >= yesterdayStart) {
+        groups[1].items.push(c);
+      } else if (time >= sevenDaysStart) {
+        groups[2].items.push(c);
+      } else if (time >= thirtyDaysStart) {
+        groups[3].items.push(c);
+      } else {
+        groups[4].items.push(c);
+      }
+    });
+
+    return groups.filter((g) => g.items.length > 0);
+  };
+
+  const groupedSidebarConversations = groupSidebarConversations(conversations);
+
   // --- Message ratings (Like/Dislike) ---
   const rateMessage = (msgId: string, rating: "like" | "dislike" | null) => {
     if (!activeId) return;
@@ -1091,12 +1236,14 @@ export default function App() {
     // Update conversation state with user message
     const updatedMessages = [...chat.messages, userMessage];
 
-    // Auto update title if it was default
+    // Auto update title if it was default or generic
     let updatedTitle = chat.title;
-    if (chat.title === "New Chat") {
-      updatedTitle = textToSend
-        ? (textToSend.length > 30 ? textToSend.substring(0, 30) + "..." : textToSend)
-        : (docToSend ? `File: ${docToSend.name}` : "New Chat");
+    const isGenericTitle =
+      !chat.title ||
+      ["new chat", "hi", "hi hi", "hello", "general conversation", "untitled chat"].includes(chat.title.toLowerCase());
+
+    if (isGenericTitle || chat.messages.length === 0) {
+      updatedTitle = generateSmartTopicTitle(textToSend, undefined, docToSend?.name);
     }
 
     setConversations((prev) =>
@@ -1141,55 +1288,80 @@ export default function App() {
       }
 
       let done = false;
-      let finalResponseText = "";
+      let fullTargetText = "";
       let finalGrounding: any = null;
+      let sseRemainder = "";
+      let streamClosed = false;
 
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          const chunkStr = decoder.decode(value, { stream: true });
-          const lines = chunkStr.split("\n");
+      let displayedLen = 0;
 
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || !trimmed.startsWith("data: ")) continue;
-
-            const payloadStr = trimmed.replace(/^data: /, "");
-            if (payloadStr === "[DONE]") {
-              done = true;
-              break;
-            }
-
-            let payload: any = null;
-            try {
-              payload = JSON.parse(payloadStr);
-            } catch (e: any) {
-              // Ignore partial JSON parsing errors that might happen on boundary splits
-            }
-
-            if (payload) {
-              if (payload.text) {
-                finalResponseText += payload.text;
-                setCurrentStreamText(finalResponseText);
-              }
-              if (payload.grounding) {
-                finalGrounding = payload.grounding;
-                setCurrentGrounding(payload.grounding);
-              }
-              if (payload.error) {
-                throw new Error(payload.error);
-              }
-            }
+      await new Promise<void>((resolve, reject) => {
+        const typingInterval = setInterval(() => {
+          const targetLen = fullTargetText.length;
+          if (displayedLen < targetLen) {
+            const diff = targetLen - displayedLen;
+            const step = diff > 80 ? Math.ceil(diff / 8) : diff > 30 ? 3 : diff > 10 ? 2 : 1;
+            displayedLen = Math.min(targetLen, displayedLen + step);
+            setCurrentStreamText(fullTargetText.substring(0, displayedLen));
+          } else if (streamClosed && displayedLen >= targetLen) {
+            clearInterval(typingInterval);
+            resolve();
           }
-        }
-      }
+        }, 16);
+
+        (async () => {
+          try {
+            while (!done) {
+              const { value, done: readerDone } = await reader.read();
+              done = readerDone;
+              if (value) {
+                sseRemainder += decoder.decode(value, { stream: true });
+                const lines = sseRemainder.split("\n");
+                sseRemainder = lines.pop() || "";
+
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+                  const payloadStr = trimmed.replace(/^data: /, "");
+                  if (payloadStr === "[DONE]") {
+                    done = true;
+                    break;
+                  }
+
+                  try {
+                    const payload = JSON.parse(payloadStr);
+                    if (payload.text) {
+                      fullTargetText += payload.text;
+                    }
+                    if (payload.grounding) {
+                      finalGrounding = payload.grounding;
+                      setCurrentGrounding(payload.grounding);
+                    }
+                    if (payload.error) {
+                      throw new Error(payload.error);
+                    }
+                  } catch (e: any) {
+                    // Ignore JSON parse errors on partial chunk boundaries
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            clearInterval(typingInterval);
+            reject(err);
+            return;
+          } finally {
+            streamClosed = true;
+          }
+        })();
+      });
 
       // Finish streaming and persist the final assistant response
       const assistantMessage: Message = {
         id: Math.random().toString(36).substring(2, 11),
         role: "assistant",
-        content: finalResponseText,
+        content: fullTargetText,
         timestamp: Date.now(),
         grounding: finalGrounding || undefined,
       };
@@ -1201,11 +1373,11 @@ export default function App() {
       );
 
       // Trigger JARVIS Auto Voice Response if JARVIS Mode is active
-      if (isJarvisModeRef.current && finalResponseText) {
-        speakJarvisResponse(finalResponseText);
+      if (isJarvisModeRef.current && fullTargetText) {
+        speakJarvisResponse(fullTargetText);
       }
 
-      const tokenCount = Math.max(10, Math.round((textToSend.length + finalResponseText.length) / 4));
+      const tokenCount = Math.max(10, Math.round((textToSend.length + fullTargetText.length) / 4));
       if (userProfile?.email) {
         fetch("/api/user/record-tokens", {
           method: "POST",
@@ -1475,62 +1647,104 @@ export default function App() {
       if (!reader) throw new Error("No reader available");
 
       let done = false;
-      let finalResponseText = "";
+      let fullTargetText = "";
       let finalGrounding: any = null;
+      let sseRemainder = "";
+      let streamClosed = false;
 
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          const chunkStr = decoder.decode(value, { stream: true });
-          const lines = chunkStr.split("\n");
+      let displayedLen = 0;
 
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || !trimmed.startsWith("data: ")) continue;
-
-            const payloadStr = trimmed.replace(/^data: /, "");
-            if (payloadStr === "[DONE]") {
-              done = true;
-              break;
-            }
-
-            let payload: any = null;
-            try {
-              payload = JSON.parse(payloadStr);
-            } catch (e: any) {
-              // Ignore partial JSON parsing errors that might happen on boundary splits
-            }
-
-            if (payload) {
-              if (payload.text) {
-                finalResponseText += payload.text;
-                setCurrentStreamText(finalResponseText);
-              }
-              if (payload.grounding) {
-                finalGrounding = payload.grounding;
-                setCurrentGrounding(payload.grounding);
-              }
-              if (payload.error) {
-                throw new Error(payload.error);
-              }
-            }
+      await new Promise<void>((resolve, reject) => {
+        const typingInterval = setInterval(() => {
+          const targetLen = fullTargetText.length;
+          if (displayedLen < targetLen) {
+            const diff = targetLen - displayedLen;
+            const step = diff > 80 ? Math.ceil(diff / 8) : diff > 30 ? 3 : diff > 10 ? 2 : 1;
+            displayedLen = Math.min(targetLen, displayedLen + step);
+            setCurrentStreamText(fullTargetText.substring(0, displayedLen));
+          } else if (streamClosed && displayedLen >= targetLen) {
+            clearInterval(typingInterval);
+            resolve();
           }
-        }
-      }
+        }, 16);
+
+        (async () => {
+          try {
+            while (!done) {
+              const { value, done: readerDone } = await reader.read();
+              done = readerDone;
+              if (value) {
+                sseRemainder += decoder.decode(value, { stream: true });
+                const lines = sseRemainder.split("\n");
+                sseRemainder = lines.pop() || "";
+
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+                  const payloadStr = trimmed.replace(/^data: /, "");
+                  if (payloadStr === "[DONE]") {
+                    done = true;
+                    break;
+                  }
+
+                  try {
+                    const payload = JSON.parse(payloadStr);
+                    if (payload.text) {
+                      fullTargetText += payload.text;
+                    }
+                    if (payload.grounding) {
+                      finalGrounding = payload.grounding;
+                      setCurrentGrounding(payload.grounding);
+                    }
+                    if (payload.error) {
+                      throw new Error(payload.error);
+                    }
+                  } catch (e: any) {
+                    // Ignore JSON parse error on partial boundaries
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            clearInterval(typingInterval);
+            reject(err);
+            return;
+          } finally {
+            streamClosed = true;
+          }
+        })();
+      });
 
       const assistantMessage: Message = {
         id: Math.random().toString(36).substring(2, 11),
         role: "assistant",
-        content: finalResponseText,
+        content: fullTargetText,
         timestamp: Date.now(),
         grounding: finalGrounding || undefined,
       };
 
       setConversations((prev) =>
-        prev.map((c) =>
-          c.id === activeConversation.id ? { ...c, messages: [...slicedMessages, assistantMessage] } : c
-        )
+        prev.map((c) => {
+          if (c.id === activeConversation.id) {
+            const updatedList = [...slicedMessages, assistantMessage];
+            const userMsg = updatedList.find((m) => m.role === "user");
+            const isGeneric =
+              !c.title ||
+              ["new chat", "hi", "hi hi", "hello", "general conversation", "untitled chat"].includes(c.title.toLowerCase());
+
+            const smartTitle = isGeneric
+              ? generateSmartTopicTitle(userMsg?.content, fullTargetText, userMsg?.document?.name)
+              : c.title;
+
+            return {
+              ...c,
+              messages: updatedList,
+              title: smartTitle,
+            };
+          }
+          return c;
+        })
       );
     } catch (err: any) {
       console.error(err);
@@ -1550,7 +1764,7 @@ export default function App() {
   return (
     <div
       className={`relative w-full h-[100dvh] min-h-screen flex overflow-hidden font-sans transition-colors duration-300 selection:bg-indigo-500/30 ${
-        theme === "light" ? "bg-[#f4f7fc] text-slate-800" : "bg-[#050b18] text-slate-200 dark"
+        theme === "light" ? "bg-white text-black" : "bg-[#050b18] text-slate-200 dark"
       }`}
       style={isKeyboardOpen && viewportHeight !== null && viewportHeight > 200 ? { height: `${viewportHeight}px` } : undefined}
     >
@@ -1744,10 +1958,10 @@ export default function App() {
 
         {/* Workspace Mode Selection */}
         {userProfile?.email?.toLowerCase() === "mnain7674@gmail.com" && (
-          <div className="px-4 pb-4 border-b border-slate-500/10 flex flex-col gap-1.5">
+          <div className="px-4 py-2 border-b border-slate-500/10 flex flex-col gap-1.5 shrink-0">
             <button
               onClick={() => setActiveView("admin")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                 activeView === "admin"
                   ? "bg-amber-500/20 border-amber-500/40 text-amber-400 font-extrabold"
                   : "border-amber-500/20 bg-amber-500/5 text-amber-500 hover:bg-amber-500/10"
@@ -1759,6 +1973,174 @@ export default function App() {
             </button>
           </div>
         )}
+
+        {/* ChatGPT Style History Section in Sidebar */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 custom-scrollbar">
+          {/* Sidebar Search Bar */}
+          <div className="relative px-1">
+            <Search size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={sidebarSearchQuery}
+              onChange={(e) => setSidebarSearchQuery(e.target.value)}
+              placeholder="Search chat history..."
+              className={`w-full pl-8 pr-3 py-1.5 rounded-xl text-xs border outline-none transition-all ${
+                theme === "dark"
+                  ? "bg-slate-900/80 border-white/10 text-slate-200 placeholder-slate-500 focus:border-indigo-500"
+                  : "bg-slate-100 border-slate-200 text-slate-800 placeholder-slate-400 focus:border-indigo-500"
+              }`}
+            />
+          </div>
+
+          {/* Categorized Chat History Items */}
+          {groupedSidebarConversations.length === 0 ? (
+            <div className="text-center py-6 px-2">
+              <p className="text-xs text-slate-400">
+                {sidebarSearchQuery ? "No matching chats found" : "No conversation history"}
+              </p>
+            </div>
+          ) : (
+            groupedSidebarConversations.map((group) => (
+              <div key={group.label} className="space-y-1">
+                <div className="px-2 pt-1.5 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  {group.label}
+                </div>
+                {group.items.map((chat) => {
+                  const isSelected = activeView === "chat" && chat.id === activeId;
+                  const isEditing = editingSidebarChatId === chat.id;
+
+                  return (
+                    <div
+                      key={chat.id}
+                      onClick={() => {
+                        if (!isEditing) {
+                          setActiveView("chat");
+                          setActiveId(chat.id);
+                          if (window.innerWidth < 1024) setSidebarOpen(false);
+                        }
+                      }}
+                      className={`group relative flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer select-none ${
+                        isSelected
+                          ? theme === "dark"
+                            ? "bg-white/10 text-white font-semibold shadow-xs"
+                            : "bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100"
+                          : theme === "dark"
+                          ? "hover:bg-white/5 text-slate-300"
+                          : "hover:bg-slate-100 text-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1 pr-1">
+
+                        {isEditing ? (
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              renameChat(chat.id, editingSidebarTitle);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-1 flex-1 min-w-0"
+                          >
+                            <input
+                              type="text"
+                              value={editingSidebarTitle}
+                              onChange={(e) => setEditingSidebarTitle(e.target.value)}
+                              autoFocus
+                              className={`w-full text-xs font-semibold px-1.5 py-0.5 rounded border outline-none ${
+                                theme === "dark"
+                                  ? "bg-slate-900 border-indigo-500 text-white"
+                                  : "bg-white border-indigo-500 text-slate-900"
+                              }`}
+                            />
+                            <button
+                              type="submit"
+                              className="p-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 shrink-0 cursor-pointer"
+                            >
+                              <Check size={12} />
+                            </button>
+                          </form>
+                        ) : (
+                          <span className="truncate flex-1" title={chat.title}>
+                            {chat.title || "Untitled Chat"}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Three-dot Options Menu & Actions */}
+                      {!isEditing && (
+                        <div className="relative flex items-center gap-0.5">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuChatId(openMenuChatId === chat.id ? null : chat.id);
+                            }}
+                            className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                              openMenuChatId === chat.id
+                                ? "bg-indigo-500/20 text-indigo-400"
+                                : "opacity-0 group-hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 text-slate-400 hover:text-slate-200"
+                            }`}
+                            title="Options"
+                          >
+                            <MoreVertical size={14} />
+                          </button>
+
+                          {/* Three-dot Popover Dropdown */}
+                          {openMenuChatId === chat.id && (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className={`absolute right-0 top-7 z-50 min-w-[130px] rounded-xl shadow-xl border p-1 animate-fadeIn flex flex-col gap-0.5 ${
+                                theme === "dark"
+                                  ? "bg-slate-900 border-white/10 text-slate-200 shadow-black/80"
+                                  : "bg-white border-slate-200 text-slate-800 shadow-slate-300"
+                              }`}
+                            >
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuChatId(null);
+                                  setEditingSidebarChatId(chat.id);
+                                  setEditingSidebarTitle(chat.title);
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-indigo-500/10 hover:text-indigo-400 transition-colors cursor-pointer text-left"
+                              >
+                                <Edit2 size={13} className="text-indigo-400" />
+                                <span>Rename</span>
+                              </button>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuChatId(null);
+                                  toggleFavorite(chat.id, e);
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-amber-500/10 hover:text-amber-400 transition-colors cursor-pointer text-left"
+                              >
+                                <Star size={13} className={chat.isFavorite ? "fill-amber-500 text-amber-500" : "text-amber-400"} />
+                                <span>{chat.isFavorite ? "Unstar" : "Star"}</span>
+                              </button>
+
+                              <div className="h-px my-0.5 bg-slate-200 dark:bg-white/10" />
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteChat(chat.id, e);
+                                }}
+                                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:bg-rose-500/10 hover:text-rose-400 text-rose-400 transition-colors cursor-pointer text-left"
+                              >
+                                <Trash2 size={13} />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))
+          )}
+        </div>
 
 
 
@@ -1870,7 +2252,7 @@ export default function App() {
 
         {/* Top Navbar */}
         <header className={`h-11 sm:h-16 flex items-center justify-between px-2 sm:px-4 md:px-8 border-b shrink-0 z-10 ${
-          theme === "dark" ? "bg-white/5 border-white/10" : "bg-white/60 border-slate-200/60"
+          theme === "dark" ? "bg-white/5 border-white/10" : "bg-white border-slate-200"
         } backdrop-blur-md`}>
           <div className="flex items-center gap-1.5 sm:gap-3">
             <button
@@ -1882,205 +2264,6 @@ export default function App() {
               title="Toggle Sidebar Menu"
             >
               <Menu size={16} className="sm:w-[18px] sm:h-[18px]" />
-            </button>
-
-            {/* Top-Left Homepage Logo & Title */}
-            <div
-              onClick={() => {
-                setActiveView("chat");
-                const emptyChat = conversations.find(c => c.messages.length === 0);
-                if (emptyChat) {
-                  setActiveId(emptyChat.id);
-                } else {
-                  createNewChat();
-                }
-              }}
-              className="flex items-center gap-2 cursor-pointer group"
-              title="JOXIQ AI Home"
-            >
-              <JoxiqLogo theme={theme} className="w-11 h-11 sm:w-12 sm:h-12 shadow-sm group-hover:scale-105 transition-transform" />
-              <span className="font-extrabold text-xs sm:text-sm tracking-tight text-slate-800 dark:text-slate-100">JOXIQ AI</span>
-            </div>
-
-            {/* Home / Return to Home Dashboard Button */}
-            <button
-              id="btn-header-home"
-              onClick={() => {
-                const emptyChat = conversations.find(c => c.messages.length === 0);
-                if (emptyChat) {
-                  setActiveId(emptyChat.id);
-                  setActiveView("chat");
-                } else {
-                  createNewChat();
-                }
-              }}
-              className={`hidden sm:flex p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
-                theme === "dark" ? "bg-white/5 border-white/10 text-slate-200 hover:bg-white/10" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-              }`}
-              title="Return to Home Dashboard"
-            >
-              <Compass size={16} className="sm:w-[18px] sm:h-[18px] text-indigo-500" />
-            </button>
-
-            {/* Quick New Chat Button */}
-            <button
-              id="btn-header-new-chat"
-              onClick={() => createNewChat()}
-              className={`hidden sm:flex items-center gap-1 px-2.5 py-2 rounded-xl border transition-all cursor-pointer ${
-                theme === "dark" ? "bg-indigo-600/20 border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30" : "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
-              }`}
-              title="Start New Chat"
-            >
-              <Plus size={16} />
-              <span className="text-xs font-bold">New Chat</span>
-            </button>
-
-            {/* Quick Model Selector Toggle */}
-            <div className={`hidden md:flex items-center p-1 rounded-xl border ${
-              theme === "dark" ? "bg-white/5 border-white/10" : "bg-slate-100 border-slate-200"
-            }`}>
-              <button
-                onClick={() => {
-                  if (activeConversation) {
-                    setConversations(prev => prev.map(c => c.id === activeConversation.id ? { ...c, model: 'gemini-2.5-flash' } : c));
-                  }
-                }}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  (!activeConversation || activeConversation.model === "gemini-2.5-flash" || !activeConversation.model)
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                Flash
-              </button>
-              <button
-                onClick={() => {
-                  if (!isProUser) {
-                    setProModalOpen(true);
-                    return;
-                  }
-                  if (activeConversation) {
-                    setConversations(prev => prev.map(c => c.id === activeConversation.id ? { ...c, model: 'gemini-2.5-pro' } : c));
-                  }
-                }}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                  (activeConversation?.model === "gemini-2.5-pro")
-                    ? "bg-amber-500 text-white shadow-sm"
-                    : "text-amber-400 hover:text-amber-300"
-                }`}
-                title={!isProUser ? "Upgrade to Pro to unlock Gemini 2.5 Pro" : "Switch to Gemini 2.5 Pro"}
-              >
-                <Sparkles size={11} />
-                <span>Pro</span>
-              </button>
-            </div>
-
-            <div className="hidden sm:flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-400 hidden md:inline">Mode:</span>
-              <div
-                onClick={() => setSettingsOpen(true)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 border rounded-full cursor-pointer transition-all shadow-sm active:scale-95 ${
-                  theme === "dark" ? "bg-white/10 border-white/20 text-indigo-400" : "bg-white border-slate-200 text-indigo-600"
-                }`}
-              >
-                <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider">
-                  {currentPersona ? currentPersona.name : "Custom AI"}
-                </span>
-                <ChevronRight size={12} className="text-slate-400 rotate-90" />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Settings Button */}
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className={`flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
-              }`}
-              title="Open AI Model & Advanced Settings"
-            >
-              <Wrench size={14} className="text-indigo-400" />
-              <span className="hidden sm:inline">Settings</span>
-            </button>
-
-            {/* Upgrade to Pro Button */}
-            <button
-              onClick={() => setProModalOpen(true)}
-              className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-amber-500/20 transition-all cursor-pointer animate-pulse"
-            >
-              <Crown size={14} />
-              <span>{isProUser ? "Pro ⭐" : <>Upgrade Pro ({freeMessagesLeft})</>}</span>
-            </button>
-            {useSearch && (
-              <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
-                <Globe size={11} className="animate-spin" />
-                <span>Search Active</span>
-              </div>
-            )}
-
-            {/* Clear messages of active chat */}
-            {activeConversation && activeConversation.messages.length > 0 && (
-              <button
-                onClick={clearCurrentChatMessages}
-                className={`hidden sm:flex p-2 rounded-xl border transition-all cursor-pointer ${
-                  theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
-                }`}
-                title="Clear current messages (preserve settings)"
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
-
-            {/* Favorite / Star active conversation */}
-            {activeConversation && (
-              <button
-                onClick={(e) => toggleFavorite(activeConversation.id, e)}
-                className={`hidden sm:flex p-2 rounded-xl border transition-all cursor-pointer ${
-                  activeConversation.isFavorite 
-                    ? "bg-amber-500/10 border-amber-500/30 text-amber-500" 
-                    : (theme === "dark" ? "bg-white/5 border-white/10 text-slate-400" : "bg-white border-slate-200 text-slate-500")
-                }`}
-                title="Favorite / Star Chat"
-              >
-                <Star size={16} className={activeConversation.isFavorite ? "fill-amber-500" : ""} />
-              </button>
-            )}
-
-            {/* Share Chat Trigger */}
-            {activeConversation && activeConversation.messages.length > 0 && (
-              <button
-                onClick={() => setShareModalOpen(true)}
-                className={`hidden sm:flex p-2 rounded-xl border transition-all cursor-pointer ${
-                  theme === "dark" ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200" : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
-                }`}
-                title="Share Chat"
-              >
-                <Share2 size={16} />
-              </button>
-            )}
-
-            {/* Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className={`hidden sm:flex p-2 rounded-xl border transition-all cursor-pointer ${
-                theme === "dark" ? "bg-white/5 border-white/10 text-yellow-400" : "bg-white border-slate-200 text-indigo-600"
-              }`}
-              title="Toggle light/dark mode"
-            >
-              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-
-            <button
-              id="btn-open-settings"
-              onClick={() => setSettingsOpen(true)}
-              className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer shadow-sm ${
-                theme === "dark" ? "bg-white/5 border-white/10 text-slate-200" : "bg-white border-slate-200 text-slate-700"
-              }`}
-              title="Chat Settings"
-            >
-              <Settings size={16} />
             </button>
           </div>
         </header>
@@ -2106,147 +2289,94 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* Chat Modes Segmented Selection Bar (dynamic helper for ChatGPT modes) */}
-        <div className={`px-2 sm:px-4 md:px-8 py-1.5 sm:py-2.5 border-b flex items-center justify-start gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none z-10 ${
-          theme === "dark" ? "bg-black/10 border-white/5" : "bg-white/20 border-slate-200/30"
-        }`}>
-          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest shrink-0 mr-1 hidden sm:inline">Modes:</span>
-          
-          <button
-            onClick={() => selectMode("general")}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold cursor-pointer transition-all shrink-0 ${
-              selectedPersonaId === "general"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-105"
-                : (theme === "dark" ? "bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300" : "bg-white hover:bg-slate-50 border border-slate-200 text-slate-700")
-            }`}
-          >
-            <Sparkles size={11} className="sm:w-3 sm:h-3" />
-            <span>JOXIQ AI</span>
-          </button>
+            {/* Message container */}
+            <div className={`flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 md:px-24 py-2 sm:py-4 md:py-6 pb-24 sm:pb-28 md:pb-6 space-y-4 md:space-y-6 overflow-x-hidden ${
+              theme === "dark" ? "bg-gradient-to-b from-transparent to-slate-950/5" : "bg-white"
+            }`}>
+              {!activeConversation || activeConversation.messages.length === 0 ? (
+                /* Starter welcome dashboard */
+                <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-4 sm:py-8 px-4 space-y-3">
+                  <div className="text-center space-y-2">
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.4 }}
+                      className="mx-auto flex items-center justify-center mb-2"
+                    >
+                      <JoxiqLogo theme={theme} className="w-16 h-16 sm:w-20 sm:h-20 shadow-lg shadow-indigo-500/20" />
+                    </motion.div>
+                    <h1 className={`text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mt-3 ${
+                      theme === "dark" ? "text-white" : "text-slate-900"
+                    }`}>
+                      How can I support you today?
+                    </h1>
+                    <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto text-xs sm:text-sm leading-relaxed px-4">
+                      Start a conversation below, choose a chat mode, upload a document or code file, or use real-time search grounding.
+                    </p>
+                  </div>
 
-          <button
-            onClick={() => selectMode("socratic")}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold cursor-pointer transition-all shrink-0 ${
-              selectedPersonaId === "socratic"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-105"
-                : (theme === "dark" ? "bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300" : "bg-white hover:bg-slate-50 border border-slate-200 text-slate-700")
-            }`}
-          >
-            <GraduationCap size={11} className="sm:w-3 sm:h-3" />
-            <span>Study Mode</span>
-          </button>
+                  {/* Chat Modes Quick Welcome Selector Grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 w-full max-w-2xl">
+                    <button
+                      onClick={() => selectMode("general")}
+                      className={`p-3.5 border rounded-xl flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all duration-200 active:scale-95 ${
+                        selectedPersonaId === "general"
+                          ? "bg-indigo-600 text-white border-indigo-500 shadow-md"
+                          : (theme === "dark" ? "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.08]" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50")
+                      }`}
+                    >
+                      <Sparkles size={18} className="text-indigo-500 dark:text-indigo-400" />
+                      <span className="text-xs font-bold font-sans">JOXIQ AI</span>
+                    </button>
 
-          <button
-            onClick={() => selectMode("coder")}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold cursor-pointer transition-all shrink-0 ${
-              selectedPersonaId === "coder"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-105"
-                : (theme === "dark" ? "bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300" : "bg-white hover:bg-slate-50 border border-slate-200 text-slate-700")
-            }`}
-          >
-            <Code size={11} className="sm:w-3 sm:h-3" />
-            <span>Coding Mode</span>
-          </button>
+                    <button
+                      onClick={() => selectMode("socratic")}
+                      className={`p-3.5 border rounded-xl flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all duration-200 active:scale-95 ${
+                        selectedPersonaId === "socratic"
+                          ? "bg-indigo-600 text-white border-indigo-500 shadow-md"
+                          : (theme === "dark" ? "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.08]" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50")
+                      }`}
+                    >
+                      <GraduationCap size={18} className="text-emerald-500 dark:text-emerald-400" />
+                      <span className="text-xs font-bold font-sans">Study Mode</span>
+                    </button>
 
-          <button
-            onClick={() => selectMode("translator")}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold cursor-pointer transition-all shrink-0 ${
-              selectedPersonaId === "translator"
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20 scale-105"
-                : (theme === "dark" ? "bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300" : "bg-white hover:bg-slate-50 border border-slate-200 text-slate-700")
-            }`}
-          >
-            <Languages size={11} className="sm:w-3 sm:h-3" />
-            <span>Translation Mode</span>
-          </button>
-        </div>
+                    <button
+                      onClick={() => selectMode("coder")}
+                      className={`p-3.5 border rounded-xl flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all duration-200 active:scale-95 ${
+                        selectedPersonaId === "coder"
+                          ? "bg-indigo-600 text-white border-indigo-500 shadow-md"
+                          : (theme === "dark" ? "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.08]" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50")
+                      }`}
+                    >
+                      <Code size={18} className="text-amber-500 dark:text-amber-400" />
+                      <span className="text-xs font-bold font-sans">Coding Mode</span>
+                    </button>
 
-        {/* Message container */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-2 sm:px-4 md:px-24 py-2 sm:py-4 md:py-6 pb-24 sm:pb-28 md:pb-6 space-y-4 md:space-y-6 overflow-x-hidden bg-gradient-to-b from-transparent to-slate-950/5">
-          {!activeConversation || activeConversation.messages.length === 0 ? (
-            /* Starter welcome dashboard */
-            <div className="max-w-3xl mx-auto w-full flex flex-col items-center justify-center py-4 sm:py-8 px-4 space-y-3">
-              <div className="text-center space-y-2">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="mx-auto flex items-center justify-center mb-2"
-                >
-                  <JoxiqLogo theme={theme} className="w-28 h-28 sm:w-32 sm:h-32 shadow-xl shadow-indigo-500/20" />
-                </motion.div>
-                <h1 className={`text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight mt-3 ${
-                  theme === "dark" ? "text-white" : "text-slate-900"
-                }`}>
-                  How can I support you today?
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto text-xs sm:text-sm leading-relaxed px-4">
-                  Start a conversation below, choose a chat mode, upload a document or code file, or use real-time search grounding.
-                </p>
-              </div>
+                    <button
+                      onClick={() => selectMode("translator")}
+                      className={`p-3.5 border rounded-xl flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all duration-200 active:scale-95 ${
+                        selectedPersonaId === "translator"
+                          ? "bg-indigo-600 text-white border-indigo-500 shadow-md"
+                          : (theme === "dark" ? "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.08]" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50")
+                      }`}
+                    >
+                      <Languages size={18} className="text-pink-500 dark:text-pink-400" />
+                      <span className="text-xs font-bold font-sans">Translation</span>
+                    </button>
+                  </div>
 
-              {/* Chat Modes Quick Welcome Selector Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 w-full max-w-2xl">
-                <button
-                  onClick={() => selectMode("general")}
-                  className={`p-3.5 border rounded-xl flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all duration-200 active:scale-95 ${
-                    selectedPersonaId === "general"
-                      ? "bg-indigo-600 text-white border-indigo-500 shadow-md"
-                      : (theme === "dark" ? "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.08]" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50")
-                  }`}
-                >
-                  <Sparkles size={18} className="text-indigo-500 dark:text-indigo-400" />
-                  <span className="text-xs font-bold font-sans">JOXIQ AI</span>
-                </button>
-
-                <button
-                  onClick={() => selectMode("socratic")}
-                  className={`p-3.5 border rounded-xl flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all duration-200 active:scale-95 ${
-                    selectedPersonaId === "socratic"
-                      ? "bg-indigo-600 text-white border-indigo-500 shadow-md"
-                      : (theme === "dark" ? "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.08]" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50")
-                  }`}
-                >
-                  <GraduationCap size={18} className="text-emerald-500 dark:text-emerald-400" />
-                  <span className="text-xs font-bold font-sans">Study Mode</span>
-                </button>
-
-                <button
-                  onClick={() => selectMode("coder")}
-                  className={`p-3.5 border rounded-xl flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all duration-200 active:scale-95 ${
-                    selectedPersonaId === "coder"
-                      ? "bg-indigo-600 text-white border-indigo-500 shadow-md"
-                      : (theme === "dark" ? "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.08]" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50")
-                  }`}
-                >
-                  <Code size={18} className="text-amber-500 dark:text-amber-400" />
-                  <span className="text-xs font-bold font-sans">Coding Mode</span>
-                </button>
-
-                <button
-                  onClick={() => selectMode("translator")}
-                  className={`p-3.5 border rounded-xl flex flex-col items-center justify-center text-center gap-2 cursor-pointer transition-all duration-200 active:scale-95 ${
-                    selectedPersonaId === "translator"
-                      ? "bg-indigo-600 text-white border-indigo-500 shadow-md"
-                      : (theme === "dark" ? "bg-white/[0.03] border-white/10 text-slate-300 hover:bg-white/[0.08]" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50")
-                  }`}
-                >
-                  <Languages size={18} className="text-pink-500 dark:text-pink-400" />
-                  <span className="text-xs font-bold font-sans">Translation</span>
-                </button>
-              </div>
-
-              {/* Guide tips */}
-              <div className={`flex items-center gap-2 border px-4 py-2.5 rounded-lg text-xs max-w-md text-center ${
-                theme === "dark" ? "bg-indigo-500/5 border-indigo-500/10 text-slate-400" : "bg-indigo-50/50 border-indigo-100 text-slate-600"
-              }`}>
-                <Info size={14} className="text-indigo-500 shrink-0" />
-                <span>
-                  Tip: Upload code snippets, text files, or PDFs, and click the <b>Star</b> in the navbar to save your favorite sessions.
-                </span>
-              </div>
-            </div>
-          ) : (
+                  {/* Guide tips */}
+                  <div className={`flex items-center gap-2 border px-4 py-2.5 rounded-lg text-xs max-w-md text-center ${
+                    theme === "dark" ? "bg-indigo-500/5 border-indigo-500/10 text-slate-400" : "bg-indigo-50/50 border-indigo-100 text-slate-600"
+                  }`}>
+                    <Info size={14} className="text-indigo-500 shrink-0" />
+                    <span>
+                      Tip: Upload code snippets, text files, or PDFs, and click the <b>Star</b> in the navbar to save your favorite sessions.
+                    </span>
+                  </div>
+                </div>
+              ) : (
             /* Active message timeline */
             <div className="max-w-4xl mx-auto space-y-8 pb-10">
               {activeConversation.messages.map((msg, mIdx) => {
@@ -2265,10 +2395,16 @@ export default function App() {
 
                     <div className={`flex flex-col gap-2 ${isUser ? "items-end max-w-[85%] md:max-w-[75%]" : "flex-1 min-w-0"}`}>
                       {isUser ? (
-                        <div className="bg-indigo-600 text-white rounded-2xl rounded-br-sm px-4 py-3 shadow-sm text-sm md:text-base leading-relaxed">
+                        <div
+                          className={`rounded-2xl rounded-br-sm px-4 py-3 text-sm md:text-base leading-relaxed border shadow-2xs transition-all ${
+                            theme === "dark"
+                              ? "bg-white/[0.08] backdrop-blur-md border-white/10 text-slate-100"
+                              : "bg-white/90 backdrop-blur-md border-slate-200/90 text-slate-900 shadow-slate-200/50"
+                          }`}
+                        >
                           {/* Inline attached images if present in message history */}
                           {msg.image && (
-                            <div className="mb-3 max-w-sm rounded-lg overflow-hidden border border-white/20 shadow-sm bg-black/40">
+                            <div className="mb-3 max-w-sm rounded-lg overflow-hidden border border-slate-200 dark:border-white/20 shadow-sm bg-black/40">
                               <img
                                 src={msg.image.data}
                                 alt="User uploaded attachment"
@@ -2280,11 +2416,15 @@ export default function App() {
 
                           {/* Inline attached documents info */}
                           {msg.document && (
-                            <div className="mb-3 flex items-center gap-2.5 p-2 rounded-xl bg-black/20 border border-white/20 text-white max-w-md">
-                              <FileText size={18} className="text-white shrink-0" />
+                            <div className={`mb-3 flex items-center gap-2.5 p-2 rounded-xl border max-w-md ${
+                              theme === "dark"
+                                ? "bg-black/30 border-white/10 text-slate-200"
+                                : "bg-slate-100/80 border-slate-200 text-slate-800"
+                            }`}>
+                              <FileText size={18} className="text-indigo-500 dark:text-indigo-400 shrink-0" />
                               <div className="flex-1 min-w-0 text-left">
                                 <div className="text-xs font-semibold truncate">{msg.document.name}</div>
-                                <div className="text-[10px] text-white/80 font-mono mt-0.5">Parsed Document - {msg.document.size}</div>
+                                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">Parsed Document - {msg.document.size}</div>
                               </div>
                             </div>
                           )}
@@ -2292,7 +2432,7 @@ export default function App() {
                           <div className="whitespace-pre-wrap break-words">{msg.content}</div>
                         </div>
                       ) : (
-                        <div className="text-slate-800 dark:text-slate-100 space-y-3 text-sm md:text-base leading-relaxed w-full">
+                        <div className="text-black dark:text-slate-100 space-y-3 text-sm md:text-base leading-relaxed w-full">
                           {/* Inline attached images if present in message history */}
                           {msg.image && (
                             <div className="mb-3 max-w-sm rounded-lg overflow-hidden border border-white/10 shadow-sm bg-black/40">
@@ -2364,11 +2504,11 @@ export default function App() {
 
                       {/* Message metadata line and audio controls */}
                       <div
-                        className={`flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500 px-1 mt-1 ${
+                        className={`flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-400 px-1 mt-1 ${
                           isUser ? "justify-end" : "justify-start"
                         }`}
                       >
-                        <span>
+                        <span className="text-slate-700 dark:text-slate-400 font-medium">
                           {new Date(msg.timestamp).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -2378,8 +2518,8 @@ export default function App() {
                           <button
                             onClick={() => handleSpeakTts(msg)}
                             disabled={isGeneratingTts && activeSpeechMsgId !== msg.id}
-                            className={`p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 hover:text-indigo-500 transition-colors cursor-pointer ${
-                              activeSpeechMsgId === msg.id ? "text-indigo-500" : "text-slate-400 dark:text-slate-500"
+                            className={`p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 hover:text-indigo-600 transition-colors cursor-pointer ${
+                              activeSpeechMsgId === msg.id ? "text-indigo-600" : "text-slate-800 dark:text-slate-300"
                             }`}
                             title={
                               activeSpeechMsgId === msg.id
@@ -2392,121 +2532,170 @@ export default function App() {
                           >
                             {activeSpeechMsgId === msg.id ? (
                               isGeneratingTts ? (
-                                <Loader2 className="w-3 h-3 animate-spin text-indigo-500" />
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
                               ) : (
-                                <VolumeX className="w-3 h-3 text-indigo-500" />
+                                <VolumeX className="w-3.5 h-3.5 text-indigo-600" />
                               )
                             ) : (
-                              <Volume2 className="w-3 h-3" />
+                              <Volume2 className="w-3.5 h-3.5" />
                             )}
                           </button>
                         )}
                       </div>
 
-                      {/* Modern Compact Response Action Toolbar (Assistant Only) */}
+                      {/* ChatGPT/Claude Clean Action Toolbar (Assistant Only) */}
                       {!isUser && (
-                        <div className="flex items-center gap-1 mt-1.5 pt-1.5 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5">
+                        <div className="flex items-center gap-1 mt-2 text-xs text-slate-500 dark:text-slate-400 relative">
+                          {/* Copy Button */}
+                          <button
+                            onClick={() => copyMessageText(msg)}
+                            className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium transition-colors cursor-pointer flex items-center gap-1.5"
+                            title={copiedMsgId === msg.id ? "Copied to clipboard!" : "Copy response"}
+                            aria-label="Copy response"
+                          >
+                            {copiedMsgId === msg.id ? (
+                              <>
+                                <Check size={15} className="text-emerald-600 dark:text-emerald-400 font-bold" />
+                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={15} />
+                                <span className="text-xs font-medium">Copy</span>
+                              </>
+                            )}
+                          </button>
+
                           {/* Like Button */}
                           <button
                             onClick={() => rateMessage(msg.id, msg.rating === "like" ? null : "like")}
-                            className={`p-1.5 rounded-md border transition-all duration-200 cursor-pointer ${
+                            className={`p-1.5 rounded-md transition-colors cursor-pointer flex items-center gap-1 ${
                               msg.rating === "like"
-                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500 font-medium"
-                                : "bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300"
+                                ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 font-medium"
+                                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                             }`}
                             title="Like response"
                             aria-label="Like response"
                           >
-                            <ThumbsUp size={13} className={msg.rating === "like" ? "fill-emerald-500" : ""} />
+                            <ThumbsUp size={15} className={msg.rating === "like" ? "fill-emerald-600 dark:fill-emerald-400" : ""} />
                           </button>
 
                           {/* Dislike Button */}
                           <button
                             onClick={() => rateMessage(msg.id, msg.rating === "dislike" ? null : "dislike")}
-                            className={`p-1.5 rounded-md border transition-all duration-200 cursor-pointer ${
+                            className={`p-1.5 rounded-md transition-colors cursor-pointer flex items-center gap-1 ${
                               msg.rating === "dislike"
-                                ? "bg-rose-500/10 border-rose-500/30 text-rose-500 font-medium"
-                                : "bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300"
+                                ? "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400 font-medium"
+                                : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                             }`}
                             title="Dislike response"
                             aria-label="Dislike response"
                           >
-                            <ThumbsDown size={13} className={msg.rating === "dislike" ? "fill-rose-500" : ""} />
-                          </button>
-
-                          {/* Copy Button */}
-                          <button
-                            onClick={() => copyMessageText(msg)}
-                            className="p-1.5 rounded-md border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer"
-                            title={copiedMsgId === msg.id ? "Copied!" : "Copy response"}
-                            aria-label="Copy response"
-                          >
-                            {copiedMsgId === msg.id ? (
-                              <Check size={13} className="text-emerald-500" />
-                            ) : (
-                              <Copy size={13} />
-                            )}
-                          </button>
-
-                          {/* Regenerate Button */}
-                          {isLastMsg && (
-                            <button
-                              onClick={handleRegenerate}
-                              disabled={isStreaming}
-                              className={`p-1.5 rounded-md border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer ${
-                                isStreaming ? "opacity-40 cursor-not-allowed" : ""
-                              }`}
-                              title="Regenerate response"
-                              aria-label="Regenerate response"
-                            >
-                              <RefreshCw size={13} className={isStreaming ? "animate-spin" : ""} />
-                            </button>
-                          )}
-
-                          {/* Save / Export as PDF Button */}
-                          <button
-                            onClick={() => handleExportMessagePdf(msg)}
-                            className="p-1.5 rounded-md border bg-indigo-50/80 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 transition-all duration-200 cursor-pointer flex items-center gap-1"
-                            title="Export & Save as PDF Document"
-                            aria-label="Export & Save as PDF Document"
-                          >
-                            <FileText size={13} />
-                            <span className="text-[10px] font-bold">PDF</span>
+                            <ThumbsDown size={15} className={msg.rating === "dislike" ? "fill-rose-600 dark:fill-rose-400" : ""} />
                           </button>
 
                           {/* Share Button */}
                           <button
                             onClick={() => shareMessage(msg)}
-                            className="p-1.5 rounded-md border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer"
+                            className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
                             title="Share response"
                             aria-label="Share response"
                           >
-                            <Share2 size={13} />
+                            <Share2 size={15} />
                           </button>
 
-                          {/* Save / Bookmark Button */}
-                          <button
-                            onClick={() => toggleSaveMessage(msg.id)}
-                            className={`p-1.5 rounded-md border transition-all duration-200 cursor-pointer ${
-                              savedMessageIds.includes(msg.id)
-                                ? "bg-amber-500/10 border-amber-500/30 text-amber-500 font-medium"
-                                : "bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/[0.08] text-slate-600 dark:text-slate-300"
-                            }`}
-                            title={savedMessageIds.includes(msg.id) ? "Saved in bookmarks" : "Save to bookmarks"}
-                            aria-label="Save response"
-                          >
-                            <Bookmark size={13} className={savedMessageIds.includes(msg.id) ? "fill-amber-500" : ""} />
-                          </button>
+                          {/* Three Dots - More Options Dropdown */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setActiveMoreMenuMsgId(activeMoreMenuMsgId === msg.id ? null : msg.id)}
+                              className={`p-1.5 rounded-md transition-colors cursor-pointer flex items-center justify-center ${
+                                activeMoreMenuMsgId === msg.id
+                                  ? "bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white"
+                                  : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                              }`}
+                              title="More options"
+                              aria-label="More options"
+                            >
+                              <MoreVertical size={15} />
+                            </button>
 
-                          {/* Delete Button */}
-                          <button
-                            onClick={() => deleteMessage(msg.id)}
-                            className="p-1.5 rounded-md border bg-white/50 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 text-slate-600 dark:text-slate-300 hover:text-rose-500 transition-all duration-200 cursor-pointer ml-auto"
-                            title="Delete message"
-                            aria-label="Delete message"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                            {activeMoreMenuMsgId === msg.id && (
+                              <>
+                                {/* Click outside backdrop */}
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={() => setActiveMoreMenuMsgId(null)}
+                                />
+
+                                {/* Dropdown Menu */}
+                                <div className="absolute left-0 top-full mt-1.5 z-50 min-w-[180px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1.5 text-xs flex flex-col gap-0.5 animate-in fade-in zoom-in-95 duration-150">
+                                  {/* Regenerate Response (if last message) */}
+                                  {isLastMsg && (
+                                    <button
+                                      onClick={() => {
+                                        handleRegenerate();
+                                        setActiveMoreMenuMsgId(null);
+                                      }}
+                                      disabled={isStreaming}
+                                      className={`w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center gap-2.5 text-slate-800 dark:text-slate-200 font-medium transition-colors cursor-pointer ${
+                                        isStreaming ? "opacity-40 cursor-not-allowed" : ""
+                                      }`}
+                                    >
+                                      <RefreshCw size={15} className={`text-slate-600 dark:text-slate-400 ${isStreaming ? "animate-spin" : ""}`} />
+                                      <span>Regenerate Response</span>
+                                    </button>
+                                  )}
+
+                                  {/* Bookmark / Favorite */}
+                                  <button
+                                    onClick={() => {
+                                      toggleSaveMessage(msg.id);
+                                      setActiveMoreMenuMsgId(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center gap-2.5 text-slate-800 dark:text-slate-200 font-medium transition-colors cursor-pointer"
+                                  >
+                                    <Bookmark
+                                      size={15}
+                                      className={
+                                        savedMessageIds.includes(msg.id)
+                                          ? "fill-amber-500 text-amber-500"
+                                          : "text-slate-600 dark:text-slate-400"
+                                      }
+                                    />
+                                    <span>
+                                      {savedMessageIds.includes(msg.id) ? "Remove Bookmark" : "Save to Bookmarks"}
+                                    </span>
+                                  </button>
+
+                                  {/* PDF Export */}
+                                  <button
+                                    onClick={() => {
+                                      handleExportMessagePdf(msg);
+                                      setActiveMoreMenuMsgId(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left hover:bg-slate-100 dark:hover:bg-slate-700/80 flex items-center gap-2.5 text-slate-800 dark:text-slate-200 font-medium transition-colors cursor-pointer"
+                                  >
+                                    <FileText size={15} className="text-indigo-600 dark:text-indigo-400" />
+                                    <span>Export as PDF</span>
+                                  </button>
+
+                                  <div className="my-1 border-t border-slate-100 dark:border-slate-700/60" />
+
+                                  {/* Delete Message */}
+                                  <button
+                                    onClick={() => {
+                                      deleteMessage(msg.id);
+                                      setActiveMoreMenuMsgId(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-500/10 flex items-center gap-2.5 text-rose-600 dark:text-rose-400 font-medium transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 size={15} />
+                                    <span>Delete Message</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2524,15 +2713,18 @@ export default function App() {
                 );
               })}
 
-              {/* Streaming AI Bubble overlay */}
+              {/* Streaming AI Bubble overlay with Typewriter Blinking Cursor */}
               {isStreaming && currentStreamText && (
                 <div className="flex items-start gap-4 justify-start w-full">
                   <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0 border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden mt-0.5">
                     <Bot size={18} className="animate-pulse" />
                   </div>
                   <div className="flex flex-col gap-2 flex-1 min-w-0">
-                    <div className="text-slate-800 dark:text-slate-100 space-y-3 text-sm md:text-base leading-relaxed w-full">
-                      <MarkdownMessage content={currentStreamText} />
+                    <div className="text-black dark:text-slate-100 space-y-3 text-sm md:text-base leading-relaxed w-full">
+                      <div>
+                        <MarkdownMessage content={currentStreamText} />
+                        <span className="inline-block w-2 h-4 ml-1 bg-slate-800 dark:bg-slate-200 animate-pulse align-middle rounded-xs" />
+                      </div>
 
                       {/* Streaming search citation query bubble if active */}
                       {currentGrounding && currentGrounding.queries && currentGrounding.queries.length > 0 && (
@@ -2543,7 +2735,7 @@ export default function App() {
                       )}
                     </div>
                     <div className="text-[10px] text-slate-400 dark:text-slate-500 px-1">
-                      <span>Generating response...</span>
+                      <span>Writing response...</span>
                     </div>
                   </div>
                 </div>
@@ -2606,7 +2798,7 @@ export default function App() {
 
         {/* Chat Input Bar area */}
         <footer className={`z-20 p-2 sm:p-4 md:p-6 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col items-center shrink-0 border-t fixed bottom-0 left-0 right-0 md:relative md:bottom-auto md:w-full ${
-          theme === "dark" ? "border-white/5 bg-slate-950/95 backdrop-blur-xl" : "border-slate-200/50 bg-white/95 backdrop-blur-xl"
+          theme === "dark" ? "border-white/5 bg-slate-950/95 backdrop-blur-xl" : "border-slate-200 bg-white"
         }`}>
           <div className="w-full max-w-3xl relative">
             {/* Suggested prompt chips row above input box */}
@@ -2624,7 +2816,7 @@ export default function App() {
                   className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 border cursor-pointer shrink-0 flex items-center gap-1.5 shadow-xs active:scale-95 ${
                     theme === "dark"
                       ? "bg-white/5 border-white/10 hover:bg-white/10 text-slate-300 hover:text-white hover:border-white/20"
-                      : "bg-slate-100/80 border-slate-200/80 hover:bg-slate-200/80 text-slate-700 hover:text-slate-900"
+                      : "bg-white border-slate-200 hover:bg-slate-50 text-slate-700 hover:text-slate-900"
                   } ${isStreaming ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <item.icon size={12} className="text-indigo-400 shrink-0" />
@@ -3513,11 +3705,58 @@ export default function App() {
           setActiveView("chat");
         }}
         onDeleteConversation={deleteChat}
+        onRenameConversation={(id, newTitle) => renameChat(id, newTitle)}
         onToggleFavorite={toggleFavorite}
         onClearAll={clearAllChats}
         theme={theme === "light" ? "light" : "dark"}
         onSavePdfToChat={handleSavePdfToChat}
       />
+
+      {/* Delete Chat Confirmation Modal */}
+      <AnimatePresence>
+        {deleteConfirmChatId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className={`w-full max-w-sm rounded-2xl p-5 shadow-2xl border ${
+                theme === "dark" ? "bg-slate-900 border-white/10 text-slate-100" : "bg-white border-slate-200 text-slate-900"
+              }`}
+            >
+              <div className="flex items-center gap-3 text-rose-500 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold">Delete Chat History?</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">This action cannot be undone.</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 mb-5 leading-relaxed">
+                Are you sure you want to permanently delete this conversation from your JOXIQ AI history?
+              </p>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setDeleteConfirmChatId(null)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer text-slate-600 dark:text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => confirmDeleteChat(deleteConfirmChatId)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition-colors cursor-pointer shadow-sm flex items-center gap-1.5"
+                >
+                  <Trash2 size={13} />
+                  <span>Delete Permanently</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* JOXIQ AI Subscription & Token Quota Modal */}
       <SubscriptionModal

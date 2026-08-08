@@ -5,6 +5,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { envConfig } from "../config/env.js";
+import { askOptimized } from "../lib/tokenOptimizer/index.js";
 import {
   IAIProvider,
   AIProviderId,
@@ -20,8 +21,7 @@ export class GeminiProvider implements IAIProvider {
   supportedModels = [
     "gemini-2.5-flash",
     "gemini-2.0-flash",
-    "gemini-1.5-pro",
-    "gemini-1.5-flash",
+    "gemini-2.5-pro",
   ];
 
   private client: GoogleGenAI | null = null;
@@ -97,30 +97,37 @@ export class GeminiProvider implements IAIProvider {
       tools,
     };
 
-    let responseStream;
+    const candidateModels = Array.from(new Set([modelName, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"]));
 
-    try {
-      responseStream = await ai.models.generateContentStream({
-        model: modelName,
-        contents,
-        config,
-      });
-    } catch (primaryError: any) {
-      console.warn(`[GeminiProvider] Model ${modelName} stream failed, attempting fallback to gemini-2.5-flash...`, primaryError);
+    let responseStream;
+    let lastError: any = null;
+
+    for (const modelToTry of candidateModels) {
       try {
         responseStream = await ai.models.generateContentStream({
-          model: "gemini-2.5-flash",
+          model: modelToTry,
           contents,
           config,
         });
-      } catch (secondaryError: any) {
-        console.warn(`[GeminiProvider] Fallback failed, trying gemini-2.0-flash...`, secondaryError);
-        responseStream = await ai.models.generateContentStream({
-          model: "gemini-2.0-flash",
-          contents,
-          config,
-        });
+        lastError = null;
+        break;
+      } catch (err: any) {
+        lastError = err;
+        const errMsg = typeof err?.message === "string" ? err.message : String(err || "");
+        console.warn(`[GeminiProvider] Model ${modelToTry} stream failed:`, errMsg);
+        if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+          // Continue loop to try next candidate model (e.g. gemini-2.0-flash or gemini-2.5-pro)
+          continue;
+        }
       }
+    }
+
+    if (!responseStream || lastError) {
+      const errMsg = typeof lastError?.message === "string" ? lastError.message : String(lastError || "");
+      if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+        throw new Error("Gemini API quota exceeded (Rate Limit 429). Please wait a few seconds before retrying.");
+      }
+      throw new Error(errMsg || "Gemini generation failed.");
     }
 
     for await (const chunk of responseStream) {
@@ -155,30 +162,93 @@ export class GeminiProvider implements IAIProvider {
     options?: ChatOptions
   ): Promise<string> {
     const ai = this.getClient();
-    const contents = this.formatContents(messages);
-    const modelName = options?.model || this.defaultModel;
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
+    const userMessage = lastUserMsg?.content || "";
+    const history = messages.filter((m) => m !== lastUserMsg);
 
-    const config: any = {
-      systemInstruction: options?.systemInstruction,
-      temperature: typeof options?.temperature === "number" ? options.temperature : 0.7,
-    };
+    const result = await askOptimized({
+      userId: options?.userId || "anonymous",
+      conversationId: options?.userId || "default_conv",
+      userMessage,
+      chatHistory: history.map((m) => ({
+        role: m.role,
+        content: m.content || "",
+      })),
+      summarizeFn: async (text: string) => {
+        try {
+          const res = await ai.models.generateContent({
+            model: "gemini-2.0-flash",
+            contents: [{ role: "user", parts: [{ text }] }],
+            config: { maxOutputTokens: 250 },
+          });
+          return res.text || "";
+        } catch (e) {
+          return "";
+        }
+      },
+      callModel: async ({ systemPrompt, context, recentMessages, userMessage, model, maxOutputTokens }) => {
+        const fullSystemInstruction = [options?.systemInstruction, systemPrompt, context].filter(Boolean).join("\n\n");
 
-    let response;
-    try {
-      response = await ai.models.generateContent({
-        model: modelName,
-        contents,
-        config,
-      });
-    } catch (error: any) {
-      console.warn(`[GeminiProvider] Model ${modelName} failed, retrying with gemini-2.5-flash...`, error);
-      response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents,
-        config,
-      });
-    }
+        const preparedMessages: ChatMessage[] = [
+          ...recentMessages.map((m) => ({
+            id: String(Date.now() + Math.random()),
+            role: (m.role === "assistant" || m.role === "model") ? ("assistant" as const) : ("user" as const),
+            content: m.content || m.text || "",
+            timestamp: Date.now(),
+          })),
+          {
+            id: String(Date.now()),
+            role: "user" as const,
+            content: userMessage,
+            timestamp: Date.now(),
+          },
+        ];
 
-    return response.text || "";
+        const contents = this.formatContents(preparedMessages);
+        const modelName = model || options?.model || this.defaultModel;
+
+        const config: any = {
+          systemInstruction: fullSystemInstruction,
+          temperature: typeof options?.temperature === "number" ? options.temperature : 0.7,
+          maxOutputTokens,
+        };
+
+        const candidateModels = Array.from(new Set([modelName, "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"]));
+
+        let response: any = null;
+        let lastError: any = null;
+
+        for (const modelToTry of candidateModels) {
+          try {
+            response = await ai.models.generateContent({
+              model: modelToTry,
+              contents,
+              config,
+            });
+            lastError = null;
+            break;
+          } catch (err: any) {
+            lastError = err;
+            const errMsg = typeof err?.message === "string" ? err.message : String(err || "");
+            console.warn(`[GeminiProvider] Model ${modelToTry} content generation failed:`, errMsg);
+            if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+              continue;
+            }
+          }
+        }
+
+        if (!response || lastError) {
+          const errMsg = typeof lastError?.message === "string" ? lastError.message : String(lastError || "");
+          if (errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") || errMsg.includes("Quota exceeded")) {
+            throw new Error("Gemini API quota exceeded (Rate Limit 429). Please wait a few seconds before retrying.");
+          }
+          throw new Error(errMsg || "Gemini generation failed.");
+        }
+
+        return response.text || "";
+      },
+    });
+
+    return result.text || "";
   }
 }

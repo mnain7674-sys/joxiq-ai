@@ -12,6 +12,7 @@ import { processAdminQuery, handleAdminAction, SecurityAutomationEngine, SelfHea
 import adminV2Routes from "./src/routes/adminV2Routes.js";
 import { chatMemory, responseCache, vectorStore, checkInputSafety, executeTool } from "./src/ai/ragMemoryEngine.js";
 import { personalizationEngine } from "./src/ai/personalizationEngine.js";
+import { askOptimized } from "./src/lib/tokenOptimizer/index.js";
 
 // Load environment variables
 dotenv.config();
@@ -891,15 +892,51 @@ app.post(["/chat", "/api/chat"], async (req, res) => {
     let replyText = "";
     if (client) {
       try {
-        const response = await client.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: [
-            { role: "user", parts: [{ text: systemInstruction }] },
-            ...history,
-            { role: "user", parts: [{ text: finalPrompt }] }
-          ]
+        const optimizedResult = await askOptimized({
+          userId: session_id,
+          conversationId: session_id,
+          userMessage: message,
+          chatHistory: history.map((h: any) => ({
+            role: h.role === "model" ? "assistant" : "user",
+            content: h.parts?.[0]?.text || "",
+          })),
+          summarizeFn: async (text: string) => {
+            try {
+              const sumRes = await client!.models.generateContent({
+                model: "gemini-2.0-flash",
+                contents: [{ role: "user", parts: [{ text }] }],
+                config: { maxOutputTokens: 250 },
+              });
+              return sumRes.text || "";
+            } catch (e) {
+              return "";
+            }
+          },
+          callModel: async ({ systemPrompt, context: optContext, recentMessages, userMessage, model, maxOutputTokens }) => {
+            const combinedSystem = [systemInstruction, systemPrompt, optContext, context ? `RAG CONTEXT:\n${context}` : ""].filter(Boolean).join("\n\n");
+
+            const contents: any[] = [
+              { role: "user", parts: [{ text: combinedSystem }] },
+            ];
+
+            recentMessages.forEach((m) => {
+              contents.push({
+                role: m.role === "assistant" || m.role === "model" ? "model" : "user",
+                parts: [{ text: m.content || m.text || "" }],
+              });
+            });
+
+            contents.push({ role: "user", parts: [{ text: userMessage }] });
+
+            const response = await client!.models.generateContent({
+              model: model || "gemini-2.5-flash",
+              contents,
+              config: { maxOutputTokens },
+            });
+            return response.text || "No response generated.";
+          },
         });
-        replyText = response.text || "No response generated.";
+        replyText = optimizedResult.text;
       } catch (genErr: any) {
         console.warn("[API Chat] Gemini call fallback:", genErr);
         replyText = `Processed prompt: ${message}`;
